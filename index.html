@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChoosePure – Know What's in Your Child's Food</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #FAFBFA;
+            color: #1A3A2E;
+            line-height: 1.6;
+            padding-bottom: 80px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 60px 24px;
+        }
+        
+        /* LOGO */
+        .logo {
+            width: 200px;
+            margin: 0 auto 32px;
+            display: block;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        /* TRUST BADGES */
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            margin: 0 auto 48px;
+            max-width: 700px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #E8F0ED;
+        }
+        
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1E7F5C;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .badge-icon {
+            width: 28px;
+            height: 28px;
+            color: #1E7F5C;
+            flex-shrink: 0;
+        }
+        
+        /* HERO SECTION */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            line-height: 1.15;
+            margin: 0 0 24px;
+            font-weight: 700;
+            color: #0F2419;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+        
+        .subhead {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #3D5A4F;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 680px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* CTA BUTTONS */
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary, .btn-secondary {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #1E7F5C;
+            color: white;
+            box-shadow: 0 4px 12px rgba(30, 127, 92, 0.2);
+        }
+        
+        .btn-primary:hover {
+            background: #16684B;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 127, 92, 0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #1E7F5C;
+            border: 2px solid #1E7F5C;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .btn-secondary:hover {
+            background: #F8FAF9;
+            border-color: #16684B;
+            color: #16684B;
+        }
+        
+        .microcopy {
+            font-size: 15px;
+            color: #5A7A6E;
+            text-align: center;
+            margin-bottom: 80px;
+            font-style: italic;
+        }
+        
+        /* HOW IT WORKS SECTION */
+        .how-it-works-section {
+            background: white;
+            border-radius: 20px;
+            padding: 56px 40px;
+            margin-bottom: 48px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            border: 1px solid #E8F0ED;
+            scroll-margin-top: 20px;
+        }
+        
+        .how-it-works-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            margin: 0 0 16px;
+            color: #0F2419;
+            text-align: center;
+            letter-spacing: -0.01em;
+        }
+        
+        .section-subtext {
+            font-size: 18px;
+            color: #3D5A4F;
+            text-align: center;
+            margin-bottom: 48px;
+            font-style: italic;
+        }
+        
+        .steps {
+            display: grid;
+            gap: 32px;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+        
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            flex-shrink: 0;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #1E7F5C 0%, #16684B 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(30, 127, 92, 0.2);
+        }
+        
+        .step-content {
+            flex: 1;
+            padding-top: 4px;
+        }
+        
+        .step-content h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0F2419;
+            margin: 0 0 8px;
+        }
+        
+        .step-content p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #3D5A4F;
+            margin: 0 0 8px;
+        }
+        
+        .step-content p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .step-highlight {
+            font-weight: 600;
+            color: #1E7F5C;
+            font-size: 15px !important;
+        }
+        
+        .closing-line {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1E7F5C;
+            padding: 24px;
+            background: #F0F8F5;
+            border-radius: 12px;
+            border: 2px solid #D4E8DF;
+        }
+        
+        /* PROBLEM SECTION */
+        .problem-section {
+            background: white;
+            border-radius: 20px;
+            padding: 48px 40px;
+            margin-bottom: 48px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            border: 1px solid #E8F0ED;
+        }
+        
+        .problem-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            margin: 0 0 16px;
+            color: #0F2419;
+            text-align: center;
+            letter-spacing: -0.01em;
+        }
+        
+        .problem-subline {
+            font-size: 17px;
+            color: #3D5A4F;
+            text-align: center;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .problem-points {
+            display: grid;
+            gap: 24px;
+            max-width: 680px;
+            margin: 0 auto 32px;
+        }
+        
+        .problem-point {
+            padding: 24px;
+            background: #F8FAF9;
+            border-radius: 12px;
+            border-left: 4px solid #1E7F5C;
+        }
+        
+        .problem-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0F2419;
+            margin: 0 0 8px;
+        }
+        
+        .problem-content p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #3D5A4F;
+        }
+        
+        .bridge-line {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1E7F5C;
+            padding: 24px;
+            background: #F0F8F5;
+            border-radius: 12px;
+            border: 2px solid #D4E8DF;
+            line-height: 1.6;
+        }
+        
+        /* TESTIMONIAL */
+        .testimonial {
+            background: linear-gradient(135deg, #1E7F5C 0%, #16684B 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 48px 40px;
+            margin-bottom: 48px;
+            box-shadow: 0 8px 32px rgba(30, 127, 92, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .testimonial::before {
+            content: '"';
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 120px;
+            opacity: 0.1;
+            font-family: 'Playfair Display', serif;
+            line-height: 1;
+        }
+        
+        .testimonial .quote {
+            font-size: 20px;
+            line-height: 1.7;
+            margin: 0 0 16px;
+            font-style: italic;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .testimonial .author {
+            font-size: 15px;
+            margin: 0;
+            opacity: 0.9;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* FORM */
+        #waitlist-form {
+            scroll-margin-top: 20px;
+        }
+        
+        form {
+            background: white;
+            border-radius: 20px;
+            padding: 48px 40px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            border: 1px solid #E8F0ED;
+        }
+        
+        form h3 {
+            font-family: 'Playfair Display', serif;
+            margin: 0 0 32px;
+            font-size: 28px;
+            color: #0F2419;
+            text-align: center;
+            letter-spacing: -0.01em;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            border: 2px solid #E0EBE6;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            background: #FAFBFA;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1E7F5C;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(30, 127, 92, 0.1);
+        }
+        
+        input::placeholder {
+            color: #8FA39A;
+        }
+        
+        form button {
+            width: 100%;
+            padding: 18px;
+            background: #1E7F5C;
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+            box-shadow: 0 4px 12px rgba(30, 127, 92, 0.2);
+        }
+        
+        form button:hover {
+            background: #16684B;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 127, 92, 0.3);
+        }
+        
+        form button:disabled {
+            background: #8FA39A;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .form-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 15px;
+            display: none;
+        }
+        
+        .form-message.success {
+            background: #E8F5E9;
+            color: #2E7D32;
+            border: 1px solid #81C784;
+            display: block;
+        }
+        
+        .form-message.error {
+            background: #FFEBEE;
+            color: #C62828;
+            border: 1px solid #EF5350;
+            display: block;
+        }
+        
+        /* STICKY CTA BAR */
+        .sticky-cta {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #0F2419 0%, #1A3A2E 100%);
+            color: white;
+            padding: 20px 24px;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        .sticky-cta.visible {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        
+        .sticky-content {
+            max-width: 800px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .sticky-content span {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .sticky-content button {
+            padding: 14px 28px;
+            background: white;
+            color: #0F2419;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .sticky-content button:hover {
+            background: #F8FAF9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .footer {
+            font-size: 13px;
+            color: #7A9188;
+            margin-top: 48px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 20px;
+            }
+            
+            .trust-badges {
+                flex-direction: column;
+                gap: 16px;
+                padding: 20px 16px;
+            }
+            
+            .badge {
+                font-size: 14px;
+            }
+            
+            .badge-icon {
+                width: 24px;
+                height: 24px;
+            }
+            
+            h1 {
+                font-size: 36px;
+            }
+            
+            .subhead {
+                font-size: 18px;
+            }
+            
+            .how-it-works-section {
+                padding: 40px 24px;
+            }
+            
+            .how-it-works-section h2 {
+                font-size: 28px;
+            }
+            
+            .section-subtext {
+                font-size: 16px;
+            }
+            
+            .step {
+                gap: 16px;
+            }
+            
+            .step-number {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+            
+            .step-content h3 {
+                font-size: 18px;
+            }
+            
+            .step-content p {
+                font-size: 15px;
+            }
+            
+            .closing-line {
+                font-size: 16px;
+                padding: 20px;
+            }
+            
+            .problem-section,
+            .testimonial,
+            form {
+                padding: 32px 24px;
+            }
+            
+            .problem-section h2,
+            form h3 {
+                font-size: 24px;
+            }
+            
+            .problem-subline {
+                font-size: 16px;
+            }
+            
+            .problem-content h3 {
+                font-size: 17px;
+            }
+            
+            .problem-content p {
+                font-size: 15px;
+            }
+            
+            .bridge-line {
+                font-size: 16px;
+                padding: 20px;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-primary, .btn-secondary {
+                width: 100%;
+            }
+            
+            .sticky-content {
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .sticky-content span {
+                font-size: 14px;
+                width: 100%;
+            }
+            
+            .sticky-content button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- LOGO -->
+        <img src="logo.png" alt="ChoosePure" class="logo" />
+        
+        <!-- HERO SECTION -->
+        <h1>Do you REALLY know what's in your child's food?</h1>
+        <p class="subhead">
+            Join hundreds of Bangalore parents who are independently testing everyday packaged foods — and getting simple, reliable purity reports.
+        </p>
+        
+        <!-- CTA BUTTONS -->
+        <div class="cta-buttons">
+            <button class="btn-primary" onclick="document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">👉 Join the Waitlist</button>
+            <button class="btn-secondary" onclick="document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">👉 See How It Works</button>
+        </div>
+        
+        <p class="microcopy">No brand sponsorship. No confusing science. Only facts parents can trust.</p>
+        
+        <!-- TRUST BADGES -->
+        <div class="trust-badges">
+            <div class="badge">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L4 6V11C4 16.55 7.84 21.74 13 23C18.16 21.74 22 16.55 22 11V6L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>FSSAI Approved</span>
+            </div>
+            <div class="badge">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 15C15.866 15 19 11.866 19 8C19 4.13401 15.866 1 12 1C8.13401 1 5 4.13401 5 8C5 11.866 8.13401 15 12 15Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 15V23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M8 19H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>NABL Certified Labs</span>
+            </div>
+            <div class="badge">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8 12L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>100% Transparent</span>
+            </div>
+        </div>
+        
+        <!-- HOW IT WORKS SECTION -->
+        <div id="how-it-works" class="how-it-works-section">
+            <h2>How ChoosePure Works</h2>
+            <p class="section-subtext">A simple, transparent process — led by parents, backed by science.</p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Parents Join the Community</h3>
+                        <p>Parents from Bangalore join ChoosePure to make better food choices for their families.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Parents Vote on What Gets Tested</h3>
+                        <p>Members vote on everyday packaged foods — milk, snacks, staples — that they want tested next.</p>
+                        <p class="step-highlight">No brands decide. Parents do.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Global-Standard Testing</h3>
+                        <p>Products are tested in certified, independent laboratories following FSSAI, US FDA, and EFSA standards.</p>
+                        <p class="step-highlight">Global benchmarks. Local relevance.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>You Get Clear, Easy Reports</h3>
+                        <p>Members receive simple, jargon-free reports explaining what was tested and what it means — so you can decide confidently.</p>
+                        <p class="step-highlight">No scary language. Just facts.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="closing-line">
+                No ads. No brand influence. Only parent-funded testing.
+            </div>
+        </div>
+        
+        <!-- THE PROBLEM SECTION -->
+        <div class="problem-section">
+            <h2>Do grocery labels always tell you what you need to know?</h2>
+            <p class="problem-subline">Food labels are important — but they don't always answer the questions parents care most about.</p>
+            
+            <div class="problem-points">
+                <div class="problem-point">
+                    <div class="problem-content">
+                        <h3>Labels show ingredients, not verification</h3>
+                        <p>Brands list what they add, but labels don't confirm whether the product has been independently tested for purity or quality.</p>
+                    </div>
+                </div>
+                <div class="problem-point">
+                    <div class="problem-content">
+                        <h3>Processing and sourcing aren't visible</h3>
+                        <p>Two products can look identical on the label, yet differ in raw material quality, processing, or contaminants.</p>
+                    </div>
+                </div>
+                <div class="problem-point">
+                    <div class="problem-content">
+                        <h3>Regulatory limits are complex</h3>
+                        <p>What's "allowed" may still leave parents unsure about what's best for regular consumption by children.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bridge-line">
+                ChoosePure helps parents go one step beyond labels — using independent lab testing and clear explanations.
+            </div>
+        </div>
+        
+        <!-- SOCIAL PROOF -->
+        <div class="testimonial">
+            <p class="quote">"Ever since ChoosePure showed real results for milk brands, I finally know what to buy for my son."</p>
+            <p class="author">— Akkya, Brigade Cosmopolis</p>
+        </div>
+        
+        <!-- WAITLIST FORM -->
+        <div id="waitlist-form">
+            <form id="signup-form">
+                <h3>Join the Waitlist</h3>
+                <div id="form-message" class="form-message"></div>
+                <input type="text" name="name" id="name" placeholder="Your name" required />
+                <input type="email" name="email" id="email" placeholder="Email address" required />
+                <input type="tel" name="phone" id="phone" placeholder="WhatsApp number" required />
+                <input type="text" name="pincode" id="pincode" placeholder="Pincode" pattern="[0-9]{6}" maxlength="6" required />
+                <button type="submit" id="submit-btn">Join the Waitlist</button>
+            </form>
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="footer">
+            Testing conducted in accredited labs.<br/>
+            Reports are shared for consumer awareness.
+        </div>
+    </div>
+    
+    <!-- STICKY CTA BAR -->
+    <div class="sticky-cta" id="sticky-cta">
+        <div class="sticky-content">
+            <span>Ready to know what's really in your food?</span>
+            <button onclick="document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">Join the Waitlist</button>
+        </div>
+    </div>
+    
+    <script>
+        // Show sticky CTA after scrolling past hero section
+        window.addEventListener('scroll', function() {
+            const stickyCta = document.getElementById('sticky-cta');
+            const scrollPosition = window.scrollY;
+            
+            if (scrollPosition > 400) {
+                stickyCta.classList.add('visible');
+            } else {
+                stickyCta.classList.remove('visible');
+            }
+        });
+        
+        // Handle form submission
+        document.getElementById('signup-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const messageDiv = document.getElementById('form-message');
+            
+            // Get form data
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                pincode: document.getElementById('pincode').value
+            };
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Joining...';
+            messageDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/waitlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.className = 'form-message success';
+                    messageDiv.textContent = '🎉 Success! Check your email for the WhatsApp community link.';
+                    document.getElementById('signup-form').reset();
+                    
+                    // Optional: Redirect to WhatsApp after 2 seconds
+                    if (result.whatsappLink) {
+                        setTimeout(() => {
+                            window.open(result.whatsappLink, '_blank');
+                        }, 2000);
+                    }
+                } else {
+                    messageDiv.className = 'form-message error';
+                    messageDiv.textContent = result.message || 'Something went wrong. Please try again.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.className = 'form-message error';
+                messageDiv.textContent = 'Network error. Please check your connection and try again.';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Join the Waitlist';
+            }
+        });
+    </script>
+</body>
+</html>
