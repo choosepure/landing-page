@@ -414,6 +414,16 @@ app.get('/admin/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin-login.html'));
 });
 
+// Serve forgot password page
+app.get('/admin/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-forgot-password.html'));
+});
+
+// Serve reset password page
+app.get('/admin/reset-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-reset-password.html'));
+});
+
 // Admin login endpoint
 app.post('/api/admin/login', async (req, res) => {
     const { email, password } = req.body;
@@ -522,6 +532,209 @@ app.post('/api/admin/login', async (req, res) => {
 app.post('/api/admin/logout', (req, res) => {
     res.clearCookie('admin_token');
     res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Forgot password endpoint
+app.post('/api/admin/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Email is required' 
+        });
+    }
+    
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+        
+        // Find admin user
+        const admin = await usersCollection.findOne({ 
+            email: email,
+            role: 'admin'
+        });
+        
+        // Always return success to prevent email enumeration
+        if (!admin) {
+            console.log('⚠️ Password reset requested for non-existent email:', email);
+            return res.json({ 
+                success: true, 
+                message: 'If the email exists, a reset link has been sent' 
+            });
+        }
+        
+        // Generate reset token (valid for 1 hour)
+        const resetToken = jwt.sign(
+            { id: admin._id, email: admin.email },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        
+        // Save reset token to database
+        await usersCollection.updateOne(
+            { _id: admin._id },
+            { 
+                $set: { 
+                    reset_token: resetToken,
+                    reset_token_expires: new Date(Date.now() + 3600000) // 1 hour
+                } 
+            }
+        );
+        
+        // Send reset email
+        const resetLink = `${req.protocol}://${req.get('host')}/admin/reset-password?token=${resetToken}`;
+        
+        try {
+            const messageData = {
+                from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+                to: email,
+                subject: 'Password Reset - ChoosePure Admin',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #1E7F5C;">Password Reset Request</h2>
+                        <p>You requested to reset your password for the ChoosePure Admin Panel.</p>
+                        
+                        <p>Click the button below to reset your password:</p>
+                        
+                        <div style="margin: 30px 0;">
+                            <a href="${resetLink}" 
+                               style="background: #1E7F5C; color: white; padding: 15px 30px; 
+                                      text-decoration: none; border-radius: 8px; display: inline-block;">
+                                Reset Password
+                            </a>
+                        </div>
+                        
+                        <p style="color: #666; font-size: 14px;">
+                            This link will expire in 1 hour.<br>
+                            If you didn't request this, please ignore this email.
+                        </p>
+                        
+                        <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                            Or copy and paste this link:<br>
+                            ${resetLink}
+                        </p>
+                    </div>
+                `
+            };
+            
+            await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
+            console.log('✅ Password reset email sent to:', email);
+        } catch (emailError) {
+            console.error('❌ Failed to send reset email:', emailError);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Failed to send reset email' 
+            });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Password reset link sent to your email' 
+        });
+    } catch (error) {
+        console.error('❌ Forgot password error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to process request' 
+        });
+    }
+});
+
+// Reset password endpoint
+app.post('/api/admin/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Token and password are required' 
+        });
+    }
+    
+    if (password.length < 8) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Password must be at least 8 characters' 
+        });
+    }
+    
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+        
+        // Verify token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid or expired reset token' 
+            });
+        }
+        
+        // Find admin user
+        const { ObjectId } = require('mongodb');
+        const admin = await usersCollection.findOne({ 
+            _id: new ObjectId(decoded.id),
+            reset_token: token
+        });
+        
+        if (!admin) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid reset token' 
+            });
+        }
+        
+        // Check if token is expired
+        if (admin.reset_token_expires && new Date() > new Date(admin.reset_token_expires)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Reset token has expired' 
+            });
+        }
+        
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(password, 12);
+        
+        // Update password and clear reset token
+        await usersCollection.updateOne(
+            { _id: admin._id },
+            { 
+                $set: { 
+                    password: hashedPassword,
+                    last_password_change: new Date()
+                },
+                $unset: {
+                    reset_token: "",
+                    reset_token_expires: ""
+                }
+            }
+        );
+        
+        console.log('✅ Password reset successful for:', admin.email);
+        
+        res.json({ 
+            success: true, 
+            message: 'Password reset successful' 
+        });
+    } catch (error) {
+        console.error('❌ Reset password error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to reset password' 
+        });
+    }
 });
 
 // Serve admin panel (protected)
