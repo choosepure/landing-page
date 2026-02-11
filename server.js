@@ -1,11 +1,19 @@
 const express = require('express');
 const cors = require('cors');
-const nodemailer = require('nodemailer');
 const path = require('path');
+const formData = require('form-data');
+const Mailgun = require('mailgun.js');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Mailgun
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({
+    username: 'api',
+    key: process.env.MAILGUN_API_KEY || 'your-mailgun-api-key'
+});
 
 // Middleware
 app.use(cors());
@@ -13,15 +21,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Email transporter configuration
-const transporter = nodemailer.createTransport({
-    service: 'gmail', // or your email service
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
-});
 
 // Database connection (example with PostgreSQL)
 const { Pool } = require('pg');
@@ -68,82 +67,96 @@ async function addToWhatsAppCommunity(phone, name) {
 
 // Send email to user
 async function sendUserEmail(email, name, whatsappLink) {
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Welcome to ChoosePure Community!',
-        html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #1E7F5C;">Welcome to ChoosePure, ${name}!</h2>
-                <p>Thank you for joining our community of parents who care about food purity.</p>
-                
-                <h3>What's Next?</h3>
-                <ol>
-                    <li>Join our WhatsApp community to stay updated</li>
-                    <li>Participate in voting for products to test</li>
-                    <li>Get access to test reports as they're published</li>
-                </ol>
-                
-                <div style="margin: 30px 0;">
-                    <a href="${whatsappLink}" 
-                       style="background: #1E7F5C; color: white; padding: 15px 30px; 
-                              text-decoration: none; border-radius: 8px; display: inline-block;">
-                        Join WhatsApp Community
-                    </a>
+    try {
+        const messageData = {
+            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+            to: email,
+            subject: 'Welcome to ChoosePure Community!',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #1E7F5C;">Welcome to ChoosePure, ${name}!</h2>
+                    <p>Thank you for joining our community of parents who care about food purity.</p>
+                    
+                    <h3>What's Next?</h3>
+                    <ol>
+                        <li>Join our WhatsApp community to stay updated</li>
+                        <li>Participate in voting for products to test</li>
+                        <li>Get access to test reports as they're published</li>
+                    </ol>
+                    
+                    <div style="margin: 30px 0;">
+                        <a href="${whatsappLink}" 
+                           style="background: #1E7F5C; color: white; padding: 15px 30px; 
+                                  text-decoration: none; border-radius: 8px; display: inline-block;">
+                            Join WhatsApp Community
+                        </a>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">
+                        If you have any questions, feel free to reply to this email.
+                    </p>
+                    
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                    <p style="color: #999; font-size: 12px;">
+                        ChoosePure - Independent Food Testing for Parents<br>
+                        No brand sponsorship. Only facts parents can trust.
+                    </p>
                 </div>
-                
-                <p style="color: #666; font-size: 14px;">
-                    If you have any questions, feel free to reply to this email.
-                </p>
-                
-                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-                <p style="color: #999; font-size: 12px;">
-                    ChoosePure - Independent Food Testing for Parents<br>
-                    No brand sponsorship. Only facts parents can trust.
-                </p>
-            </div>
-        `
-    };
-    
-    return transporter.sendMail(mailOptions);
+            `
+        };
+        
+        const result = await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
+        console.log('✅ User email sent:', result);
+        return result;
+    } catch (error) {
+        console.error('❌ Failed to send user email:', error);
+        throw error;
+    }
 }
 
 // Send notification to admin
 async function sendAdminEmail(userData) {
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: 'support@choosepure.in',
-        subject: 'New Waitlist Signup - ChoosePure',
-        html: `
-            <div style="font-family: Arial, sans-serif;">
-                <h2>New Waitlist Signup</h2>
-                <table style="border-collapse: collapse; width: 100%;">
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Name:</strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${userData.name}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Email:</strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${userData.email}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone:</strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${userData.phone}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Pincode:</strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${userData.pincode}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Signed up:</strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${new Date().toLocaleString()}</td>
-                    </tr>
-                </table>
-            </div>
-        `
-    };
-    
-    return transporter.sendMail(mailOptions);
+    try {
+        const messageData = {
+            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+            to: 'support@choosepure.in',
+            subject: 'New Waitlist Signup - ChoosePure',
+            html: `
+                <div style="font-family: Arial, sans-serif;">
+                    <h2>New Waitlist Signup</h2>
+                    <table style="border-collapse: collapse; width: 100%;">
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Name:</strong></td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${userData.name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Email:</strong></td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${userData.email}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone:</strong></td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${userData.phone}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Pincode:</strong></td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${userData.pincode}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Signed up:</strong></td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${new Date().toLocaleString()}</td>
+                        </tr>
+                    </table>
+                </div>
+            `
+        };
+        
+        const result = await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
+        console.log('✅ Admin email sent:', result);
+        return result;
+    } catch (error) {
+        console.error('❌ Failed to send admin email:', error);
+        throw error;
+    }
 }
 
 // Waitlist submission endpoint
