@@ -112,7 +112,7 @@ async function sendUserEmail(email, name, whatsappLink) {
 async function sendAdminEmail(userData) {
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: process.env.ADMIN_EMAIL,
+        to: 'support@choosepure.in',
         subject: 'New Waitlist Signup - ChoosePure',
         html: `
             <div style="font-family: Arial, sans-serif;">
@@ -158,41 +158,80 @@ app.post('/api/waitlist', async (req, res) => {
         });
     }
     
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Please enter a valid email address' 
+        });
+    }
+    
+    // Validate phone format (10 digits)
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Please enter a valid 10-digit phone number' 
+        });
+    }
+    
+    // Validate pincode format (6 digits)
+    const pincodeRegex = /^[0-9]{6}$/;
+    if (!pincodeRegex.test(pincode)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Please enter a valid 6-digit pincode' 
+        });
+    }
+    
     try {
-        // Save to database
-        const insertQuery = `
-            INSERT INTO waitlist (name, email, phone, pincode)
-            VALUES ($1, $2, $3, $4)
-            RETURNING *
-        `;
+        const userData = { name, email, phone, pincode, created_at: new Date() };
         
-        const result = await pool.query(insertQuery, [name, email, phone, pincode]);
-        const userData = result.rows[0];
+        // Try to save to database
+        try {
+            const insertQuery = `
+                INSERT INTO waitlist (name, email, phone, pincode)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
+            `;
+            const result = await pool.query(insertQuery, [name, email, phone, pincode]);
+            console.log('✅ User saved to database:', result.rows[0]);
+        } catch (dbError) {
+            if (dbError.code === '23505') { // Duplicate email
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'This email is already registered' 
+                });
+            }
+            console.error('⚠️ Database error (continuing anyway):', dbError.message);
+        }
         
         // Get WhatsApp community link
-        const whatsappLink = await addToWhatsAppCommunity(phone, name);
+        const whatsappLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/your-group-invite-link';
         
-        // Send emails in parallel
-        await Promise.all([
-            sendUserEmail(email, name, whatsappLink),
-            sendAdminEmail(userData)
+        // Try to send emails (don't block on failure)
+        Promise.all([
+            sendUserEmail(email, name, whatsappLink).catch(err => {
+                console.error('⚠️ Failed to send user email:', err.message);
+            }),
+            sendAdminEmail(userData).catch(err => {
+                console.error('⚠️ Failed to send admin email:', err.message);
+            })
         ]);
         
+        // Log to console for debugging
+        console.log('📝 New waitlist signup:', userData);
+        
+        // Always return success to user
         res.json({ 
             success: true, 
-            message: 'Successfully joined the waitlist!',
+            message: 'Successfully joined the waitlist! Check your email for the WhatsApp community link.',
             whatsappLink: whatsappLink
         });
         
     } catch (error) {
-        console.error('Error processing waitlist:', error);
-        
-        if (error.code === '23505') { // Duplicate email
-            return res.status(400).json({ 
-                success: false, 
-                message: 'This email is already registered' 
-            });
-        }
+        console.error('❌ Error processing waitlist:', error);
         
         res.status(500).json({ 
             success: false, 
