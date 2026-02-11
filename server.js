@@ -185,10 +185,13 @@ async function sendUserEmail(email, name, whatsappLink) {
 async function sendAdminEmail(userData) {
     try {
         console.log('📧 Preparing admin notification email...');
+        const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'support@choosepure.in';
+        
         const messageData = {
-            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
-            to: 'support@choosepure.in',
+            from: 'ChoosePure Notifications <noreply@choosepure.in>',
+            to: adminEmail,
             subject: 'New Waitlist Signup - ChoosePure',
+            'h:Reply-To': 'support@choosepure.in',
             html: `
                 <div style="font-family: Arial, sans-serif;">
                     <h2>New Waitlist Signup</h2>
@@ -218,7 +221,7 @@ async function sendAdminEmail(userData) {
             `
         };
         
-        console.log('📤 Sending admin notification to: support@choosepure.in');
+        console.log('📤 Sending admin notification to:', adminEmail);
         const result = await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
         console.log('✅ Admin email sent successfully:', result.id);
         return result;
@@ -374,6 +377,44 @@ app.get('/api/test-email', async (req, res) => {
             throw new Error('MAILGUN_DOMAIN is not set');
         }
         
+        const testEmail = req.query.email || 'support@choosepure.in';
+        
+        const messageData = {
+            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+            to: testEmail,
+            subject: 'Test Email from ChoosePure',
+            text: 'This is a test email to verify Mailgun configuration.',
+            html: '<h1>Test Email</h1><p>This is a test email to verify Mailgun configuration.</p>'
+        };
+        
+        console.log('📤 Sending test email to:', testEmail);
+        const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageData);
+        console.log('✅ Test email sent successfully:', result);
+        
+        res.json({ 
+            success: true, 
+            message: `Test email sent successfully to ${testEmail}! Check inbox.`,
+            messageId: result.id,
+            status: result.status,
+            details: result
+        });
+    } catch (error) {
+        console.error('❌ Test email failed:', error);
+        console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            details: error.details
+        });
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send test email',
+            error: error.message,
+            status: error.status,
+            details: error.details || 'No additional details'
+        });
+    }
+});
         const messageData = {
             from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
             to: 'support@choosepure.in',
@@ -600,9 +641,10 @@ app.post('/api/admin/forgot-password', async (req, res) => {
         
         try {
             const messageData = {
-                from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+                from: 'ChoosePure Admin <noreply@choosepure.in>',
                 to: email,
                 subject: 'Password Reset - ChoosePure Admin',
+                'h:Reply-To': 'support@choosepure.in',
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                         <h2 style="color: #1E7F5C;">Password Reset Request</h2>
