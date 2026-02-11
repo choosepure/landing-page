@@ -31,22 +31,58 @@ console.log('📧 Mailgun API Key:', process.env.MAILGUN_API_KEY ? '✅ Set' : '
 let db;
 let waitlistCollection;
 let usersCollection;
+let isDbConnected = false;
 
 async function connectToDatabase() {
     try {
-        const client = new MongoClient(process.env.MONGO_URL);
+        console.log('🔌 Attempting to connect to MongoDB...');
+        console.log('📍 MONGO_URL:', process.env.MONGO_URL ? 'Set (length: ' + process.env.MONGO_URL.length + ')' : 'Not set');
+        console.log('📍 DB_NAME:', process.env.DB_NAME);
+        
+        if (!process.env.MONGO_URL) {
+            throw new Error('MONGO_URL environment variable is not set');
+        }
+        
+        const client = new MongoClient(process.env.MONGO_URL, {
+            serverSelectionTimeoutMS: 10000, // 10 second timeout
+            connectTimeoutMS: 10000,
+        });
+        
         await client.connect();
         console.log('✅ Connected to MongoDB');
+        
+        // Test the connection
+        await client.db().admin().ping();
+        console.log('✅ MongoDB ping successful');
         
         db = client.db(process.env.DB_NAME || 'choosepure_db');
         waitlistCollection = db.collection('waitlist');
         usersCollection = db.collection('users');
         
+        // Verify collections exist
+        const collections = await db.listCollections().toArray();
+        console.log('📚 Available collections:', collections.map(c => c.name).join(', '));
+        
         // Create index on email for uniqueness
         await waitlistCollection.createIndex({ email: 1 }, { unique: true });
         console.log('✅ Waitlist collection initialized');
+        console.log('✅ Users collection initialized');
+        
+        // Check if admin user exists
+        const adminCount = await usersCollection.countDocuments({ role: 'admin' });
+        console.log('👤 Admin users found:', adminCount);
+        
+        isDbConnected = true;
     } catch (error) {
-        console.error('❌ MongoDB connection error:', error);
+        console.error('❌ MongoDB connection error:', error.message);
+        console.error('Full error:', error);
+        isDbConnected = false;
+        
+        // Retry connection after 5 seconds
+        setTimeout(() => {
+            console.log('🔄 Retrying database connection...');
+            connectToDatabase();
+        }, 5000);
     }
 }
 
@@ -309,7 +345,11 @@ app.post('/api/waitlist', async (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ 
+        status: 'ok',
+        database: isDbConnected ? 'connected' : 'disconnected',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Test email endpoint
@@ -386,12 +426,27 @@ app.post('/api/admin/login', async (req, res) => {
     }
     
     try {
-        if (!usersCollection) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database not connected' 
-            });
+        // Wait for database connection if not ready
+        if (!isDbConnected || !usersCollection) {
+            console.log('⏳ Waiting for database connection...');
+            
+            // Wait up to 10 seconds for connection
+            let attempts = 0;
+            while ((!isDbConnected || !usersCollection) && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                attempts++;
+            }
+            
+            if (!isDbConnected || !usersCollection) {
+                console.error('❌ Database still not connected after waiting');
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Database not connected' 
+                });
+            }
         }
+        
+        console.log('🔍 Looking up admin user:', email);
         
         // Find admin user
         const admin = await usersCollection.findOne({ 
@@ -406,6 +461,8 @@ app.post('/api/admin/login', async (req, res) => {
                 message: 'Invalid credentials' 
             });
         }
+        
+        console.log('✅ Admin found, verifying password...');
         
         // Verify password
         const isValidPassword = await bcrypt.compare(password, admin.password);
@@ -456,7 +513,7 @@ app.post('/api/admin/login', async (req, res) => {
         console.error('❌ Login error:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'Login failed' 
+            message: 'Login failed: ' + error.message 
         });
     }
 });
