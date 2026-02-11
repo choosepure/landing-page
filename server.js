@@ -89,7 +89,10 @@ async function connectToDatabase() {
 connectToDatabase();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['https://choosepure.in', 'https://www.choosepure.in', 'http://localhost:3000'],
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -285,11 +288,15 @@ app.post('/api/waitlist', async (req, res) => {
         };
         
         // Save to MongoDB database
+        let dbSaveSuccess = false;
         try {
             if (!waitlistCollection) {
                 console.error('❌ Database collection not initialized!');
                 console.log('Attempting to reconnect...');
                 await connectToDatabase();
+                
+                // Wait a bit for connection
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
             
             if (waitlistCollection) {
@@ -297,6 +304,7 @@ app.post('/api/waitlist', async (req, res) => {
                 const result = await waitlistCollection.insertOne(userData);
                 console.log('✅ User saved to database with ID:', result.insertedId);
                 userData._id = result.insertedId;
+                dbSaveSuccess = true;
             } else {
                 console.error('❌ Database still not connected after reconnect attempt');
             }
@@ -309,6 +317,11 @@ app.post('/api/waitlist', async (req, res) => {
                 });
             }
             console.error('❌ Database error:', dbError);
+            console.error('Error stack:', dbError.stack);
+        }
+        
+        if (!dbSaveSuccess) {
+            console.error('⚠️ WARNING: User data was not saved to database!');
         }
         
         // Get WhatsApp community link
@@ -363,6 +376,48 @@ app.get('/api/health', (req, res) => {
         },
         timestamp: new Date().toISOString()
     });
+});
+
+// Test database write
+app.get('/api/test-db-write', async (req, res) => {
+    try {
+        if (!waitlistCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+        
+        const testData = {
+            name: 'Test User',
+            email: `test${Date.now()}@example.com`,
+            phone: '9999999999',
+            pincode: '560001',
+            created_at: new Date(),
+            status: 'test'
+        };
+        
+        console.log('🧪 Testing database write...');
+        const result = await waitlistCollection.insertOne(testData);
+        console.log('✅ Test data inserted:', result.insertedId);
+        
+        // Count total entries
+        const count = await waitlistCollection.countDocuments();
+        
+        res.json({ 
+            success: true, 
+            message: 'Test data inserted successfully',
+            insertedId: result.insertedId,
+            totalEntries: count
+        });
+    } catch (error) {
+        console.error('❌ Test write failed:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Test write failed',
+            error: error.message
+        });
+    }
 });
 
 // Test email endpoint
