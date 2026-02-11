@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const formData = require('form-data');
 const Mailgun = require('mailgun.js');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -20,42 +21,35 @@ console.log('🔧 Mailgun initialized');
 console.log('📧 Mailgun Domain:', process.env.MAILGUN_DOMAIN);
 console.log('📧 Mailgun API Key:', process.env.MAILGUN_API_KEY ? '✅ Set' : '❌ Not set');
 
+// MongoDB connection
+let db;
+let waitlistCollection;
+
+async function connectToDatabase() {
+    try {
+        const client = new MongoClient(process.env.MONGO_URL);
+        await client.connect();
+        console.log('✅ Connected to MongoDB');
+        
+        db = client.db(process.env.DB_NAME || 'choosepure_db');
+        waitlistCollection = db.collection('waitlist');
+        
+        // Create index on email for uniqueness
+        await waitlistCollection.createIndex({ email: 1 }, { unique: true });
+        console.log('✅ Waitlist collection initialized');
+    } catch (error) {
+        console.error('❌ MongoDB connection error:', error);
+    }
+}
+
+connectToDatabase();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Database connection (example with PostgreSQL)
-const { Pool } = require('pg');
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
-
-// Initialize database table
-async function initDatabase() {
-    const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS waitlist (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            phone VARCHAR(20) NOT NULL,
-            pincode VARCHAR(6) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    `;
-    
-    try {
-        await pool.query(createTableQuery);
-        console.log('Database table initialized');
-    } catch (error) {
-        console.error('Error initializing database:', error);
-    }
-}
-
-initDatabase();
 
 // WhatsApp integration function
 async function addToWhatsAppCommunity(phone, name) {
@@ -204,19 +198,26 @@ app.post('/api/waitlist', async (req, res) => {
     }
     
     try {
-        const userData = { name, email, phone, pincode, created_at: new Date() };
+        const userData = { 
+            name, 
+            email, 
+            phone, 
+            pincode, 
+            created_at: new Date(),
+            status: 'active'
+        };
         
-        // Try to save to database
+        // Save to MongoDB database
         try {
-            const insertQuery = `
-                INSERT INTO waitlist (name, email, phone, pincode)
-                VALUES ($1, $2, $3, $4)
-                RETURNING *
-            `;
-            const result = await pool.query(insertQuery, [name, email, phone, pincode]);
-            console.log('✅ User saved to database:', result.rows[0]);
+            if (waitlistCollection) {
+                const result = await waitlistCollection.insertOne(userData);
+                console.log('✅ User saved to database:', result.insertedId);
+                userData._id = result.insertedId;
+            } else {
+                console.warn('⚠️ Database not connected, skipping save');
+            }
         } catch (dbError) {
-            if (dbError.code === '23505') { // Duplicate email
+            if (dbError.code === 11000) { // Duplicate email in MongoDB
                 return res.status(400).json({ 
                     success: false, 
                     message: 'This email is already registered' 
@@ -228,17 +229,22 @@ app.post('/api/waitlist', async (req, res) => {
         // Get WhatsApp community link
         const whatsappLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/your-group-invite-link';
         
-        // Try to send emails (don't block on failure but log errors)
+        // Send emails (both user and admin)
         console.log('📧 Attempting to send emails...');
         try {
-            await Promise.all([
-                sendUserEmail(email, name, whatsappLink),
+            const emailPromises = [
+                sendUserEmail(email, name, whatsappLink)
+                    .then(() => console.log('✅ User email sent to:', email))
+                    .catch(err => console.error('❌ Failed to send user email:', err.message)),
                 sendAdminEmail(userData)
-            ]);
-            console.log('✅ Both emails sent successfully');
+                    .then(() => console.log('✅ Admin email sent to: support@choosepure.in'))
+                    .catch(err => console.error('❌ Failed to send admin email:', err.message))
+            ];
+            
+            await Promise.allSettled(emailPromises);
+            console.log('📧 Email sending completed');
         } catch (emailError) {
-            console.error('❌ Email sending failed:', emailError);
-            console.error('Full error:', JSON.stringify(emailError, null, 2));
+            console.error('❌ Email sending error:', emailError);
         }
         
         // Log to console for debugging
