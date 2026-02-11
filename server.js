@@ -12,8 +12,13 @@ const PORT = process.env.PORT || 3000;
 const mailgun = new Mailgun(formData);
 const mg = mailgun.client({
     username: 'api',
-    key: process.env.MAILGUN_API_KEY || 'your-mailgun-api-key'
+    key: process.env.MAILGUN_API_KEY || 'your-mailgun-api-key',
+    url: 'https://api.mailgun.net' // Use EU endpoint if needed: https://api.eu.mailgun.net
 });
+
+console.log('🔧 Mailgun initialized');
+console.log('📧 Mailgun Domain:', process.env.MAILGUN_DOMAIN);
+console.log('📧 Mailgun API Key:', process.env.MAILGUN_API_KEY ? '✅ Set' : '❌ Not set');
 
 // Middleware
 app.use(cors());
@@ -223,15 +228,18 @@ app.post('/api/waitlist', async (req, res) => {
         // Get WhatsApp community link
         const whatsappLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/your-group-invite-link';
         
-        // Try to send emails (don't block on failure)
-        Promise.all([
-            sendUserEmail(email, name, whatsappLink).catch(err => {
-                console.error('⚠️ Failed to send user email:', err.message);
-            }),
-            sendAdminEmail(userData).catch(err => {
-                console.error('⚠️ Failed to send admin email:', err.message);
-            })
-        ]);
+        // Try to send emails (don't block on failure but log errors)
+        console.log('📧 Attempting to send emails...');
+        try {
+            await Promise.all([
+                sendUserEmail(email, name, whatsappLink),
+                sendAdminEmail(userData)
+            ]);
+            console.log('✅ Both emails sent successfully');
+        } catch (emailError) {
+            console.error('❌ Email sending failed:', emailError);
+            console.error('Full error:', JSON.stringify(emailError, null, 2));
+        }
         
         // Log to console for debugging
         console.log('📝 New waitlist signup:', userData);
@@ -258,11 +266,68 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
+// Test email endpoint
+app.get('/api/test-email', async (req, res) => {
+    try {
+        console.log('🧪 Testing Mailgun configuration...');
+        console.log('   API Key:', process.env.MAILGUN_API_KEY ? `${process.env.MAILGUN_API_KEY.substring(0, 10)}...` : 'Not set');
+        console.log('   Domain:', process.env.MAILGUN_DOMAIN);
+        console.log('   From Email:', process.env.MAILGUN_FROM_EMAIL);
+        
+        if (!process.env.MAILGUN_API_KEY) {
+            throw new Error('MAILGUN_API_KEY is not set');
+        }
+        
+        if (!process.env.MAILGUN_DOMAIN) {
+            throw new Error('MAILGUN_DOMAIN is not set');
+        }
+        
+        const messageData = {
+            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+            to: 'support@choosepure.in',
+            subject: 'Test Email from ChoosePure',
+            text: 'This is a test email to verify Mailgun configuration.',
+            html: '<h1>Test Email</h1><p>This is a test email to verify Mailgun configuration.</p>'
+        };
+        
+        console.log('📤 Sending test email...');
+        const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageData);
+        console.log('✅ Test email sent successfully:', result);
+        
+        res.json({ 
+            success: true, 
+            message: 'Test email sent successfully! Check support@choosepure.in inbox.',
+            messageId: result.id,
+            status: result.status
+        });
+    } catch (error) {
+        console.error('❌ Test email failed:', error);
+        console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            details: error.details
+        });
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send test email',
+            error: error.message,
+            status: error.status,
+            details: error.details || 'No additional details'
+        });
+    }
+});
+
 // Serve index.html for root route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log('📧 Email Configuration:');
+    console.log('   MAILGUN_API_KEY:', process.env.MAILGUN_API_KEY ? '✅ Set' : '❌ Not set');
+    console.log('   MAILGUN_DOMAIN:', process.env.MAILGUN_DOMAIN || '❌ Not set');
+    console.log('   MAILGUN_FROM_EMAIL:', process.env.MAILGUN_FROM_EMAIL || '❌ Not set');
+    console.log('   WHATSAPP_GROUP_LINK:', process.env.WHATSAPP_GROUP_LINK ? '✅ Set' : '❌ Not set');
 });
