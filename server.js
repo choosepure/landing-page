@@ -415,41 +415,6 @@ app.get('/api/test-email', async (req, res) => {
         });
     }
 });
-        const messageData = {
-            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
-            to: 'support@choosepure.in',
-            subject: 'Test Email from ChoosePure',
-            text: 'This is a test email to verify Mailgun configuration.',
-            html: '<h1>Test Email</h1><p>This is a test email to verify Mailgun configuration.</p>'
-        };
-        
-        console.log('📤 Sending test email...');
-        const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageData);
-        console.log('✅ Test email sent successfully:', result);
-        
-        res.json({ 
-            success: true, 
-            message: 'Test email sent successfully! Check support@choosepure.in inbox.',
-            messageId: result.id,
-            status: result.status
-        });
-    } catch (error) {
-        console.error('❌ Test email failed:', error);
-        console.error('Error details:', {
-            message: error.message,
-            status: error.status,
-            details: error.details
-        });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to send test email',
-            error: error.message,
-            status: error.status,
-            details: error.details || 'No additional details'
-        });
-    }
-});
 
 // Serve index.html for root route
 app.get('/', (req, res) => {
