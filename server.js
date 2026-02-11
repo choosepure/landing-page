@@ -4,10 +4,16 @@ const path = require('path');
 const formData = require('form-data');
 const Mailgun = require('mailgun.js');
 const { MongoClient } = require('mongodb');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// JWT Secret
+const JWT_SECRET = process.env.SECRET_KEY || 'your-secret-key-change-this';
 
 // Initialize Mailgun
 const mailgun = new Mailgun(formData);
@@ -24,6 +30,7 @@ console.log('📧 Mailgun API Key:', process.env.MAILGUN_API_KEY ? '✅ Set' : '
 // MongoDB connection
 let db;
 let waitlistCollection;
+let usersCollection;
 
 async function connectToDatabase() {
     try {
@@ -33,6 +40,7 @@ async function connectToDatabase() {
         
         db = client.db(process.env.DB_NAME || 'choosepure_db');
         waitlistCollection = db.collection('waitlist');
+        usersCollection = db.collection('users');
         
         // Create index on email for uniqueness
         await waitlistCollection.createIndex({ email: 1 }, { unique: true });
@@ -48,6 +56,7 @@ connectToDatabase();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -62,6 +71,29 @@ async function addToWhatsAppCommunity(phone, name) {
     
     // For now, we'll return the invite link to send via email
     return whatsappGroupLink;
+}
+
+// Authentication middleware
+function authenticateAdmin(req, res, next) {
+    const token = req.cookies.admin_token;
+    
+    if (!token) {
+        return res.status(401).json({ 
+            success: false, 
+            message: 'Authentication required' 
+        });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.admin = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ 
+            success: false, 
+            message: 'Invalid or expired token' 
+        });
+    }
 }
 
 // Send email to user
@@ -337,13 +369,122 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Serve admin panel
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+// Serve admin login page
+app.get('/admin/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-login.html'));
 });
 
-// Admin API: Get all waitlist members
-app.get('/api/admin/waitlist', async (req, res) => {
+// Admin login endpoint
+app.post('/api/admin/login', async (req, res) => {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Email and password are required' 
+        });
+    }
+    
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+        
+        // Find admin user
+        const admin = await usersCollection.findOne({ 
+            email: email,
+            role: 'admin'
+        });
+        
+        if (!admin) {
+            console.log('❌ Admin not found:', email);
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
+        }
+        
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, admin.password);
+        
+        if (!isValidPassword) {
+            console.log('❌ Invalid password for:', email);
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
+        }
+        
+        // Update last login
+        await usersCollection.updateOne(
+            { _id: admin._id },
+            { $set: { last_login: new Date() } }
+        );
+        
+        // Generate JWT token
+        const token = jwt.sign(
+            { 
+                id: admin._id, 
+                email: admin.email, 
+                role: admin.role 
+            },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+        
+        // Set cookie
+        res.cookie('admin_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+        
+        console.log('✅ Admin logged in:', email);
+        
+        res.json({ 
+            success: true, 
+            message: 'Login successful',
+            admin: {
+                name: admin.fname,
+                email: admin.email
+            }
+        });
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Login failed' 
+        });
+    }
+});
+
+// Admin logout endpoint
+app.post('/api/admin/logout', (req, res) => {
+    res.clearCookie('admin_token');
+    res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Serve admin panel (protected)
+app.get('/admin', (req, res) => {
+    const token = req.cookies.admin_token;
+    
+    if (!token) {
+        return res.redirect('/admin/login');
+    }
+    
+    try {
+        jwt.verify(token, JWT_SECRET);
+        res.sendFile(path.join(__dirname, 'admin.html'));
+    } catch (error) {
+        res.redirect('/admin/login');
+    }
+});
+
+// Admin API: Get all waitlist members (protected)
+app.get('/api/admin/waitlist', authenticateAdmin, async (req, res) => {
     try {
         if (!waitlistCollection) {
             return res.status(500).json({ 
@@ -373,8 +514,8 @@ app.get('/api/admin/waitlist', async (req, res) => {
     }
 });
 
-// Admin API: Add new member manually
-app.post('/api/admin/waitlist', async (req, res) => {
+// Admin API: Add new member manually (protected)
+app.post('/api/admin/waitlist', authenticateAdmin, async (req, res) => {
     const { name, email, phone, pincode } = req.body;
     
     if (!name || !email || !phone || !pincode) {
@@ -426,8 +567,8 @@ app.post('/api/admin/waitlist', async (req, res) => {
     }
 });
 
-// Admin API: Delete member
-app.delete('/api/admin/waitlist/:id', async (req, res) => {
+// Admin API: Delete member (protected)
+app.delete('/api/admin/waitlist/:id', authenticateAdmin, async (req, res) => {
     try {
         if (!waitlistCollection) {
             return res.status(500).json({ 
