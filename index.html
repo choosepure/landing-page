@@ -826,12 +826,16 @@
                 pincode: document.getElementById('pincode').value
             };
             
+            console.log('Form submitted with data:', formData);
+            
             // Disable button and show loading
             submitBtn.disabled = true;
             submitBtn.textContent = 'Joining...';
             messageDiv.style.display = 'none';
+            messageDiv.className = 'form-message';
             
             try {
+                console.log('Sending request to /api/waitlist...');
                 const response = await fetch('/api/waitlist', {
                     method: 'POST',
                     headers: {
@@ -840,15 +844,18 @@
                     body: JSON.stringify(formData)
                 });
                 
+                console.log('Response status:', response.status);
                 const result = await response.json();
+                console.log('Response data:', result);
                 
-                if (result.success) {
+                if (response.ok && result.success) {
                     messageDiv.className = 'form-message success';
                     messageDiv.textContent = '🎉 Success! Check your email for the WhatsApp community link.';
+                    messageDiv.style.display = 'block';
                     document.getElementById('signup-form').reset();
                     
                     // Optional: Redirect to WhatsApp after 2 seconds
-                    if (result.whatsappLink) {
+                    if (result.whatsappLink && result.whatsappLink !== 'https://chat.whatsapp.com/your-group-invite-link') {
                         setTimeout(() => {
                             window.open(result.whatsappLink, '_blank');
                         }, 2000);
@@ -856,11 +863,13 @@
                 } else {
                     messageDiv.className = 'form-message error';
                     messageDiv.textContent = result.message || 'Something went wrong. Please try again.';
+                    messageDiv.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error:', error);
                 messageDiv.className = 'form-message error';
                 messageDiv.textContent = 'Network error. Please check your connection and try again.';
+                messageDiv.style.display = 'block';
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Join the Waitlist';
