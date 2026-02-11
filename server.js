@@ -209,21 +209,29 @@ app.post('/api/waitlist', async (req, res) => {
         
         // Save to MongoDB database
         try {
+            if (!waitlistCollection) {
+                console.error('❌ Database collection not initialized!');
+                console.log('Attempting to reconnect...');
+                await connectToDatabase();
+            }
+            
             if (waitlistCollection) {
+                console.log('💾 Saving to database:', { name, email, phone, pincode });
                 const result = await waitlistCollection.insertOne(userData);
-                console.log('✅ User saved to database:', result.insertedId);
+                console.log('✅ User saved to database with ID:', result.insertedId);
                 userData._id = result.insertedId;
             } else {
-                console.warn('⚠️ Database not connected, skipping save');
+                console.error('❌ Database still not connected after reconnect attempt');
             }
         } catch (dbError) {
             if (dbError.code === 11000) { // Duplicate email in MongoDB
+                console.log('⚠️ Duplicate email detected:', email);
                 return res.status(400).json({ 
                     success: false, 
                     message: 'This email is already registered' 
                 });
             }
-            console.error('⚠️ Database error (continuing anyway):', dbError.message);
+            console.error('❌ Database error:', dbError);
         }
         
         // Get WhatsApp community link
@@ -327,6 +335,131 @@ app.get('/api/test-email', async (req, res) => {
 // Serve index.html for root route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Serve admin panel
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Admin API: Get all waitlist members
+app.get('/api/admin/waitlist', async (req, res) => {
+    try {
+        if (!waitlistCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+        
+        const members = await waitlistCollection
+            .find({})
+            .sort({ created_at: -1 })
+            .toArray();
+        
+        console.log(`📊 Retrieved ${members.length} waitlist members`);
+        
+        res.json({ 
+            success: true, 
+            members: members,
+            count: members.length
+        });
+    } catch (error) {
+        console.error('❌ Error fetching waitlist:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch waitlist members' 
+        });
+    }
+});
+
+// Admin API: Add new member manually
+app.post('/api/admin/waitlist', async (req, res) => {
+    const { name, email, phone, pincode } = req.body;
+    
+    if (!name || !email || !phone || !pincode) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'All fields are required' 
+        });
+    }
+    
+    try {
+        if (!waitlistCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+        
+        const userData = {
+            name,
+            email,
+            phone,
+            pincode,
+            created_at: new Date(),
+            status: 'active',
+            source: 'admin'
+        };
+        
+        const result = await waitlistCollection.insertOne(userData);
+        console.log('✅ Admin added member:', result.insertedId);
+        
+        res.json({ 
+            success: true, 
+            message: 'Member added successfully',
+            id: result.insertedId
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This email is already registered' 
+            });
+        }
+        
+        console.error('❌ Error adding member:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to add member' 
+        });
+    }
+});
+
+// Admin API: Delete member
+app.delete('/api/admin/waitlist/:id', async (req, res) => {
+    try {
+        if (!waitlistCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+        
+        const { ObjectId } = require('mongodb');
+        const result = await waitlistCollection.deleteOne({ 
+            _id: new ObjectId(req.params.id) 
+        });
+        
+        if (result.deletedCount > 0) {
+            console.log('✅ Admin deleted member:', req.params.id);
+            res.json({ 
+                success: true, 
+                message: 'Member deleted successfully' 
+            });
+        } else {
+            res.status(404).json({ 
+                success: false, 
+                message: 'Member not found' 
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error deleting member:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to delete member' 
+        });
+    }
 });
 
 app.listen(PORT, () => {

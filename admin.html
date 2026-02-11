@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ChoosePure</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #1E7F5C;
+            margin-bottom: 30px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1E7F5C;
+        }
+        
+        .actions {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .actions h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #1E7F5C;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #16684B;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 ChoosePure Admin Panel</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Signups</h3>
+                <div class="number" id="total-count">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Today</h3>
+                <div class="number" id="today-count">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>This Week</h3>
+                <div class="number" id="week-count">-</div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <h2>Add New Member</h2>
+            <div id="add-message" class="message"></div>
+            <form id="add-form">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="add-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="add-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="add-phone" pattern="[0-9]{10}" required>
+                </div>
+                <div class="form-group">
+                    <label>Pincode</label>
+                    <input type="text" id="add-pincode" pattern="[0-9]{6}" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Member</button>
+            </form>
+        </div>
+        
+        <div class="table-container">
+            <h2 style="margin-bottom: 20px;">Waitlist Members</h2>
+            <div id="loading" class="loading">Loading...</div>
+            <table id="members-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Pincode</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="members-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/admin/waitlist');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayMembers(data.members);
+                    updateStats(data.members);
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+            }
+        }
+        
+        function displayMembers(members) {
+            const tbody = document.getElementById('members-body');
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('members-table');
+            
+            loading.style.display = 'none';
+            table.style.display = 'table';
+            
+            tbody.innerHTML = members.map(member => `
+                <tr>
+                    <td>${member.name}</td>
+                    <td>${member.email}</td>
+                    <td>${member.phone}</td>
+                    <td>${member.pincode}</td>
+                    <td>${new Date(member.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-danger btn-small" onclick="deleteMember('${member._id}', '${member.email}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function updateStats(members) {
+            const total = members.length;
+            const today = members.filter(m => {
+                const date = new Date(m.created_at);
+                const now = new Date();
+                return date.toDateString() === now.toDateString();
+            }).length;
+            
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            const week = members.filter(m => new Date(m.created_at) >= weekAgo).length;
+            
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('today-count').textContent = today;
+            document.getElementById('week-count').textContent = week;
+        }
+        
+        document.getElementById('add-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const messageDiv = document.getElementById('add-message');
+            const formData = {
+                name: document.getElementById('add-name').value,
+                email: document.getElementById('add-email').value,
+                phone: document.getElementById('add-phone').value,
+                pincode: document.getElementById('add-pincode').value
+            };
+            
+            try {
+                const response = await fetch('/api/admin/waitlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Member added successfully!';
+                    document.getElementById('add-form').reset();
+                    loadMembers();
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = result.message || 'Failed to add member';
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Network error. Please try again.';
+            }
+        });
+        
+        async function deleteMember(id, email) {
+            if (!confirm(`Are you sure you want to delete ${email}?`)) return;
+            
+            try {
+                const response = await fetch(`/api/admin/waitlist/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Member deleted successfully');
+                    loadMembers();
+                } else {
+                    alert('Failed to delete member');
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+        
+        // Load members on page load
+        loadMembers();
+        
+        // Refresh every 30 seconds
+        setInterval(loadMembers, 30000);
+    </script>
+</body>
+</html>
