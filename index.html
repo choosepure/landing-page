@@ -837,8 +837,13 @@
             messageDiv.className = 'form-message';
             
             try {
-                console.log('Sending request to /api/waitlist...');
-                const response = await fetch('/api/waitlist', {
+                console.log('Sending request to API...');
+                const apiUrl = window.location.hostname === 'localhost' 
+                    ? '/api/waitlist' 
+                    : 'https://api.choosepure.in/api/waitlist';
+                
+                console.log('API URL:', apiUrl);
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
