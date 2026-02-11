@@ -184,6 +184,7 @@ async function sendUserEmail(email, name, whatsappLink) {
 // Send notification to admin
 async function sendAdminEmail(userData) {
     try {
+        console.log('📧 Preparing admin notification email...');
         const messageData = {
             from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
             to: 'support@choosepure.in',
@@ -217,11 +218,16 @@ async function sendAdminEmail(userData) {
             `
         };
         
+        console.log('📤 Sending admin notification to: support@choosepure.in');
         const result = await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
-        console.log('✅ Admin email sent:', result);
+        console.log('✅ Admin email sent successfully:', result.id);
         return result;
     } catch (error) {
-        console.error('❌ Failed to send admin email:', error);
+        console.error('❌ Failed to send admin email:', error.message);
+        console.error('Error details:', {
+            status: error.status,
+            details: error.details
+        });
         throw error;
     }
 }
@@ -589,6 +595,9 @@ app.post('/api/admin/forgot-password', async (req, res) => {
         // Send reset email
         const resetLink = `${req.protocol}://${req.get('host')}/admin/reset-password?token=${resetToken}`;
         
+        console.log('📧 Sending password reset email to:', email);
+        console.log('🔗 Reset link:', resetLink);
+        
         try {
             const messageData = {
                 from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
@@ -622,13 +631,19 @@ app.post('/api/admin/forgot-password', async (req, res) => {
                 `
             };
             
-            await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
-            console.log('✅ Password reset email sent to:', email);
+            console.log('📤 Calling Mailgun API...');
+            const result = await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
+            console.log('✅ Password reset email sent successfully:', result);
         } catch (emailError) {
             console.error('❌ Failed to send reset email:', emailError);
+            console.error('Error details:', {
+                message: emailError.message,
+                status: emailError.status,
+                details: emailError.details
+            });
             return res.status(500).json({ 
                 success: false, 
-                message: 'Failed to send reset email' 
+                message: 'Failed to send reset email: ' + emailError.message 
             });
         }
         
