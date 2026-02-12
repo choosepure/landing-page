@@ -6,9 +6,17 @@
     <title>ChoosePure – Know What's in Your Child's Food</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
-    <link rel="shortcut icon" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon.png" />
+    <link rel="shortcut icon" href="/public/favicon.png" />
+    <link rel="apple-touch-icon" href="/public/favicon.png" />
+    
+    <!-- Meta tags for sharing -->
+    <meta property="og:title" content="ChoosePure – Know What's in Your Child's Food" />
+    <meta property="og:description" content="Join hundreds of Bangalore parents who are independently testing everyday packaged foods." />
+    <meta property="og:image" content="https://choosepure.in/public/logo.png" />
+    <meta property="og:url" content="https://choosepure.in" />
+    <meta name="twitter:card" content="summary_large_image" />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -527,6 +535,32 @@
             text-align: center;
         }
         
+        .share-button {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #1E7F5C;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(30, 127, 92, 0.3);
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .share-button:hover {
+            background: #16684B;
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(30, 127, 92, 0.4);
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 40px 20px;
@@ -800,7 +834,44 @@
         </div>
     </div>
     
+    <!-- SHARE BUTTON -->
+    <button class="share-button" onclick="shareApp()" title="Share ChoosePure">
+        📤
+    </button>
+    
     <script>
+        // Share function
+        async function shareApp() {
+            const shareData = {
+                title: 'ChoosePure – Know What\'s in Your Child\'s Food',
+                text: 'Join hundreds of Bangalore parents who are independently testing everyday packaged foods. No brand sponsorship. Only facts parents can trust.',
+                url: 'https://choosepure.in'
+            };
+            
+            try {
+                // Check if Web Share API is supported
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                    console.log('Shared successfully');
+                } else {
+                    // Fallback: Copy to clipboard
+                    await navigator.clipboard.writeText(shareData.url);
+                    alert('Link copied to clipboard! Share it with your friends.');
+                }
+            } catch (err) {
+                // If share was cancelled or failed, copy to clipboard
+                if (err.name !== 'AbortError') {
+                    try {
+                        await navigator.clipboard.writeText(shareData.url);
+                        alert('Link copied to clipboard!');
+                    } catch (clipboardErr) {
+                        console.error('Error sharing:', err);
+                        alert('Unable to share. Please copy this link: https://choosepure.in');
+                    }
+                }
+            }
+        }
+        
         // Show sticky CTA after scrolling past hero section
         window.addEventListener('scroll', function() {
             const stickyCta = document.getElementById('sticky-cta');
