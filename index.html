@@ -838,9 +838,7 @@
             
             try {
                 console.log('Sending request to API...');
-                const apiUrl = window.location.hostname === 'localhost' 
-                    ? '/api/waitlist' 
-                    : 'https://api.choosepure.in/api/waitlist';
+                const apiUrl = 'https://api.choosepure.in/api/waitlist';
                 
                 console.log('API URL:', apiUrl);
                 const response = await fetch(apiUrl, {
