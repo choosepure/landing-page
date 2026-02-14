@@ -562,6 +562,12 @@
         }
         
         @media (max-width: 768px) {
+            .share-button {
+                width: 50px;
+                height: 50px;
+                bottom: 90px;
+                right: 15px;
+            }
             .container {
                 padding: 40px 20px;
             }
@@ -896,12 +902,19 @@
         // Show sticky CTA after scrolling past hero section
         window.addEventListener('scroll', function() {
             const stickyCta = document.getElementById('sticky-cta');
+            const shareButton = document.querySelector('.share-button');
             const scrollPosition = window.scrollY;
             
             if (scrollPosition > 400) {
                 stickyCta.classList.add('visible');
+                if (shareButton) {
+                    shareButton.style.bottom = window.innerWidth <= 768 ? '140px' : '160px';
+                }
             } else {
                 stickyCta.classList.remove('visible');
+                if (shareButton) {
+                    shareButton.style.bottom = window.innerWidth <= 768 ? '90px' : '100px';
+                }
             }
         });
         
