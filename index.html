@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChoosePure – Know What's in Your Child's Food</title>
     
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MJ1Y3XWYQ4"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-MJ1Y3XWYQ4', {
+            'send_page_view': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+    </script>
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon.png" />
@@ -694,10 +706,10 @@
             Join hundreds of Bangalore parents who are independently testing everyday packaged foods — and getting simple, reliable purity reports.
         </p>
         
-        <!-- CTA BUTTONS -->
+        // CTA BUTTONS -->
         <div class="cta-buttons">
-            <button class="btn-primary" onclick="document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">👉 Join the Waitlist</button>
-            <button class="btn-secondary" onclick="document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">👉 See How It Works</button>
+            <button class="btn-primary" onclick="trackEvent('cta_click', 'join_waitlist_hero'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">👉 Join the Waitlist</button>
+            <button class="btn-secondary" onclick="trackEvent('cta_click', 'how_it_works'); document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">👉 See How It Works</button>
         </div>
         
         <p class="microcopy">No brand sponsorship. No confusing science. Only facts parents can trust.</p>
@@ -836,7 +848,7 @@
     <div class="sticky-cta" id="sticky-cta">
         <div class="sticky-content">
             <span>Ready to know what's really in your food?</span>
-            <button onclick="document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">Join the Waitlist</button>
+            <button onclick="trackEvent('cta_click', 'join_waitlist_sticky'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">Join the Waitlist</button>
         </div>
     </div>
     
@@ -848,6 +860,39 @@
     </button>
     
     <script>
+        // Google Analytics Event Tracking
+        function trackEvent(eventName, eventCategory, eventLabel = null, eventValue = null) {
+            if (typeof gtag !== 'undefined') {
+                const eventParams = {
+                    event_category: eventCategory
+                };
+                if (eventLabel) eventParams.event_label = eventLabel;
+                if (eventValue) eventParams.value = eventValue;
+                
+                gtag('event', eventName, eventParams);
+                console.log('📊 Event tracked:', eventName, eventParams);
+            }
+        }
+        
+        // Track scroll depth
+        let scrollDepthTracked = {
+            25: false,
+            50: false,
+            75: false,
+            100: false
+        };
+        
+        window.addEventListener('scroll', function() {
+            const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+            
+            Object.keys(scrollDepthTracked).forEach(depth => {
+                if (scrollPercent >= depth && !scrollDepthTracked[depth]) {
+                    trackEvent('scroll_depth', 'engagement', `${depth}%`);
+                    scrollDepthTracked[depth] = true;
+                }
+            });
+        });
+        
         // Wake up the server on page load
         (function wakeUpServer() {
             console.log('🔄 Waking up server...');
@@ -869,6 +914,8 @@
         
         // Share function
         async function shareApp() {
+            trackEvent('share_click', 'engagement', 'share_button');
+            
             const shareData = {
                 title: 'ChoosePure – Know What\'s in Your Child\'s Food',
                 text: 'Join hundreds of Bangalore parents who are independently testing everyday packaged foods. No brand sponsorship. Only facts parents can trust.',
@@ -879,10 +926,12 @@
                 // Check if Web Share API is supported
                 if (navigator.share) {
                     await navigator.share(shareData);
+                    trackEvent('share_success', 'engagement', 'native_share');
                     console.log('Shared successfully');
                 } else {
                     // Fallback: Copy to clipboard
                     await navigator.clipboard.writeText(shareData.url);
+                    trackEvent('share_success', 'engagement', 'clipboard');
                     alert('Link copied to clipboard! Share it with your friends.');
                 }
             } catch (err) {
@@ -890,11 +939,15 @@
                 if (err.name !== 'AbortError') {
                     try {
                         await navigator.clipboard.writeText(shareData.url);
+                        trackEvent('share_success', 'engagement', 'clipboard_fallback');
                         alert('Link copied to clipboard!');
                     } catch (clipboardErr) {
                         console.error('Error sharing:', err);
+                        trackEvent('share_error', 'engagement', 'failed');
                         alert('Unable to share. Please copy this link: https://choosepure.in');
                     }
+                } else {
+                    trackEvent('share_cancelled', 'engagement', 'user_cancelled');
                 }
             }
         }
@@ -966,6 +1019,9 @@
                 console.log('Response data:', result);
                 
                 if (response.ok && result.success) {
+                    // Track successful form submission
+                    trackEvent('form_submit_success', 'conversion', 'waitlist_signup');
+                    
                     messageDiv.className = 'form-message success';
                     messageDiv.textContent = '🎉 Success! Check your email for the WhatsApp community link.';
                     messageDiv.style.display = 'block';
@@ -974,16 +1030,19 @@
                     // Optional: Redirect to WhatsApp after 2 seconds
                     if (result.whatsappLink && result.whatsappLink !== 'https://chat.whatsapp.com/your-group-invite-link') {
                         setTimeout(() => {
+                            trackEvent('whatsapp_redirect', 'engagement', 'auto_redirect');
                             window.open(result.whatsappLink, '_blank');
                         }, 2000);
                     }
                 } else {
+                    trackEvent('form_submit_error', 'error', result.message || 'unknown_error');
                     messageDiv.className = 'form-message error';
                     messageDiv.textContent = result.message || 'Something went wrong. Please try again.';
                     messageDiv.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error:', error);
+                trackEvent('form_submit_error', 'error', 'network_error');
                 messageDiv.className = 'form-message error';
                 messageDiv.textContent = 'Network error. Please check your connection and try again.';
                 messageDiv.style.display = 'block';
