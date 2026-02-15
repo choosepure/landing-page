@@ -33,9 +33,24 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
+        :root {
+            /* Brand Colors */
+            --pure-ivory: #FAFAF7;
+            --deep-leaf-green: #1F6B4E;
+            --grain-brown: #8A6E4B;
+            --lab-grey: #6B6B6B;
+            --mint: #95db93;
+            --warning-amber: #FFB703;
+            --fail-red: #D62828;
+            
+            /* Typography */
+            --font-primary: 'Inter', sans-serif;
+            --font-data: 'Roboto Mono', monospace;
+        }
+        
         * {
             box-sizing: border-box;
             margin: 0;
@@ -43,9 +58,9 @@
         }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background: #FAFBFA;
-            color: #1A3A2E;
+            font-family: var(--font-primary);
+            background: var(--pure-ivory);
+            color: var(--lab-grey);
             line-height: 1.6;
             padding-bottom: 80px;
         }
@@ -86,7 +101,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: #1E7F5C;
+            color: var(--deep-leaf-green);
             font-weight: 600;
             font-size: 15px;
         }
@@ -94,18 +109,18 @@
         .badge-icon {
             width: 28px;
             height: 28px;
-            color: #1E7F5C;
+            color: var(--deep-leaf-green);
             flex-shrink: 0;
         }
         
         /* HERO SECTION */
         h1 {
-            font-family: 'Playfair Display', serif;
+            font-family: var(--font-primary);
             font-size: 48px;
             line-height: 1.15;
             margin: 0 0 24px;
-            font-weight: 700;
-            color: #0F2419;
+            font-weight: 600;
+            color: var(--deep-leaf-green);
             text-align: center;
             letter-spacing: -0.02em;
         }
@@ -113,12 +128,13 @@
         .subhead {
             font-size: 20px;
             line-height: 1.6;
-            color: #3D5A4F;
+            color: var(--grain-brown);
             margin-bottom: 40px;
             text-align: center;
             max-width: 680px;
             margin-left: auto;
             margin-right: auto;
+            font-weight: 400;
         }
         
         /* CTA BUTTONS */
@@ -144,28 +160,28 @@
         }
         
         .btn-primary {
-            background: #1E7F5C;
+            background: var(--deep-leaf-green);
             color: white;
-            box-shadow: 0 4px 12px rgba(30, 127, 92, 0.2);
+            box-shadow: 0 4px 12px rgba(31, 107, 78, 0.2);
         }
         
         .btn-primary:hover {
-            background: #16684B;
+            background: #185A3F;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30, 127, 92, 0.3);
+            box-shadow: 0 6px 20px rgba(31, 107, 78, 0.3);
         }
         
         .btn-secondary {
             background: white;
-            color: #1E7F5C;
-            border: 2px solid #1E7F5C;
+            color: var(--deep-leaf-green);
+            border: 2px solid var(--deep-leaf-green);
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         
         .btn-secondary:hover {
-            background: #F8FAF9;
-            border-color: #16684B;
-            color: #16684B;
+            background: var(--pure-ivory);
+            border-color: #185A3F;
+            color: #185A3F;
         }
         
         .microcopy {
@@ -740,7 +756,7 @@
             Join hundreds of Bangalore parents who are independently testing everyday packaged foods — and getting simple, reliable purity reports.
         </p>
         
-        // CTA BUTTONS -->
+        <!-- CTA BUTTONS -->
         <div class="cta-buttons">
             <button class="btn-primary" onclick="trackEvent('cta_click', 'join_waitlist_hero'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">👉 Join the Waitlist</button>
             <button class="btn-secondary" onclick="trackEvent('cta_click', 'how_it_works'); document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">👉 See How It Works</button>
