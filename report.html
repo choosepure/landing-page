@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Report - ChoosePure</title>
+    <link rel="icon" type="image/png" href="/public/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pure-ivory: #FAFAF7;
+            --deep-leaf-green: #1F6B4E;
+            --grain-brown: #8A6E4B;
+            --lab-grey: #6B6B6B;
+            --mint: #95db93;
+            --warning-amber: #FFB703;
+            --fail-red: #D62828;
+            --font-primary: 'Inter', sans-serif;
+            --font-data: 'Roboto Mono', monospace;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: var(--font-primary);
+            background: var(--pure-ivory);
+            color: var(--lab-grey);
+            line-height: 1.6;
+            padding: 80px 20px 60px;
+        }
+        
+        /* Password Protection Screen */
+        .password-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .password-container {
+            max-width: 450px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            padding: 48px 40px;
+            text-align: center;
+        }
+        
+        .lock-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 24px;
+            background: var(--deep-leaf-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .lock-icon svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+        
+        .password-container h2 {
+            font-size: 24px;
+            color: var(--deep-leaf-green);
+            margin-bottom: 12px;
+        }
+        
+        .password-container p {
+            color: var(--lab-grey);
+            margin-bottom: 32px;
+            font-size: 15px;
+        }
+        
+        .password-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E0EBE6;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: var(--font-primary);
+            transition: all 0.2s ease;
+        }
+        
+        .password-input:focus {
+            outline: none;
+            border-color: var(--deep-leaf-green);
+            box-shadow: 0 0 0 3px rgba(31, 107, 78, 0.1);
+        }
+        
+        .password-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--deep-leaf-green);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .password-btn:hover {
+            background: #185A3F;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 107, 78, 0.3);
+        }
+        
+        .error-message {
+            color: var(--fail-red);
+            font-size: 14px;
+            margin-top: 8px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        /* Report Content */
+        .report-content {
+            display: none;
+        }
+        
+        .report-content.show {
+            display: block;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .report-header {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        
+        .report-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .report-title h1 {
+            font-size: 36px;
+            color: var(--deep-leaf-green);
+            margin-bottom: 8px;
+        }
+        
+        .brand-name {
+            font-size: 20px;
+            color: var(--grain-brown);
+            font-weight: 500;
+        }
+        
+        .purity-score {
+            text-align: center;
+            min-width: 120px;
+        }
+        
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+            margin: 0 auto 8px;
+        }
+        
+        .score-high { background: var(--deep-leaf-green); }
+        .score-medium { background: var(--warning-amber); }
+        .score-low { background: var(--fail-red); }
+        
+        .score-label {
+            font-size: 14px;
+            color: var(--lab-grey);
+            font-weight: 600;
+        }
+        
+        .report-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: var(--pure-ivory);
+            border-radius: 12px;
+        }
+        
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .meta-label {
+            font-size: 13px;
+            color: var(--grain-brown);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .meta-value {
+            font-size: 16px;
+            color: var(--lab-grey);
+            font-family: var(--font-data);
+        }
+        
+        .report-section {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        
+        .section-title {
+            font-size: 24px;
+            color: var(--deep-leaf-green);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--pure-ivory);
+        }
+        
+        .parameters-grid {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .parameter-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 100px;
+            gap: 16px;
+            padding: 16px;
+            background: var(--pure-ivory);
+            border-radius: 8px;
+            align-items: center;
+        }
+        
+        .parameter-name {
+            font-weight: 600;
+            color: var(--lab-grey);
+        }
+        
+        .parameter-value {
+            font-family: var(--font-data);
+            color: var(--lab-grey);
+        }
+        
+        .parameter-limit {
+            font-family: var(--font-data);
+            font-size: 14px;
+            color: var(--grain-brown);
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .status-pass {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+        
+        .status-warning {
+            background: #FFF9E6;
+            color: #F57C00;
+        }
+        
+        .status-fail {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+        
+        .summary-box {
+            background: linear-gradient(135deg, var(--deep-leaf-green) 0%, #16684B 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .summary-box h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+        
+        .summary-box p {
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            color: var(--deep-leaf-green);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 60px 16px 40px;
+            }
+            
+            .password-container {
+                padding: 32px 24px;
+            }
+            
+            .report-header,
+            .report-section {
+                padding: 24px 20px;
+            }
+            
+            .report-title h1 {
+                font-size: 28px;
+            }
+            
+            .parameter-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .parameter-row > div {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="password-screen" class="password-screen">
+        <div class="password-container">
+            <div class="lock-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C9.243 2 7 4.243 7 7v3H6c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zm3 8V7c0-1.654-1.346-3-3-3S9 5.346 9 7v3h6z" fill="currentColor"/>
+                </svg>
+            </div>
+            <h2>Protected Report</h2>
+            <p>This report is password protected. Please enter the password to view the test results.</p>
+            <form id="password-form" class="password-form">
+                <input 
+                    type="password" 
+                    id="password-input" 
+                    class="password-input" 
+                    placeholder="Enter password"
+                    required
+                />
+                <button type="submit" class="password-btn">Unlock Report</button>
+                <div id="error-message" class="error-message">Incorrect password. Please try again.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Content (Hidden until password is correct) -->
+    <div id="report-content" class="report-content">
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            
+            <!-- Report Header -->
+            <div class="report-header">
+                <div class="report-title">
+                    <div>
+                        <h1>Amul Gold Milk</h1>
+                        <div class="brand-name">Amul</div>
+                    </div>
+                    <div class="purity-score">
+                        <div class="score-circle score-high">9.2</div>
+                        <div class="score-label">Purity Score</div>
+                    </div>
+                </div>
+                
+                <div class="report-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Category</div>
+                        <div class="meta-value">Dairy</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Test Date</div>
+                        <div class="meta-value">Jan 15, 2026</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Lab</div>
+                        <div class="meta-value">NABL Certified</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Batch No.</div>
+                        <div class="meta-value">AMG2601150</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="report-section">
+                <div class="summary-box">
+                    <h3>Executive Summary</h3>
+                    <p>Amul Gold Milk passed all major purity and safety tests. The product shows excellent quality with no adulterants detected. Fat content and protein levels are within the claimed range. The milk is safe for consumption and meets FSSAI standards.</p>
+                </div>
+            </div>
+
+            <!-- Test Parameters -->
+            <div class="report-section">
+                <h2 class="section-title">Test Parameters</h2>
+                <div class="parameters-grid">
+                    <div class="parameter-row">
+                        <div class="parameter-name">Fat Content</div>
+                        <div class="parameter-value">6.1%</div>
+                        <div class="parameter-limit">Min: 6.0%</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Protein</div>
+                        <div class="parameter-value">3.4%</div>
+                        <div class="parameter-limit">Min: 3.0%</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">SNF (Solids Not Fat)</div>
+                        <div class="parameter-value">8.9%</div>
+                        <div class="parameter-limit">Min: 8.5%</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Urea</div>
+                        <div class="parameter-value">Not Detected</div>
+                        <div class="parameter-limit">Should be absent</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Starch</div>
+                        <div class="parameter-value">Not Detected</div>
+                        <div class="parameter-limit">Should be absent</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Glucose</div>
+                        <div class="parameter-value">Not Detected</div>
+                        <div class="parameter-limit">Should be absent</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Hydrogen Peroxide</div>
+                        <div class="parameter-value">Not Detected</div>
+                        <div class="parameter-limit">Should be absent</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Neutralizers</div>
+                        <div class="parameter-value">Not Detected</div>
+                        <div class="parameter-limit">Should be absent</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Aflatoxin M1</div>
+                        <div class="parameter-value">0.02 µg/L</div>
+                        <div class="parameter-limit">Max: 0.5 µg/L</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-name">Antibiotic Residues</div>
+                        <div class="parameter-value">Not Detected</div>
+                        <div class="parameter-limit">Should be absent</div>
+                        <div class="status-badge status-pass">PASS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Methodology -->
+            <div class="report-section">
+                <h2 class="section-title">Testing Methodology</h2>
+                <p style="margin-bottom: 16px;">All tests were conducted at an FSSAI-approved and NABL-accredited laboratory following standard testing protocols:</p>
+                <ul style="margin-left: 24px; line-height: 1.8;">
+                    <li>Fat content: Gerber Method (IS 1224 Part 1)</li>
+                    <li>Protein: Kjeldahl Method (IS 1479 Part 2)</li>
+                    <li>SNF: Calculation method as per FSSAI</li>
+                    <li>Adulterants: Chemical tests as per FSSAI Manual</li>
+                    <li>Aflatoxin M1: ELISA method</li>
+                    <li>Antibiotic residues: Microbiological screening</li>
+                </ul>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="report-section" style="background: #FFF9E6; border-left: 4px solid var(--warning-amber);">
+                <h2 class="section-title" style="color: var(--grain-brown);">Important Disclaimer</h2>
+                <p style="line-height: 1.8; color: var(--lab-grey);">
+                    This report is based on a single sample tested at a specific point in time. Results may vary across different batches, locations, and time periods. This report is for informational purposes only and should not be considered as medical, nutritional, or legal advice. ChoosePure does not manufacture, sell, or endorse any products. For complete terms, please refer to our <a href="/terms-conditions.html" style="color: var(--deep-leaf-green);">Terms & Conditions</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PASSWORD = '12345';
+        const passwordForm = document.getElementById('password-form');
+        const passwordInput = document.getElementById('password-input');
+        const errorMessage = document.getElementById('error-message');
+        const passwordScreen = document.getElementById('password-screen');
+        const reportContent = document.getElementById('report-content');
+
+        // Check if already authenticated in this session
+        if (sessionStorage.getItem('report_authenticated') === 'true') {
+            showReport();
+        }
+
+        passwordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const enteredPassword = passwordInput.value;
+            
+            if (enteredPassword === PASSWORD) {
+                // Store authentication in session
+                sessionStorage.setItem('report_authenticated', 'true');
+                showReport();
+            } else {
+                // Show error
+                errorMessage.classList.add('show');
+                passwordInput.value = '';
+                passwordInput.focus();
+                
+                // Shake animation
+                passwordForm.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    passwordForm.style.animation = '';
+                }, 500);
+            }
+        });
+
+        function showReport() {
+            passwordScreen.style.display = 'none';
+            reportContent.classList.add('show');
+        }
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
