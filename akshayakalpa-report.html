@@ -4,6 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Akshayakalpa Milk Test Report - ChoosePure</title>
+    
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '3534907673428830');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=3534907673428830&ev=PageView&noscript=1"/>
+    </noscript>
+    <!-- End Meta Pixel Code -->
+    
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MJ1Y3XWYQ4"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-MJ1Y3XWYQ4', {
+            'send_page_view': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+    </script>
+    
     <link rel="icon" type="image/png" href="/public/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -458,8 +490,31 @@
             
             if (enteredPassword === PASSWORD) {
                 sessionStorage.setItem('akshayakalpa_report_authenticated', 'true');
+                
+                // Track successful password unlock
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'report_unlock', {
+                        event_category: 'engagement',
+                        event_label: 'akshayakalpa_report'
+                    });
+                }
+                if (typeof fbq !== 'undefined') {
+                    fbq('track', 'ViewContent', {
+                        content_name: 'Akshayakalpa Report',
+                        content_category: 'Test Report'
+                    });
+                }
+                
                 showReport();
             } else {
+                // Track failed password attempt
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'report_unlock_failed', {
+                        event_category: 'engagement',
+                        event_label: 'akshayakalpa_report'
+                    });
+                }
+                
                 errorMessage.classList.add('show');
                 passwordInput.value = '';
                 passwordInput.focus();
@@ -471,6 +526,9 @@
         function showReport() {
             passwordScreen.style.display = 'none';
             reportContent.classList.add('show');
+            
+            // Track report view
+            console.log('📊 Report viewed: Akshayakalpa');
         }
 
         const style = document.createElement('style');
