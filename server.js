@@ -954,6 +954,85 @@ app.delete('/api/admin/waitlist/:id', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Admin API: Send bulk email (protected)
+app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
+    const { recipients, subject, message } = req.body;
+    
+    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'No recipients provided' 
+        });
+    }
+    
+    if (!subject || !message) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Subject and message are required' 
+        });
+    }
+    
+    try {
+        console.log(`📧 Sending bulk email to ${recipients.length} recipients...`);
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        // Send emails one by one
+        for (const recipient of recipients) {
+            try {
+                // Replace {{name}} placeholder with actual name
+                const personalizedMessage = message.replace(/\{\{name\}\}/g, recipient.name);
+                
+                const messageData = {
+                    from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+                    to: recipient.email,
+                    subject: subject,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                            <div style="white-space: pre-wrap;">${personalizedMessage}</div>
+                            
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                            <p style="color: #999; font-size: 12px;">
+                                ChoosePure - Independent Food Testing for Parents<br>
+                                No brand sponsorship. Only facts parents can trust.
+                            </p>
+                        </div>
+                    `
+                };
+                
+                await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
+                successCount++;
+                console.log(`✅ Email sent to ${recipient.email}`);
+                
+                // Small delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+            } catch (emailError) {
+                console.error(`❌ Failed to send email to ${recipient.email}:`, emailError.message);
+                failCount++;
+            }
+        }
+        
+        console.log(`📊 Bulk email complete: ${successCount} sent, ${failCount} failed`);
+        
+        res.json({ 
+            success: true, 
+            message: `Emails sent successfully`,
+            sent: successCount,
+            failed: failCount,
+            total: recipients.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Bulk email error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send bulk emails' 
+        });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log('📧 Email Configuration:');
