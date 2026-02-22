@@ -171,6 +171,37 @@
     </div>
     
     <script>
+        // Check server status on page load
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                if (data.database === 'disconnected') {
+                    const messageDiv = document.getElementById('message');
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = 'Server is starting up, please wait...';
+                    messageDiv.style.display = 'block';
+                    
+                    // Retry after 3 seconds
+                    setTimeout(checkServerStatus, 3000);
+                } else {
+                    // Hide any startup messages
+                    const messageDiv = document.getElementById('message');
+                    if (messageDiv.textContent.includes('starting up')) {
+                        messageDiv.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.log('Health check failed, server may be starting...');
+                // Retry after 3 seconds
+                setTimeout(checkServerStatus, 3000);
+            }
+        }
+        
+        // Check on page load
+        checkServerStatus();
+        
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
