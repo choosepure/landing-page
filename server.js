@@ -956,7 +956,7 @@ app.delete('/api/admin/waitlist/:id', authenticateAdmin, async (req, res) => {
 
 // Admin API: Send bulk email (protected)
 app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
-    const { recipients, subject, message } = req.body;
+    const { recipients, subject, message, messageType } = req.body;
     
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
         return res.status(400).json({ 
@@ -974,6 +974,7 @@ app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
     
     try {
         console.log(`📧 Sending bulk email to ${recipients.length} recipients...`);
+        console.log(`📝 Message type: ${messageType || 'text'}`);
         
         let successCount = 0;
         let failCount = 0;
@@ -981,16 +982,16 @@ app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
         // Send emails one by one
         for (const recipient of recipients) {
             try {
-                // Replace {{name}} placeholder with actual name
-                const personalizedMessage = message.replace(/\{\{name\}\}/g, recipient.name);
+                // Replace {{name}} placeholder with actual name (case-insensitive)
+                const personalizedMessage = message.replace(/\{\{name\}\}/gi, recipient.name);
                 
-                const messageData = {
-                    from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
-                    to: recipient.email,
-                    subject: subject,
-                    html: `
+                let emailContent;
+                
+                if (messageType === 'html') {
+                    // User provided HTML - wrap it with basic email structure
+                    emailContent = `
                         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                            <div style="white-space: pre-wrap;">${personalizedMessage}</div>
+                            ${personalizedMessage}
                             
                             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                             <p style="color: #999; font-size: 12px;">
@@ -998,7 +999,33 @@ app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
                                 No brand sponsorship. Only facts parents can trust.
                             </p>
                         </div>
-                    `
+                    `;
+                } else {
+                    // Plain text - convert to HTML with line breaks
+                    const htmlMessage = personalizedMessage
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\n/g, '<br>');
+                    
+                    emailContent = `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                            <div style="line-height: 1.6;">${htmlMessage}</div>
+                            
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                            <p style="color: #999; font-size: 12px;">
+                                ChoosePure - Independent Food Testing for Parents<br>
+                                No brand sponsorship. Only facts parents can trust.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                const messageData = {
+                    from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+                    to: recipient.email,
+                    subject: subject,
+                    html: emailContent
                 };
                 
                 await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);

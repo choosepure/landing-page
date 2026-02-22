@@ -287,7 +287,7 @@
         
         <!-- Bulk Email Modal -->
         <div id="bulk-email-modal" class="modal">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width: 900px;">
                 <span class="close" onclick="closeBulkEmailModal()">&times;</span>
                 <h2>Send Bulk Email</h2>
                 <p id="selected-count" style="color: #666; margin-bottom: 20px;">0 recipients selected</p>
@@ -296,15 +296,41 @@
                         <label>Subject *</label>
                         <input type="text" id="email-subject" required placeholder="Enter email subject">
                     </div>
+                    
                     <div class="form-group">
-                        <label>Message *</label>
-                        <textarea id="email-message" required placeholder="Enter your message here. Use {{name}} to personalize with recipient's name." rows="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;"></textarea>
-                        <small style="color: #666;">Tip: Use {{name}} in your message to automatically insert the recipient's name</small>
+                        <label style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Message Format</span>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" class="btn btn-small" onclick="switchToPlainText()" id="plain-text-btn" style="background: #1E7F5C; color: white;">Plain Text</button>
+                                <button type="button" class="btn btn-small" onclick="switchToHTML()" id="html-btn" style="background: #ddd; color: #333;">HTML</button>
+                            </div>
+                        </label>
                     </div>
+                    
+                    <div class="form-group" id="plain-text-editor">
+                        <label>Message *</label>
+                        <textarea id="email-message" required placeholder="Enter your message here. Use {{name}} or {{Name}} to personalize with recipient's name." rows="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;"></textarea>
+                        <small style="color: #666;">Tip: Use {{name}} or {{Name}} in your message to automatically insert the recipient's name</small>
+                    </div>
+                    
+                    <div class="form-group" id="html-editor" style="display: none;">
+                        <label>HTML Message *</label>
+                        <textarea id="email-html" placeholder="Enter HTML content here. Use {{name}} or {{Name}} for personalization." rows="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px;"></textarea>
+                        <small style="color: #666; display: block; margin-top: 8px;">
+                            <strong>HTML Tips:</strong><br>
+                            • Use {{name}} or {{Name}} for personalization<br>
+                            • Links: &lt;a href="https://example.com"&gt;Click here&lt;/a&gt;<br>
+                            • Bold: &lt;strong&gt;text&lt;/strong&gt; or &lt;b&gt;text&lt;/b&gt;<br>
+                            • Line break: &lt;br&gt;<br>
+                            • Paragraph: &lt;p&gt;text&lt;/p&gt;
+                        </small>
+                    </div>
+                    
                     <div class="form-group">
                         <label>Preview</label>
-                        <div id="email-preview" style="background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #ddd; min-height: 100px; white-space: pre-wrap;"></div>
+                        <div id="email-preview" style="background: white; padding: 20px; border-radius: 4px; border: 1px solid #ddd; min-height: 150px; font-family: Arial, sans-serif; line-height: 1.6;"></div>
                     </div>
+                    
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
                         <button type="submit" class="btn btn-primary" id="send-email-btn">Send Email</button>
                         <button type="button" class="btn btn-secondary" onclick="closeBulkEmailModal()">Cancel</button>
@@ -497,21 +523,67 @@
         // Update preview when message changes
         document.addEventListener('DOMContentLoaded', function() {
             const messageInput = document.getElementById('email-message');
+            const htmlInput = document.getElementById('email-html');
+            
             if (messageInput) {
                 messageInput.addEventListener('input', updateEmailPreview);
             }
+            if (htmlInput) {
+                htmlInput.addEventListener('input', updateEmailPreview);
+            }
         });
         
+        let isHTMLMode = false;
+        
+        function switchToPlainText() {
+            isHTMLMode = false;
+            document.getElementById('plain-text-editor').style.display = 'block';
+            document.getElementById('html-editor').style.display = 'none';
+            document.getElementById('plain-text-btn').style.background = '#1E7F5C';
+            document.getElementById('plain-text-btn').style.color = 'white';
+            document.getElementById('html-btn').style.background = '#ddd';
+            document.getElementById('html-btn').style.color = '#333';
+            document.getElementById('email-message').required = true;
+            document.getElementById('email-html').required = false;
+            updateEmailPreview();
+        }
+        
+        function switchToHTML() {
+            isHTMLMode = true;
+            document.getElementById('plain-text-editor').style.display = 'none';
+            document.getElementById('html-editor').style.display = 'block';
+            document.getElementById('html-btn').style.background = '#1E7F5C';
+            document.getElementById('html-btn').style.color = 'white';
+            document.getElementById('plain-text-btn').style.background = '#ddd';
+            document.getElementById('plain-text-btn').style.color = '#333';
+            document.getElementById('email-message').required = false;
+            document.getElementById('email-html').required = true;
+            updateEmailPreview();
+        }
+        
         function updateEmailPreview() {
-            const message = document.getElementById('email-message').value;
             const preview = document.getElementById('email-preview');
+            let message;
+            
+            if (isHTMLMode) {
+                message = document.getElementById('email-html').value;
+            } else {
+                message = document.getElementById('email-message').value;
+            }
             
             if (selectedMembers.length > 0) {
                 const sampleName = selectedMembers[0].name;
-                const previewText = message.replace(/\{\{name\}\}/g, sampleName);
-                preview.textContent = previewText || 'Your message preview will appear here...';
+                const previewText = message.replace(/\{\{name\}\}/gi, sampleName);
+                
+                if (isHTMLMode) {
+                    preview.innerHTML = previewText || '<em style="color: #999;">Your HTML preview will appear here...</em>';
+                } else {
+                    preview.textContent = previewText || 'Your message preview will appear here...';
+                    preview.style.whiteSpace = 'pre-wrap';
+                }
             } else {
                 preview.textContent = 'Select recipients to see preview';
+                preview.style.whiteSpace = 'pre-wrap';
             }
         }
         
@@ -524,7 +596,20 @@
             }
             
             const subject = document.getElementById('email-subject').value;
-            const message = document.getElementById('email-message').value;
+            let message, messageType;
+            
+            if (isHTMLMode) {
+                message = document.getElementById('email-html').value;
+                messageType = 'html';
+            } else {
+                message = document.getElementById('email-message').value;
+                messageType = 'text';
+            }
+            
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
             
             if (!confirm(`Send email to ${selectedMembers.length} recipient(s)?`)) {
                 return;
@@ -543,7 +628,8 @@
                     body: JSON.stringify({
                         recipients: selectedMembers,
                         subject: subject,
-                        message: message
+                        message: message,
+                        messageType: messageType
                     })
                 });
                 
