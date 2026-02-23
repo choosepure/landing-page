@@ -263,7 +263,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0;">Waitlist Members</h2>
                 <div>
-                    <button id="select-all-btn" class="btn btn-secondary" onclick="toggleSelectAll()">Select All</button>
+                    <button id="select-all-btn" class="btn btn-secondary" onclick="selectAllMembers()">Select All</button>
                     <button id="bulk-email-btn" class="btn btn-primary" onclick="openBulkEmailModal()" style="margin-left: 10px;">Send Bulk Email</button>
                 </div>
             </div>
@@ -488,6 +488,23 @@
             updateSelectedCount();
         }
         
+        function selectAllMembers() {
+            const selectAllCheckbox = document.getElementById('select-all-checkbox');
+            const selectAllBtn = document.getElementById('select-all-btn');
+            const checkboxes = document.querySelectorAll('.member-checkbox');
+            
+            // If all are selected, deselect all. Otherwise, select all.
+            const allSelected = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = !allSelected;
+            });
+            
+            selectAllCheckbox.checked = !allSelected;
+            selectAllBtn.textContent = !allSelected ? 'Deselect All' : 'Select All';
+            updateSelectedCount();
+        }
+        
         function updateSelectedCount() {
             const checkboxes = document.querySelectorAll('.member-checkbox:checked');
             selectedMembers = Array.from(checkboxes).map(cb => ({
@@ -502,7 +519,14 @@
             // Update select all checkbox state
             const allCheckboxes = document.querySelectorAll('.member-checkbox');
             const selectAllCheckbox = document.getElementById('select-all-checkbox');
-            selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+            const selectAllBtn = document.getElementById('select-all-btn');
+            
+            const allSelected = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+            selectAllCheckbox.checked = allSelected;
+            
+            if (selectAllBtn) {
+                selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All';
+            }
         }
         
         function openBulkEmailModal() {
