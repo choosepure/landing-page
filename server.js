@@ -139,7 +139,7 @@ function authenticateAdmin(req, res, next) {
 async function sendUserEmail(email, name, whatsappLink) {
     try {
         const messageData = {
-            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+            from: 'ChoosePure <support@choosepure.in>',
             to: email,
             subject: 'Welcome to ChoosePure Community!',
             html: `
@@ -439,7 +439,7 @@ app.get('/api/test-email', async (req, res) => {
         const testEmail = req.query.email || 'support@choosepure.in';
         
         const messageData = {
-            from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+            from: 'ChoosePure <support@choosepure.in>',
             to: testEmail,
             subject: 'Test Email from ChoosePure',
             text: 'This is a test email to verify Mailgun configuration.',
@@ -1022,7 +1022,7 @@ app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
                 }
                 
                 const messageData = {
-                    from: process.env.MAILGUN_FROM_EMAIL || 'support@choosepure.in',
+                    from: 'ChoosePure <support@choosepure.in>',
                     to: recipient.email,
                     subject: subject,
                     html: emailContent
