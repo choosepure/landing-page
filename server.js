@@ -1433,7 +1433,7 @@ app.post('/api/polls/vote', async (req, res) => {
         const order = await razorpay.orders.create({
             amount: amount * 100,
             currency: 'INR',
-            receipt: `vote_${productId}_${Date.now()}`
+            receipt: `v_${Date.now()}`
         });
 
         console.log('✅ Razorpay order created:', order.id);
