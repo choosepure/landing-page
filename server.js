@@ -1445,7 +1445,9 @@ app.post('/api/polls/vote', async (req, res) => {
             key: process.env.RAZORPAY_KEY_ID 
         });
     } catch (error) {
-        console.error('❌ Error creating vote order:', error);
+        console.error('❌ Error creating vote order:', error.message || error);
+        console.error('   Razorpay Key ID set:', process.env.RAZORPAY_KEY_ID ? '✅' : '❌ NOT SET');
+        console.error('   Razorpay Key Secret set:', process.env.RAZORPAY_KEY_SECRET ? '✅' : '❌ NOT SET');
         res.status(500).json({ 
             success: false, 
             message: 'Payment initialization failed. Please try again.' 
