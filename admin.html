@@ -285,6 +285,88 @@
             </table>
         </div>
         
+        <!-- Product Polling Section -->
+        <div style="margin-top: 40px;">
+            <h2 style="color: #1F6B4E; margin-bottom: 20px; font-size: 24px;">🗳️ Product Polling</h2>
+
+            <!-- Polling Summary Stats -->
+            <div class="stats" id="polling-stats">
+                <div class="stat-card">
+                    <h3>Total Votes Cast</h3>
+                    <div class="number" id="polling-total-votes">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Revenue</h3>
+                    <div class="number" id="polling-total-revenue">-</div>
+                </div>
+            </div>
+
+            <!-- Add Product Form -->
+            <div class="actions">
+                <h2>Add New Product</h2>
+                <div id="product-message" class="message"></div>
+                <form id="add-product-form">
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <input type="text" id="product-name" required placeholder="Enter product name">
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="url" id="product-image-url" required placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="product-description" required placeholder="Enter product description">
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum Amount per Vote (INR)</label>
+                        <input type="number" id="product-min-amount" required min="1" step="1" placeholder="e.g. 50">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </form>
+            </div>
+
+            <!-- Products List Table -->
+            <div class="table-container" style="margin-top: 20px;">
+                <h2 style="margin-bottom: 20px;">Products</h2>
+                <div id="products-loading" class="loading">Loading products...</div>
+                <table id="products-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Min Amount (₹)</th>
+                            <th>Total Votes</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Vote Transactions Table -->
+            <div class="table-container" style="margin-top: 20px;">
+                <h2 style="margin-bottom: 20px;">Recent Vote Transactions</h2>
+                <div id="transactions-loading" class="loading">Loading transactions...</div>
+                <table id="transactions-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Email</th>
+                            <th>Product</th>
+                            <th>Votes</th>
+                            <th>Amount (₹)</th>
+                            <th>Payment ID</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Bulk Email Modal -->
         <div id="bulk-email-modal" class="modal">
             <div class="modal-content" style="max-width: 900px;">
@@ -686,6 +768,201 @@
                 closeBulkEmailModal();
             }
         }
+
+        // ========== Product Polling Functions ==========
+        const POLLING_API_BASE = 'https://api.choosepure.in';
+
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${POLLING_API_BASE}/api/admin/polls/products`, {
+                    credentials: 'include'
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayProducts(data.products);
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('products-loading').textContent = 'Failed to load products.';
+            }
+        }
+
+        function displayProducts(products) {
+            const tbody = document.getElementById('products-body');
+            const loading = document.getElementById('products-loading');
+            const table = document.getElementById('products-table');
+
+            loading.style.display = 'none';
+            table.style.display = 'table';
+
+            if (products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">No products added yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = products.map(product => `
+                <tr>
+                    <td><img src="${product.imageUrl}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;"></td>
+                    <td>${product.name}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${product.description}</td>
+                    <td>₹${product.minAmount}</td>
+                    <td>${product.totalVotes}</td>
+                    <td>
+                        <span style="padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; background: ${product.status === 'active' ? '#d4edda' : '#f8d7da'}; color: ${product.status === 'active' ? '#155724' : '#721c24'};">
+                            ${product.status}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-small" style="background: #8A6E4B; color: white; margin-right: 5px;" onclick="toggleProductStatus('${product._id}', '${product.status}')">
+                            ${product.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="deleteProduct('${product._id}', '${product.name}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function toggleProductStatus(productId, currentStatus) {
+            try {
+                const response = await fetch(`${POLLING_API_BASE}/api/admin/polls/products/${productId}/status`, {
+                    method: 'PUT',
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loadProducts();
+                } else {
+                    alert('Failed to update product status: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        async function deleteProduct(productId, productName) {
+            if (!confirm(`Are you sure you want to delete "${productName}"?`)) return;
+
+            try {
+                const response = await fetch(`${POLLING_API_BASE}/api/admin/polls/products/${productId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loadProducts();
+                } else {
+                    alert('Failed to delete product: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const messageDiv = document.getElementById('product-message');
+            const formData = {
+                name: document.getElementById('product-name').value.trim(),
+                imageUrl: document.getElementById('product-image-url').value.trim(),
+                description: document.getElementById('product-description').value.trim(),
+                minAmount: parseInt(document.getElementById('product-min-amount').value, 10)
+            };
+
+            try {
+                const response = await fetch(`${POLLING_API_BASE}/api/admin/polls/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Product added successfully!';
+                    document.getElementById('add-product-form').reset();
+                    loadProducts();
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = result.message || 'Failed to add product';
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Network error. Please try again.';
+            }
+        });
+
+        async function loadTransactions() {
+            try {
+                const response = await fetch(`${POLLING_API_BASE}/api/admin/polls/transactions`, {
+                    credentials: 'include'
+                });
+
+                if (response.status === 401) {
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayTransactions(data.transactions);
+                    displayPollingSummary(data.summary);
+                }
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                document.getElementById('transactions-loading').textContent = 'Failed to load transactions.';
+            }
+        }
+
+        function displayTransactions(transactions) {
+            const tbody = document.getElementById('transactions-body');
+            const loading = document.getElementById('transactions-loading');
+            const table = document.getElementById('transactions-table');
+
+            loading.style.display = 'none';
+            table.style.display = 'table';
+
+            if (!transactions || transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">No transactions yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = transactions.map(tx => `
+                <tr>
+                    <td>${tx.userName}</td>
+                    <td>${tx.userEmail}</td>
+                    <td>${tx.productName}</td>
+                    <td>${tx.voteCount}</td>
+                    <td>₹${tx.amount}</td>
+                    <td style="font-size: 12px; font-family: monospace;">${tx.razorpayPaymentId || '-'}</td>
+                    <td>${new Date(tx.createdAt).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function displayPollingSummary(summary) {
+            if (summary) {
+                document.getElementById('polling-total-votes').textContent = summary.totalVotes || 0;
+                document.getElementById('polling-total-revenue').textContent = '₹' + (summary.totalRevenue || 0);
+            }
+        }
+
+        // Load polling data on page load
+        loadProducts();
+        loadTransactions();
     </script>
 </body>
 </html>

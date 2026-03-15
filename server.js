@@ -1,12 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const formData = require('form-data');
 const Mailgun = require('mailgun.js');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const Razorpay = require('razorpay');
 require('dotenv').config();
 
 const app = express();
@@ -27,10 +29,18 @@ console.log('🔧 Mailgun initialized');
 console.log('📧 Mailgun Domain:', process.env.MAILGUN_DOMAIN);
 console.log('📧 Mailgun API Key:', process.env.MAILGUN_API_KEY ? '✅ Set' : '❌ Not set');
 
+// Initialize Razorpay client
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
 // MongoDB connection
 let db;
 let waitlistCollection;
 let usersCollection;
+let productsCollection;
+let voteTransactionsCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -58,6 +68,8 @@ async function connectToDatabase() {
         db = client.db(process.env.DB_NAME || 'choosepure_db');
         waitlistCollection = db.collection('waitlist');
         usersCollection = db.collection('users');
+        productsCollection = db.collection('products');
+        voteTransactionsCollection = db.collection('vote_transactions');
         
         // Verify collections exist
         const collections = await db.listCollections().toArray();
@@ -67,6 +79,15 @@ async function connectToDatabase() {
         await waitlistCollection.createIndex({ email: 1 }, { unique: true });
         console.log('✅ Waitlist collection initialized');
         console.log('✅ Users collection initialized');
+        
+        // Create indexes for products collection
+        await productsCollection.createIndex({ status: 1, totalVotes: -1 });
+        console.log('✅ Products collection initialized');
+        
+        // Create indexes for vote_transactions collection
+        await voteTransactionsCollection.createIndex({ productId: 1 });
+        await voteTransactionsCollection.createIndex({ createdAt: -1 });
+        console.log('✅ Vote transactions collection initialized');
         
         // Check if admin user exists
         const adminCount = await usersCollection.countDocuments({ role: 'admin' });
@@ -478,6 +499,11 @@ app.get('/api/test-email', async (req, res) => {
 // Serve index.html for root route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Serve polling page
+app.get('/polling', (req, res) => {
+    res.sendFile(path.join(__dirname, 'polling.html'));
 });
 
 // Serve admin login page
@@ -1056,6 +1082,458 @@ app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Failed to send bulk emails' 
+        });
+    }
+});
+
+// ==========================================
+// Product Polling Admin Endpoints
+// ==========================================
+
+// Admin API: Create a new product (protected)
+app.post('/api/admin/polls/products', authenticateAdmin, async (req, res) => {
+    try {
+        if (!productsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { name, imageUrl, description, minAmount } = req.body;
+
+        // Validate required fields
+        const missingFields = [];
+        if (!name) missingFields.push('name');
+        if (!imageUrl) missingFields.push('imageUrl');
+        if (!description) missingFields.push('description');
+        if (minAmount === undefined || minAmount === null || minAmount === '') missingFields.push('minAmount');
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Missing required fields: ${missingFields.join(', ')}` 
+            });
+        }
+
+        // Validate minAmount is a positive number
+        if (typeof minAmount !== 'number' || minAmount <= 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Minimum amount must be greater than 0' 
+            });
+        }
+
+        const now = new Date();
+        const product = {
+            name,
+            imageUrl,
+            description,
+            minAmount,
+            totalVotes: 0,
+            status: 'active',
+            createdAt: now,
+            updatedAt: now
+        };
+
+        const result = await productsCollection.insertOne(product);
+        console.log('✅ Product created:', result.insertedId);
+
+        res.json({ 
+            success: true, 
+            message: 'Product created successfully',
+            product: { ...product, _id: result.insertedId }
+        });
+    } catch (error) {
+        console.error('❌ Error creating product:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to create product' 
+        });
+    }
+});
+
+// Admin API: List all products including inactive (protected)
+app.get('/api/admin/polls/products', authenticateAdmin, async (req, res) => {
+    try {
+        if (!productsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const products = await productsCollection
+            .find({})
+            .sort({ createdAt: -1 })
+            .toArray();
+
+        res.json({ 
+            success: true, 
+            products: products 
+        });
+    } catch (error) {
+        console.error('❌ Error fetching products:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch products' 
+        });
+    }
+});
+
+// Admin API: Toggle product status (protected)
+app.put('/api/admin/polls/products/:id/status', authenticateAdmin, async (req, res) => {
+    try {
+        if (!productsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const productId = new ObjectId(req.params.id);
+
+        // Find the product first
+        const product = await productsCollection.findOne({ _id: productId });
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found' 
+            });
+        }
+
+        const newStatus = product.status === 'active' ? 'inactive' : 'active';
+
+        await productsCollection.updateOne(
+            { _id: productId },
+            { $set: { status: newStatus, updatedAt: new Date() } }
+        );
+
+        console.log(`✅ Product ${req.params.id} status toggled to ${newStatus}`);
+
+        res.json({ 
+            success: true, 
+            message: `Product status updated to ${newStatus}`,
+            status: newStatus
+        });
+    } catch (error) {
+        console.error('❌ Error toggling product status:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update product status' 
+        });
+    }
+});
+
+// Admin API: Delete product (protected)
+app.delete('/api/admin/polls/products/:id', authenticateAdmin, async (req, res) => {
+    try {
+        if (!productsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const result = await productsCollection.deleteOne({ 
+            _id: new ObjectId(req.params.id) 
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found' 
+            });
+        }
+
+        console.log('✅ Product deleted:', req.params.id);
+
+        res.json({ 
+            success: true, 
+            message: 'Product deleted successfully' 
+        });
+    } catch (error) {
+        console.error('❌ Error deleting product:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to delete product' 
+        });
+    }
+});
+
+// Admin API: Get vote transactions with summary stats (protected)
+app.get('/api/admin/polls/transactions', authenticateAdmin, async (req, res) => {
+    try {
+        if (!voteTransactionsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        // Fetch 100 most recent transactions sorted by createdAt descending
+        const transactions = await voteTransactionsCollection
+            .find({})
+            .sort({ createdAt: -1 })
+            .limit(100)
+            .project({ 
+                userName: 1, 
+                userEmail: 1, 
+                productName: 1, 
+                voteCount: 1, 
+                amount: 1, 
+                razorpayPaymentId: 1, 
+                createdAt: 1 
+            })
+            .toArray();
+
+        // Aggregate summary stats: total votes and total revenue
+        const summaryResult = await voteTransactionsCollection.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalVotes: { $sum: '$voteCount' },
+                    totalRevenue: { $sum: '$amount' }
+                }
+            }
+        ]).toArray();
+
+        const summary = summaryResult.length > 0 
+            ? { totalVotes: summaryResult[0].totalVotes, totalRevenue: summaryResult[0].totalRevenue }
+            : { totalVotes: 0, totalRevenue: 0 };
+
+        res.json({ 
+            success: true, 
+            transactions,
+            summary
+        });
+    } catch (error) {
+        console.error('❌ Error fetching transactions:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch transactions' 
+        });
+    }
+});
+
+// ==========================================
+// Public Polling Endpoints
+// ==========================================
+
+// Public API: List active products sorted by totalVotes descending
+app.get('/api/polls/products', async (req, res) => {
+    try {
+        if (!productsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const products = await productsCollection
+            .find({ status: 'active' })
+            .sort({ totalVotes: -1 })
+            .project({ name: 1, imageUrl: 1, description: 1, minAmount: 1, totalVotes: 1 })
+            .toArray();
+
+        res.json({ 
+            success: true, 
+            products: products 
+        });
+    } catch (error) {
+        console.error('❌ Error fetching public products:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch products' 
+        });
+    }
+});
+
+// Public API: Create Razorpay order for vote payment
+app.post('/api/polls/vote', async (req, res) => {
+    try {
+        if (!productsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { productId, voteCount, userName, userEmail, userPhone } = req.body;
+
+        // Validate required fields
+        if (!userName || !userEmail || !userPhone) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Name, email, and phone are required' 
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userEmail)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid email address' 
+            });
+        }
+
+        // Validate phone (10 digits)
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(userPhone)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid 10-digit phone number' 
+            });
+        }
+
+        // Validate voteCount (1–50)
+        if (!voteCount || typeof voteCount !== 'number' || voteCount < 1 || voteCount > 50 || !Number.isInteger(voteCount)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Vote count must be between 1 and 50' 
+            });
+        }
+
+        // Validate productId
+        if (!productId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Product ID is required' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const product = await productsCollection.findOne({ 
+            _id: new ObjectId(productId), 
+            status: 'active' 
+        });
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found or not active' 
+            });
+        }
+
+        // Calculate total amount
+        const amount = voteCount * product.minAmount;
+
+        // Create Razorpay order (amount in paise)
+        const order = await razorpay.orders.create({
+            amount: amount * 100,
+            currency: 'INR',
+            receipt: `vote_${productId}_${Date.now()}`
+        });
+
+        console.log('✅ Razorpay order created:', order.id);
+
+        res.json({ 
+            success: true, 
+            orderId: order.id, 
+            amount: amount, 
+            key: process.env.RAZORPAY_KEY_ID 
+        });
+    } catch (error) {
+        console.error('❌ Error creating vote order:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Payment initialization failed. Please try again.' 
+        });
+    }
+});
+
+// Public API: Verify payment and record votes
+app.post('/api/polls/verify-payment', async (req, res) => {
+    try {
+        if (!productsCollection || !voteTransactionsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { 
+            razorpay_order_id, 
+            razorpay_payment_id, 
+            razorpay_signature, 
+            productId, 
+            voteCount, 
+            userName, 
+            userEmail, 
+            userPhone 
+        } = req.body;
+
+        // Validate required payment fields
+        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Payment verification details are incomplete' 
+            });
+        }
+
+        // Verify signature using HMAC SHA256
+        const expectedSignature = crypto
+            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(razorpay_order_id + '|' + razorpay_payment_id)
+            .digest('hex');
+
+        if (expectedSignature !== razorpay_signature) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Payment verification failed' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found' 
+            });
+        }
+
+        const amount = voteCount * product.minAmount;
+
+        // Insert vote transaction record
+        await voteTransactionsCollection.insertOne({
+            productId: new ObjectId(productId),
+            productName: product.name,
+            userName,
+            userEmail,
+            userPhone,
+            voteCount,
+            amount,
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+            status: 'completed',
+            createdAt: new Date()
+        });
+
+        // Increment product totalVotes
+        const updateResult = await productsCollection.findOneAndUpdate(
+            { _id: new ObjectId(productId) },
+            { $inc: { totalVotes: voteCount } },
+            { returnDocument: 'after' }
+        );
+
+        console.log(`✅ Payment verified and ${voteCount} votes recorded for product ${productId}`);
+
+        res.json({ 
+            success: true, 
+            updatedVoteCount: updateResult.totalVotes 
+        });
+    } catch (error) {
+        console.error('❌ Error verifying payment:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Payment verification failed' 
         });
     }
 });

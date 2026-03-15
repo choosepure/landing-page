@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChoosePure – Vote for Product Testing</title>
+
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '3534907673428830');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=3534907673428830&ev=PageView&noscript=1"/>
+    </noscript>
+    <!-- End Meta Pixel Code -->
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MJ1Y3XWYQ4"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-MJ1Y3XWYQ4', {
+            'send_page_view': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+    </script>
+
+    <!-- Mixpanel -->
+    <script type="text/javascript">
+        (function(e,c){if(!c.__SV){var l,h;window.mixpanel=c;c._i=[];c.init=function(q,r,f){function t(d,a){var g=a.split(".");2==g.length&&(d=d[g[0]],a=g[1]);d[a]=function(){d.push([a].concat(Array.prototype.slice.call(arguments,0)))}}var b=c;"undefined"!==typeof f?b=c[f]=[]:f="mixpanel";b.people=b.people||[];b.toString=function(d){var a="mixpanel";"mixpanel"!==f&&(a+="."+f);d||(a+=" (stub)");return a};b.people.toString=function(){return b.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders start_session_recording stop_session_recording people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)t(b,l[h]);var n="set set_once union unset remove delete".split(" ");b.get_group=function(){function d(p){a[p]=function(){b.push([g,[p].concat(Array.prototype.slice.call(arguments,0))])}}for(var a={},g=["get_group"].concat(Array.prototype.slice.call(arguments,0)),m=0;m<n.length;m++)d(n[m]);return a};c._i.push([q,r,f])};c.__SV=1.2;var k=e.createElement("script");k.type="text/javascript";k.async=!0;k.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";e=e.getElementsByTagName("script")[0];e.parentNode.insertBefore(k,e)}})(document,window.mixpanel||[]);
+        mixpanel.init('6921e08f65e4331fdd48e6a18a822ab4', {
+            autocapture: true,
+            record_sessions_percent: 100,
+        });
+    </script>
+
+    <!-- Razorpay Checkout -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon.png" />
+    <link rel="shortcut icon" href="/public/favicon.png" />
+    <link rel="apple-touch-icon" href="/public/favicon.png" />
+
+    <!-- Meta tags for sharing -->
+    <meta property="og:title" content="ChoosePure – Vote for Product Testing" />
+    <meta property="og:description" content="Vote for the products you want tested next. Your voice decides what gets independently tested." />
+    <meta property="og:image" content="https://choosepure.in/public/logo.png" />
+    <meta property="og:url" content="https://choosepure.in/polling" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --pure-ivory: #FAFAF7;
+            --deep-leaf-green: #1F6B4E;
+            --grain-brown: #8A6E4B;
+            --lab-grey: #6B6B6B;
+            --mint: #95db93;
+            --warning-amber: #FFB703;
+            --fail-red: #D62828;
+            --font-primary: 'Inter', sans-serif;
+            --font-data: 'Roboto Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-primary);
+            background: var(--pure-ivory);
+            color: var(--lab-grey);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #E8F0ED;
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-logo {
+            height: 40px;
+        }
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .header-nav a {
+            color: var(--deep-leaf-green);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        .header-nav a:hover { opacity: 0.8; }
+        .btn-waitlist {
+            background: var(--deep-leaf-green);
+            color: white !important;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-waitlist:hover {
+            background: #185A3F;
+            transform: translateY(-1px);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .hero h1 {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--deep-leaf-green);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+        .hero p {
+            font-size: 18px;
+            color: var(--grain-brown);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Loading */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #E8F0ED;
+            border-top-color: var(--deep-leaf-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-container p {
+            margin-top: 16px;
+            color: var(--lab-grey);
+            font-size: 15px;
+        }
+
+        /* Error */
+        .error-container {
+            text-align: center;
+            padding: 80px 20px;
+            display: none;
+        }
+        .error-container p {
+            color: var(--fail-red);
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .btn-retry {
+            background: var(--deep-leaf-green);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            transition: background 0.2s;
+        }
+        .btn-retry:hover { background: #185A3F; }
+
+        /* Product Grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #E8F0ED;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+        .product-info {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0F2419;
+            margin-bottom: 8px;
+        }
+        .product-description {
+            font-size: 14px;
+            color: var(--lab-grey);
+            margin-bottom: 16px;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #E8F0ED;
+        }
+        .product-amount {
+            font-family: var(--font-data);
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--deep-leaf-green);
+        }
+        .product-votes {
+            font-size: 13px;
+            color: var(--grain-brown);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .product-votes svg {
+            width: 16px;
+            height: 16px;
+        }
+        .btn-vote {
+            width: 100%;
+            padding: 14px;
+            background: var(--deep-leaf-green);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-vote:hover {
+            background: #185A3F;
+            transform: translateY(-1px);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 24px 24px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .modal-header h2 {
+            font-size: 20px;
+            color: #0F2419;
+            font-weight: 600;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--lab-grey);
+            padding: 4px;
+            line-height: 1;
+        }
+        .modal-close:hover { color: #0F2419; }
+        .modal-body { padding: 24px; }
+
+        /* Quantity Selector */
+        .quantity-section {
+            margin-bottom: 24px;
+        }
+        .quantity-section label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0F2419;
+            margin-bottom: 10px;
+        }
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border: 2px solid #E0EBE6;
+            border-radius: 10px;
+            overflow: hidden;
+            width: fit-content;
+        }
+        .qty-btn {
+            width: 44px;
+            height: 44px;
+            background: #F8FAF9;
+            border: none;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--deep-leaf-green);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qty-btn:hover { background: #E8F0ED; }
+        .qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .qty-input {
+            width: 60px;
+            height: 44px;
+            text-align: center;
+            border: none;
+            border-left: 2px solid #E0EBE6;
+            border-right: 2px solid #E0EBE6;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: var(--font-data);
+            color: #0F2419;
+            outline: none;
+        }
+        .qty-input::-webkit-inner-spin-button,
+        .qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .qty-input { -moz-appearance: textfield; }
+
+        /* Total Display */
+        .total-display {
+            background: #F0F8F5;
+            border: 2px solid #D4E8DF;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-label {
+            font-size: 14px;
+            color: var(--lab-grey);
+        }
+        .total-amount {
+            font-family: var(--font-data);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--deep-leaf-green);
+        }
+
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0F2419;
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #E0EBE6;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: var(--font-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #FAFBFA;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--deep-leaf-green);
+            box-shadow: 0 0 0 3px rgba(31,107,78,0.1);
+            background: white;
+        }
+        .form-group input.input-error {
+            border-color: var(--fail-red);
+        }
+        .field-error {
+            font-size: 12px;
+            color: var(--fail-red);
+            margin-top: 4px;
+            display: none;
+        }
+        .field-error.visible { display: block; }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: var(--deep-leaf-green);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+        .btn-submit:hover { background: #185A3F; }
+        .btn-submit:disabled {
+            background: #8FA39A;
+            cursor: not-allowed;
+        }
+
+        /* Status Messages */
+        .status-message {
+            display: none;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .status-message.success {
+            display: block;
+            background: #E8F5E9;
+            color: #2E7D32;
+            border: 1px solid #81C784;
+        }
+        .status-message.error {
+            display: block;
+            background: #FFEBEE;
+            color: #C62828;
+            border: 1px solid #EF5350;
+        }
+        .status-message.cancelled {
+            display: block;
+            background: #FFF8E1;
+            color: #F57F17;
+            border: 1px solid #FFD54F;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state p {
+            font-size: 16px;
+            color: var(--lab-grey);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 24px;
+            font-size: 13px;
+            color: #7A9188;
+        }
+        .footer a {
+            color: var(--deep-leaf-green);
+            text-decoration: none;
+        }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 28px; }
+            .hero p { font-size: 16px; }
+            .product-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .container { padding: 24px 16px 60px; }
+            .header-nav a:not(.btn-waitlist) { display: none; }
+            .modal { border-radius: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <a href="/"><img src="/public/logo.png" alt="ChoosePure" class="header-logo" /></a>
+            <nav class="header-nav">
+                <a href="/">← Back to Home</a>
+                <a href="/#waitlist-form" class="btn-waitlist">Join Waitlist</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <h1>Vote for What Gets Tested Next</h1>
+            <p>Your votes decide which products our community tests. Cast your vote and help parents make informed choices.</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading products...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="error-container">
+            <p id="error-message">Unable to connect. Please check your internet connection and try again.</p>
+            <button class="btn-retry" onclick="fetchProducts()">Try Again</button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty" class="empty-state" style="display:none;">
+            <p>No products available for voting right now. Check back soon!</p>
+        </div>
+
+        <!-- Product Grid -->
+        <div id="product-grid" class="product-grid" style="display:none;"></div>
+    </div>
+
+    <!-- Vote Modal -->
+    <div id="vote-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Vote for product">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-product-name"></h2>
+                <button class="modal-close" onclick="closeModal()" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Status Message -->
+                <div id="modal-status" class="status-message"></div>
+
+                <!-- Vote Form -->
+                <div id="vote-form-container">
+                    <!-- Quantity -->
+                    <div class="quantity-section">
+                        <label>Number of Votes</label>
+                        <div class="quantity-selector">
+                            <button type="button" class="qty-btn" id="qty-minus" onclick="changeQty(-1)">−</button>
+                            <input type="number" id="qty-input" class="qty-input" value="1" min="1" max="50" oninput="onQtyChange()" />
+                            <button type="button" class="qty-btn" id="qty-plus" onclick="changeQty(1)">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="total-display">
+                        <span class="total-label">Total Amount</span>
+                        <span class="total-amount" id="total-amount">₹0</span>
+                    </div>
+
+                    <!-- User Info -->
+                    <div class="form-group">
+                        <label for="user-name">Full Name</label>
+                        <input type="text" id="user-name" placeholder="Your full name" />
+                        <div class="field-error" id="name-error">Please enter your name</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">Email Address</label>
+                        <input type="email" id="user-email" placeholder="you@example.com" />
+                        <div class="field-error" id="email-error">Please enter a valid email address</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-phone">Phone Number</label>
+                        <input type="tel" id="user-phone" placeholder="10-digit phone number" maxlength="10" />
+                        <div class="field-error" id="phone-error">Please enter a valid 10-digit phone number</div>
+                    </div>
+
+                    <button class="btn-submit" id="btn-submit" onclick="submitVote()">Proceed to Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 ChoosePure. All rights reserved. | <a href="/privacy-policy.html">Privacy Policy</a> | <a href="/terms-conditions.html">Terms</a> | <a href="/refund-policy.html">Refund Policy</a></p>
+    </footer>
+
+    <script>
+        const API_BASE = 'https://api.choosepure.in';
+        let products = [];
+        let selectedProduct = null;
+
+        // ── Fetch Products ──
+        async function fetchProducts() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const grid = document.getElementById('product-grid');
+            const empty = document.getElementById('empty');
+
+            loading.style.display = 'flex';
+            error.style.display = 'none';
+            grid.style.display = 'none';
+            empty.style.display = 'none';
+
+            try {
+                const res = await fetch(API_BASE + '/api/polls/products');
+                if (!res.ok) throw new Error('Failed to fetch products');
+                const data = await res.json();
+                products = data.products || data;
+                loading.style.display = 'none';
+
+                if (!products.length) {
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                grid.innerHTML = products.map(renderCard).join('');
+                grid.style.display = 'grid';
+            } catch (err) {
+                loading.style.display = 'none';
+                document.getElementById('error-message').textContent =
+                    'Unable to connect. Please check your internet connection and try again.';
+                error.style.display = 'block';
+            }
+        }
+
+        function renderCard(product) {
+            const id = product._id || product.id;
+            return `
+                <div class="product-card">
+                    <img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" class="product-image" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23E8F0ED%22 width=%22300%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%236B6B6B%22 font-size=%2214%22>No Image</text></svg>'" />
+                    <div class="product-info">
+                        <div class="product-name">${escapeHtml(product.name)}</div>
+                        <div class="product-description">${escapeHtml(product.description)}</div>
+                        <div class="product-meta">
+                            <span class="product-amount">₹${product.minAmount} / vote</span>
+                            <span class="product-votes">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-6 0v4"/><path d="M18 8H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2z"/></svg>
+                                ${product.totalVotes} votes
+                            </span>
+                        </div>
+                        <button class="btn-vote" onclick='openModal(${JSON.stringify(id)})'>Vote for This Product</button>
+                    </div>
+                </div>`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ── Modal ──
+        function openModal(productId) {
+            selectedProduct = products.find(p => (p._id || p.id) === productId);
+            if (!selectedProduct) return;
+
+            document.getElementById('modal-product-name').textContent = 'Vote for ' + selectedProduct.name;
+            document.getElementById('qty-input').value = 1;
+            updateTotal();
+            clearValidation();
+            document.getElementById('modal-status').className = 'status-message';
+            document.getElementById('modal-status').style.display = 'none';
+            document.getElementById('vote-form-container').style.display = 'block';
+            document.getElementById('btn-submit').disabled = false;
+            document.getElementById('btn-submit').textContent = 'Proceed to Payment';
+            document.getElementById('vote-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('vote-modal').classList.remove('active');
+            document.body.style.overflow = '';
+            selectedProduct = null;
+        }
+
+        // Close modal on overlay click
+        document.getElementById('vote-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ── Quantity ──
+        function changeQty(delta) {
+            const input = document.getElementById('qty-input');
+            let val = parseInt(input.value) || 1;
+            val = Math.min(50, Math.max(1, val + delta));
+            input.value = val;
+            updateTotal();
+        }
+
+        function onQtyChange() {
+            const input = document.getElementById('qty-input');
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 50) val = 50;
+            input.value = val;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            if (!selectedProduct) return;
+            const qty = parseInt(document.getElementById('qty-input').value) || 1;
+            const total = qty * selectedProduct.minAmount;
+            document.getElementById('total-amount').textContent = '₹' + total;
+            document.getElementById('qty-minus').disabled = qty <= 1;
+            document.getElementById('qty-plus').disabled = qty >= 50;
+        }
+
+        // ── Validation ──
+        function clearValidation() {
+            ['name', 'email', 'phone'].forEach(f => {
+                document.getElementById('user-' + f).classList.remove('input-error');
+                document.getElementById(f + '-error').classList.remove('visible');
+            });
+            document.getElementById('user-name').value = '';
+            document.getElementById('user-email').value = '';
+            document.getElementById('user-phone').value = '';
+        }
+
+        function validateForm() {
+            let valid = true;
+            const name = document.getElementById('user-name').value.trim();
+            const email = document.getElementById('user-email').value.trim();
+            const phone = document.getElementById('user-phone').value.trim();
+
+            // Reset
+            ['name', 'email', 'phone'].forEach(f => {
+                document.getElementById('user-' + f).classList.remove('input-error');
+                document.getElementById(f + '-error').classList.remove('visible');
+            });
+
+            if (!name) {
+                document.getElementById('user-name').classList.add('input-error');
+                document.getElementById('name-error').classList.add('visible');
+                valid = false;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                document.getElementById('user-email').classList.add('input-error');
+                document.getElementById('email-error').classList.add('visible');
+                valid = false;
+            }
+            if (!phone || !/^\d{10}$/.test(phone)) {
+                document.getElementById('user-phone').classList.add('input-error');
+                document.getElementById('phone-error').classList.add('visible');
+                valid = false;
+            }
+            return valid ? { name, email, phone } : null;
+        }
+
+        // ── Submit Vote & Razorpay ──
+        async function submitVote() {
+            const userInfo = validateForm();
+            if (!userInfo) return;
+
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            const statusEl = document.getElementById('modal-status');
+            statusEl.style.display = 'none';
+
+            const voteCount = parseInt(document.getElementById('qty-input').value) || 1;
+            const productId = selectedProduct._id || selectedProduct.id;
+            const amount = voteCount * selectedProduct.minAmount;
+
+            // Track vote initiation
+            trackVoteInitiation(selectedProduct.name, voteCount, amount);
+
+            try {
+                const res = await fetch(API_BASE + '/api/polls/vote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productId: productId,
+                        voteCount: voteCount,
+                        userName: userInfo.name,
+                        userEmail: userInfo.email,
+                        userPhone: userInfo.phone
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to create order');
+
+                // Open Razorpay
+                const options = {
+                    key: data.key,
+                    amount: data.amount,
+                    currency: 'INR',
+                    name: 'ChoosePure',
+                    description: 'Vote for Product Testing',
+                    image: 'https://choosepure.in/public/logo.png',
+                    order_id: data.orderId,
+                    prefill: {
+                        name: userInfo.name,
+                        email: userInfo.email,
+                        contact: userInfo.phone
+                    },
+                    theme: { color: '#1F6B4E' },
+                    handler: async function(response) {
+                        await verifyPayment(response, productId, voteCount, userInfo, amount);
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            showStatus('cancelled', 'Payment was cancelled. Your votes were not recorded.');
+                            btn.disabled = false;
+                            btn.textContent = 'Proceed to Payment';
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function(response) {
+                    showStatus('error', response.error.description || 'Payment failed. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = 'Proceed to Payment';
+                });
+                rzp.open();
+
+            } catch (err) {
+                showStatus('error', err.message || 'Something went wrong. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Proceed to Payment';
+            }
+        }
+
+        async function verifyPayment(response, productId, voteCount, userInfo, amount) {
+            const btn = document.getElementById('btn-submit');
+            try {
+                const res = await fetch(API_BASE + '/api/polls/verify-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        productId: productId,
+                        voteCount: voteCount,
+                        userName: userInfo.name,
+                        userEmail: userInfo.email,
+                        userPhone: userInfo.phone
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Payment verification failed');
+
+                // Track successful purchase
+                trackPurchase(amount);
+
+                // Update local vote count
+                const updatedCount = data.updatedVoteCount || (selectedProduct.totalVotes + voteCount);
+                const product = products.find(p => (p._id || p.id) === productId);
+                if (product) product.totalVotes = updatedCount;
+
+                // Show success
+                document.getElementById('vote-form-container').style.display = 'none';
+                showStatus('success',
+                    `Thank you! Your ${voteCount} vote${voteCount > 1 ? 's' : ''} for ${selectedProduct.name} ${voteCount > 1 ? 'have' : 'has'} been recorded. Total votes: ${updatedCount}`
+                );
+
+                // Refresh grid
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = products.map(renderCard).join('');
+
+            } catch (err) {
+                showStatus('error', err.message || 'Payment verification failed. Please contact support.');
+                btn.disabled = false;
+                btn.textContent = 'Proceed to Payment';
+            }
+        }
+
+        function showStatus(type, message) {
+            const el = document.getElementById('modal-status');
+            el.className = 'status-message ' + type;
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        // ── Analytics Tracking ──
+        function trackVoteInitiation(productName, voteCount, amount) {
+            try {
+                // GA4
+                gtag('event', 'begin_checkout', {
+                    currency: 'INR',
+                    value: amount,
+                    items: [{ item_name: productName, quantity: voteCount, price: amount / voteCount }]
+                });
+                // Meta Pixel
+                fbq('track', 'InitiateCheckout', {
+                    content_name: productName,
+                    num_items: voteCount,
+                    value: amount,
+                    currency: 'INR'
+                });
+                // Mixpanel
+                mixpanel.track('Vote Payment Initiated', {
+                    product_name: productName,
+                    vote_count: voteCount,
+                    amount: amount
+                });
+            } catch (e) { /* analytics should not block */ }
+        }
+
+        function trackPurchase(amount) {
+            try {
+                // GA4
+                gtag('event', 'purchase', {
+                    currency: 'INR',
+                    value: amount,
+                    transaction_id: 'vote_' + Date.now()
+                });
+                // Meta Pixel
+                fbq('track', 'Purchase', {
+                    value: amount,
+                    currency: 'INR'
+                });
+                // Mixpanel
+                mixpanel.track('Vote Payment Completed', {
+                    amount: amount
+                });
+            } catch (e) { /* analytics should not block */ }
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchProducts();
+            // Mixpanel page view
+            try { mixpanel.track('Polling Page Viewed'); } catch(e) {}
+        });
+    </script>
+</body>
+</html>
