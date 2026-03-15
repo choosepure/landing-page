@@ -527,6 +527,132 @@
         }
         .footer a:hover { text-decoration: underline; }
 
+        /* Suggestion Form */
+        .suggest-section {
+            max-width: 600px;
+            margin: 48px auto;
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #E8F0ED;
+        }
+        .suggest-section h2 {
+            font-size: 24px;
+            color: var(--deep-leaf-green);
+            margin: 0 0 8px;
+        }
+        .suggest-section .section-desc {
+            color: var(--lab-grey);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .suggest-section .form-row {
+            margin-bottom: 16px;
+        }
+        .suggest-section label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .suggest-section input, .suggest-section textarea, .suggest-section select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #E0EBE6;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: var(--font-primary);
+            background: #FAFBFA;
+            transition: border-color 0.2s;
+        }
+        .suggest-section input:focus, .suggest-section textarea:focus, .suggest-section select:focus {
+            outline: none;
+            border-color: var(--deep-leaf-green);
+            background: white;
+        }
+        .suggest-section textarea { resize: vertical; min-height: 60px; }
+        .suggest-section .field-err {
+            color: #D62828;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        .suggest-section .btn-suggest {
+            width: 100%;
+            padding: 12px;
+            background: var(--deep-leaf-green);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        .suggest-section .btn-suggest:hover { background: #185A3F; }
+        .suggest-section .btn-suggest:disabled { background: #8FA39A; cursor: not-allowed; }
+        .suggest-msg {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .suggest-msg.success { display: block; background: #E8F5E9; color: #2E7D32; border: 1px solid #81C784; }
+        .suggest-msg.error { display: block; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; }
+
+        /* Community Suggestions */
+        .suggestions-section {
+            max-width: 800px;
+            margin: 0 auto 48px;
+        }
+        .suggestions-section h2 {
+            font-size: 24px;
+            color: var(--deep-leaf-green);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .suggestion-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #E8F0ED;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .upvote-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            background: #F0F8F5;
+            border: 2px solid #D4E8DF;
+            border-radius: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 56px;
+            font-family: var(--font-primary);
+        }
+        .upvote-btn:hover { background: #D4E8DF; border-color: var(--deep-leaf-green); }
+        .upvote-btn.upvoted { background: var(--deep-leaf-green); border-color: var(--deep-leaf-green); color: white; }
+        .upvote-btn .arrow { font-size: 16px; line-height: 1; }
+        .upvote-btn .count { font-size: 14px; font-weight: 700; }
+        .suggestion-info { flex: 1; }
+        .suggestion-info .sg-name { font-size: 16px; font-weight: 600; color: #0F2419; margin: 0 0 4px; }
+        .suggestion-info .sg-cat { display: inline-block; background: #F0F8F5; color: var(--deep-leaf-green); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 6px; }
+        .suggestion-info .sg-reason { font-size: 13px; color: var(--lab-grey); margin: 0 0 6px; }
+        .suggestion-info .sg-meta { font-size: 12px; color: #999; }
+        .suggestions-empty { text-align: center; color: var(--lab-grey); padding: 32px; font-size: 14px; }
+        .suggestions-loading { text-align: center; padding: 32px; color: var(--lab-grey); }
+
         /* Responsive */
         @media (max-width: 768px) {
             .hero h1 { font-size: 28px; }
@@ -632,6 +758,56 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Suggest a Product -->
+    <div class="suggest-section">
+        <h2>💡 Suggest a Product</h2>
+        <p class="section-desc">Want a product tested? Suggest it and the community can upvote it.</p>
+        <div id="suggest-msg" class="suggest-msg"></div>
+        <div class="form-row">
+            <label for="sg-name">Product Name *</label>
+            <input type="text" id="sg-name" placeholder="e.g. Amul Taaza Milk" />
+            <div class="field-err" id="sg-name-err">Product name is required</div>
+        </div>
+        <div class="form-row">
+            <label for="sg-category">Category *</label>
+            <select id="sg-category">
+                <option value="">Select category</option>
+                <option value="Milk">Milk</option>
+                <option value="Ghee">Ghee</option>
+                <option value="Honey">Honey</option>
+                <option value="Baby Food">Baby Food</option>
+                <option value="Snacks">Snacks</option>
+                <option value="Staples">Staples</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Other">Other</option>
+            </select>
+            <div class="field-err" id="sg-cat-err">Category is required</div>
+        </div>
+        <div class="form-row">
+            <label for="sg-reason">Why should this be tested?</label>
+            <textarea id="sg-reason" placeholder="Optional — tell us why this product matters"></textarea>
+        </div>
+        <div class="form-row">
+            <label for="sg-uname">Your Name *</label>
+            <input type="text" id="sg-uname" placeholder="Your name" />
+            <div class="field-err" id="sg-uname-err">Name is required</div>
+        </div>
+        <div class="form-row">
+            <label for="sg-email">Your Email *</label>
+            <input type="email" id="sg-email" placeholder="you@example.com" />
+            <div class="field-err" id="sg-email-err">Please enter a valid email</div>
+        </div>
+        <button class="btn-suggest" id="btn-suggest" onclick="submitSuggestion()">Submit Suggestion</button>
+    </div>
+
+    <!-- Community Suggestions -->
+    <div class="suggestions-section">
+        <h2>🗳️ Community Suggestions</h2>
+        <div id="suggestions-loading" class="suggestions-loading">Loading suggestions...</div>
+        <div id="suggestions-empty" class="suggestions-empty" style="display:none;">No suggestions yet. Be the first to suggest a product!</div>
+        <div id="suggestions-list"></div>
     </div>
 
     <!-- Footer -->
@@ -978,9 +1154,116 @@
         // ── Init ──
         document.addEventListener('DOMContentLoaded', function() {
             fetchProducts();
+            fetchSuggestions();
             // Mixpanel page view
             try { mixpanel.track('Polling Page Viewed'); } catch(e) {}
         });
+
+        // ── Suggestions ──
+        function getUpvotedIds() {
+            try { return JSON.parse(localStorage.getItem('choosepure_upvoted_suggestions') || '[]'); } catch(e) { return []; }
+        }
+        function saveUpvotedId(id) {
+            const ids = getUpvotedIds();
+            if (!ids.includes(id)) { ids.push(id); localStorage.setItem('choosepure_upvoted_suggestions', JSON.stringify(ids)); }
+        }
+
+        async function fetchSuggestions() {
+            const loading = document.getElementById('suggestions-loading');
+            const empty = document.getElementById('suggestions-empty');
+            const list = document.getElementById('suggestions-list');
+            loading.style.display = 'block';
+            empty.style.display = 'none';
+            list.innerHTML = '';
+            try {
+                const res = await fetch(API_BASE + '/api/suggestions');
+                const data = await res.json();
+                loading.style.display = 'none';
+                if (!data.success || !data.suggestions.length) { empty.style.display = 'block'; return; }
+                const upvoted = getUpvotedIds();
+                list.innerHTML = data.suggestions.map(s => {
+                    const isUpvoted = upvoted.includes(s._id);
+                    const firstName = (s.userName || '').split(' ')[0];
+                    const date = new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    return `<div class="suggestion-card">
+                        <button class="upvote-btn ${isUpvoted ? 'upvoted' : ''}" onclick="upvoteSuggestion('${s._id}', this)" ${isUpvoted ? 'title="Already upvoted"' : ''}>
+                            <span class="arrow">▲</span>
+                            <span class="count">${s.upvotes}</span>
+                        </button>
+                        <div class="suggestion-info">
+                            <p class="sg-name">${s.productName}</p>
+                            <span class="sg-cat">${s.category}</span>
+                            ${s.reason ? `<p class="sg-reason">${s.reason}</p>` : ''}
+                            <p class="sg-meta">Suggested by ${firstName} · ${date}</p>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                loading.innerHTML = 'Unable to load suggestions. <a href="#" onclick="fetchSuggestions();return false;">Retry</a>';
+            }
+        }
+
+        async function upvoteSuggestion(id, btn) {
+            const countEl = btn.querySelector('.count');
+            const prev = parseInt(countEl.textContent);
+            countEl.textContent = prev + 1;
+            btn.classList.add('upvoted');
+            try {
+                const res = await fetch(API_BASE + '/api/suggestions/' + id + '/upvote', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    countEl.textContent = data.upvotes;
+                    saveUpvotedId(id);
+                    try { mixpanel.track('Suggestion Upvoted', { suggestion_id: id }); } catch(e) {}
+                } else { countEl.textContent = prev; btn.classList.remove('upvoted'); }
+            } catch(e) { countEl.textContent = prev; btn.classList.remove('upvoted'); }
+        }
+
+        async function submitSuggestion() {
+            // Clear errors
+            document.querySelectorAll('.suggest-section .field-err').forEach(el => el.style.display = 'none');
+            const msgEl = document.getElementById('suggest-msg');
+            msgEl.className = 'suggest-msg'; msgEl.style.display = 'none';
+
+            const productName = document.getElementById('sg-name').value.trim();
+            const category = document.getElementById('sg-category').value;
+            const reason = document.getElementById('sg-reason').value.trim();
+            const userName = document.getElementById('sg-uname').value.trim();
+            const userEmail = document.getElementById('sg-email').value.trim();
+
+            let valid = true;
+            if (!productName) { document.getElementById('sg-name-err').style.display = 'block'; valid = false; }
+            if (!category) { document.getElementById('sg-cat-err').style.display = 'block'; valid = false; }
+            if (!userName) { document.getElementById('sg-uname-err').style.display = 'block'; valid = false; }
+            if (!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) { document.getElementById('sg-email-err').style.display = 'block'; valid = false; }
+            if (!valid) return;
+
+            const btn = document.getElementById('btn-suggest');
+            btn.disabled = true; btn.textContent = 'Submitting...';
+            try {
+                const res = await fetch(API_BASE + '/api/suggestions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productName, category, reason, userName, userEmail })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    msgEl.className = 'suggest-msg success'; msgEl.textContent = 'Suggestion submitted! It will appear after admin approval.'; msgEl.style.display = 'block';
+                    document.getElementById('sg-name').value = '';
+                    document.getElementById('sg-category').value = '';
+                    document.getElementById('sg-reason').value = '';
+                    document.getElementById('sg-uname').value = '';
+                    document.getElementById('sg-email').value = '';
+                    fetchSuggestions();
+                    try { mixpanel.track('Product Suggested', { product_name: productName, category }); } catch(e) {}
+                } else {
+                    msgEl.className = 'suggest-msg error'; msgEl.textContent = data.message || 'Failed to submit. Try again.'; msgEl.style.display = 'block';
+                }
+            } catch(e) {
+                msgEl.className = 'suggest-msg error'; msgEl.textContent = 'Unable to submit. Please check your connection.'; msgEl.style.display = 'block';
+            }
+            btn.disabled = false; btn.textContent = 'Submit Suggestion';
+        }
     </script>
 </body>
 </html>

@@ -41,6 +41,7 @@ let waitlistCollection;
 let usersCollection;
 let productsCollection;
 let voteTransactionsCollection;
+let suggestionsCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -88,6 +89,12 @@ async function connectToDatabase() {
         await voteTransactionsCollection.createIndex({ productId: 1 });
         await voteTransactionsCollection.createIndex({ createdAt: -1 });
         console.log('✅ Vote transactions collection initialized');
+        
+        // Initialize product_suggestions collection
+        suggestionsCollection = db.collection('product_suggestions');
+        await suggestionsCollection.createIndex({ status: 1, upvotes: -1 });
+        await suggestionsCollection.createIndex({ createdAt: -1 });
+        console.log('✅ Product suggestions collection initialized');
         
         // Check if admin user exists
         const adminCount = await usersCollection.countDocuments({ role: 'admin' });
@@ -1535,6 +1542,234 @@ app.post('/api/polls/verify-payment', async (req, res) => {
             success: false, 
             message: 'Payment verification failed' 
         });
+    }
+});
+
+// ==========================================
+// PRODUCT SUGGESTIONS API
+// ==========================================
+
+// Public API: Submit a product suggestion
+app.post('/api/suggestions', async (req, res) => {
+    try {
+        if (!suggestionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { productName, category, reason, userName, userEmail } = req.body;
+
+        // Validate required fields
+        const missing = [];
+        if (!productName) missing.push('productName');
+        if (!category) missing.push('category');
+        if (!userName) missing.push('userName');
+        if (!userEmail) missing.push('userEmail');
+        if (missing.length > 0) {
+            return res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(', ')}` });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userEmail)) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+        }
+
+        const suggestion = {
+            productName,
+            category,
+            reason: reason || '',
+            userName,
+            userEmail,
+            upvotes: 0,
+            status: 'pending',
+            createdAt: new Date()
+        };
+
+        const result = await suggestionsCollection.insertOne(suggestion);
+        suggestion._id = result.insertedId;
+
+        console.log('✅ New product suggestion:', productName, 'by', userName);
+        res.json({ success: true, suggestion });
+    } catch (error) {
+        console.error('❌ Error creating suggestion:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit suggestion' });
+    }
+});
+
+// Public API: List approved suggestions sorted by upvotes descending
+app.get('/api/suggestions', async (req, res) => {
+    try {
+        if (!suggestionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const suggestions = await suggestionsCollection
+            .find({ status: 'approved' })
+            .sort({ upvotes: -1 })
+            .toArray();
+
+        res.json({ success: true, suggestions });
+    } catch (error) {
+        console.error('❌ Error fetching suggestions:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch suggestions' });
+    }
+});
+
+// Public API: Upvote a suggestion
+app.post('/api/suggestions/:id/upvote', async (req, res) => {
+    try {
+        if (!suggestionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const result = await suggestionsCollection.findOneAndUpdate(
+            { _id: new ObjectId(req.params.id) },
+            { $inc: { upvotes: 1 } },
+            { returnDocument: 'after' }
+        );
+
+        if (!result) {
+            return res.status(404).json({ success: false, message: 'Suggestion not found' });
+        }
+
+        res.json({ success: true, upvotes: result.upvotes });
+    } catch (error) {
+        console.error('❌ Error upvoting suggestion:', error);
+        res.status(500).json({ success: false, message: 'Failed to upvote suggestion' });
+    }
+});
+
+// Admin API: List all suggestions (any status)
+app.get('/api/admin/suggestions', authenticateAdmin, async (req, res) => {
+    try {
+        if (!suggestionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const suggestions = await suggestionsCollection
+            .find({})
+            .sort({ createdAt: -1 })
+            .toArray();
+
+        res.json({ success: true, suggestions });
+    } catch (error) {
+        console.error('❌ Error fetching admin suggestions:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch suggestions' });
+    }
+});
+
+// Admin API: Update suggestion status
+app.put('/api/admin/suggestions/:id/status', authenticateAdmin, async (req, res) => {
+    try {
+        if (!suggestionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { status } = req.body;
+        const validStatuses = ['pending', 'approved', 'rejected'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ success: false, message: 'Status must be one of: pending, approved, rejected' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const result = await suggestionsCollection.findOneAndUpdate(
+            { _id: new ObjectId(req.params.id) },
+            { $set: { status, updatedAt: new Date() } },
+            { returnDocument: 'after' }
+        );
+
+        if (!result) {
+            return res.status(404).json({ success: false, message: 'Suggestion not found' });
+        }
+
+        res.json({ success: true, suggestion: result });
+    } catch (error) {
+        console.error('❌ Error updating suggestion status:', error);
+        res.status(500).json({ success: false, message: 'Failed to update suggestion status' });
+    }
+});
+
+// Admin API: Delete a suggestion
+app.delete('/api/admin/suggestions/:id', authenticateAdmin, async (req, res) => {
+    try {
+        if (!suggestionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const result = await suggestionsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Suggestion not found' });
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ Error deleting suggestion:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete suggestion' });
+    }
+});
+
+// Admin API: Convert approved suggestion to poll product
+app.post('/api/admin/suggestions/:id/convert', authenticateAdmin, async (req, res) => {
+    try {
+        if (!suggestionsCollection || !productsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { imageUrl, description, minAmount } = req.body;
+
+        // Validate required fields
+        const missing = [];
+        if (!imageUrl) missing.push('imageUrl');
+        if (!description) missing.push('description');
+        if (!minAmount) missing.push('minAmount');
+        if (missing.length > 0) {
+            return res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(', ')}` });
+        }
+
+        if (Number(minAmount) <= 0) {
+            return res.status(400).json({ success: false, message: 'Minimum amount must be greater than 0' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const suggestion = await suggestionsCollection.findOne({ _id: new ObjectId(req.params.id) });
+
+        if (!suggestion) {
+            return res.status(404).json({ success: false, message: 'Suggestion not found' });
+        }
+
+        if (suggestion.status !== 'approved') {
+            return res.status(400).json({ success: false, message: 'Only approved suggestions can be converted' });
+        }
+
+        // Create product from suggestion
+        const product = {
+            name: suggestion.productName,
+            imageUrl,
+            description,
+            minAmount: Number(minAmount),
+            totalVotes: 0,
+            status: 'active',
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+
+        const productResult = await productsCollection.insertOne(product);
+        product._id = productResult.insertedId;
+
+        // Update suggestion status to converted
+        await suggestionsCollection.updateOne(
+            { _id: new ObjectId(req.params.id) },
+            { $set: { status: 'converted', updatedAt: new Date() } }
+        );
+
+        console.log('✅ Suggestion converted to product:', suggestion.productName);
+        res.json({ success: true, product });
+    } catch (error) {
+        console.error('❌ Error converting suggestion:', error);
+        res.status(500).json({ success: false, message: 'Failed to convert suggestion' });
     }
 });
 

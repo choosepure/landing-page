@@ -365,6 +365,55 @@
                     <tbody id="transactions-body"></tbody>
                 </table>
             </div>
+
+            <!-- Product Suggestions Management -->
+            <div class="table-container" style="margin-top: 20px;">
+                <h2 style="margin-bottom: 20px;">Product Suggestions</h2>
+                <div id="suggestions-admin-loading" class="loading">Loading suggestions...</div>
+                <table id="suggestions-admin-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Reason</th>
+                            <th>Submitter</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Upvotes</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suggestions-admin-body"></tbody>
+                </table>
+                <div id="suggestions-admin-empty" style="display:none; text-align:center; color:#666; padding:20px;">No suggestions yet.</div>
+            </div>
+
+            <!-- Convert to Product Modal -->
+            <div id="convert-modal" class="modal" style="display:none;">
+                <div class="modal-content" style="max-width:500px;">
+                    <span class="close" onclick="document.getElementById('convert-modal').style.display='none'">&times;</span>
+                    <h2>Convert Suggestion to Product</h2>
+                    <input type="hidden" id="convert-suggestion-id" />
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <input type="text" id="convert-name" disabled style="background:#f5f5f5;" />
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL *</label>
+                        <input type="text" id="convert-image" placeholder="https://example.com/image.jpg" />
+                    </div>
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="convert-desc" rows="3" placeholder="Product description" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-family:inherit;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum Amount per Vote (₹) *</label>
+                        <input type="number" id="convert-amount" min="1" placeholder="e.g. 10" />
+                    </div>
+                    <button class="btn" id="btn-convert" onclick="convertSuggestion()" style="background:#1E7F5C;color:white;width:100%;padding:12px;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Convert to Product</button>
+                </div>
+            </div>
         </div>
 
         <!-- Bulk Email Modal -->
@@ -963,6 +1012,109 @@
         // Load polling data on page load
         loadProducts();
         loadTransactions();
+        loadAdminSuggestions();
+
+        // ========== Product Suggestions Admin Functions ==========
+        async function loadAdminSuggestions() {
+            const loading = document.getElementById('suggestions-admin-loading');
+            const table = document.getElementById('suggestions-admin-table');
+            const empty = document.getElementById('suggestions-admin-empty');
+            const tbody = document.getElementById('suggestions-admin-body');
+            try {
+                const res = await fetch(`${POLLING_API_BASE}/api/admin/suggestions`, { credentials: 'include' });
+                const data = await res.json();
+                loading.style.display = 'none';
+                if (!data.success || !data.suggestions.length) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none';
+                table.style.display = 'table';
+                tbody.innerHTML = data.suggestions.map(s => {
+                    const date = new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const statusColors = { pending: '#FFB703', approved: '#2E7D32', rejected: '#D62828', converted: '#1565C0' };
+                    const statusBadge = `<span style="background:${statusColors[s.status] || '#666'};color:white;padding:2px 8px;border-radius:4px;font-size:12px;">${s.status}</span>`;
+                    let actions = '';
+                    if (s.status === 'pending') {
+                        actions = `<button class="btn btn-small" style="background:#2E7D32;color:white;margin:2px;" onclick="updateSuggestionStatus('${s._id}','approved')">Approve</button>
+                                   <button class="btn btn-small" style="background:#D62828;color:white;margin:2px;" onclick="updateSuggestionStatus('${s._id}','rejected')">Reject</button>`;
+                    } else if (s.status === 'approved') {
+                        actions = `<button class="btn btn-small" style="background:#1565C0;color:white;margin:2px;" onclick="openConvertModal('${s._id}','${s.productName.replace(/'/g,"\\'")}')">Convert</button>
+                                   <button class="btn btn-small" style="background:#D62828;color:white;margin:2px;" onclick="updateSuggestionStatus('${s._id}','rejected')">Reject</button>`;
+                    } else if (s.status === 'converted') {
+                        actions = '<span style="color:#1565C0;font-size:12px;">Converted ✓</span>';
+                    }
+                    actions += ` <button class="btn btn-small" style="background:#999;color:white;margin:2px;" onclick="deleteSuggestion('${s._id}')">Delete</button>`;
+                    return `<tr>
+                        <td>${s.productName}</td>
+                        <td>${s.category || '-'}</td>
+                        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(s.reason||'').replace(/"/g,'&quot;')}">${s.reason || '-'}</td>
+                        <td>${s.userName}</td>
+                        <td>${s.userEmail}</td>
+                        <td>${statusBadge}</td>
+                        <td>${s.upvotes}</td>
+                        <td>${date}</td>
+                        <td style="white-space:nowrap;">${actions}</td>
+                    </tr>`;
+                }).join('');
+            } catch(e) {
+                loading.textContent = 'Failed to load suggestions.';
+            }
+        }
+
+        async function updateSuggestionStatus(id, status) {
+            try {
+                const res = await fetch(`${POLLING_API_BASE}/api/admin/suggestions/${id}/status`, {
+                    method: 'PUT', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                const data = await res.json();
+                if (data.success) { loadAdminSuggestions(); } else { alert(data.message || 'Failed to update status'); }
+            } catch(e) { alert('Error updating suggestion status'); }
+        }
+
+        async function deleteSuggestion(id) {
+            if (!confirm('Are you sure you want to delete this suggestion?')) return;
+            try {
+                const res = await fetch(`${POLLING_API_BASE}/api/admin/suggestions/${id}`, {
+                    method: 'DELETE', credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.success) { loadAdminSuggestions(); } else { alert(data.message || 'Failed to delete'); }
+            } catch(e) { alert('Error deleting suggestion'); }
+        }
+
+        function openConvertModal(id, name) {
+            document.getElementById('convert-suggestion-id').value = id;
+            document.getElementById('convert-name').value = name;
+            document.getElementById('convert-image').value = '';
+            document.getElementById('convert-desc').value = '';
+            document.getElementById('convert-amount').value = '';
+            document.getElementById('convert-modal').style.display = 'block';
+        }
+
+        async function convertSuggestion() {
+            const id = document.getElementById('convert-suggestion-id').value;
+            const imageUrl = document.getElementById('convert-image').value.trim();
+            const description = document.getElementById('convert-desc').value.trim();
+            const minAmount = document.getElementById('convert-amount').value;
+            if (!imageUrl || !description || !minAmount) { alert('All fields are required'); return; }
+            const btn = document.getElementById('btn-convert');
+            btn.disabled = true; btn.textContent = 'Converting...';
+            try {
+                const res = await fetch(`${POLLING_API_BASE}/api/admin/suggestions/${id}/convert`, {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageUrl, description, minAmount: Number(minAmount) })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('convert-modal').style.display = 'none';
+                    alert('Suggestion converted to product successfully!');
+                    loadAdminSuggestions();
+                    loadProducts();
+                } else { alert(data.message || 'Failed to convert'); }
+            } catch(e) { alert('Error converting suggestion'); }
+            btn.disabled = false; btn.textContent = 'Convert to Product';
+        }
     </script>
 </body>
 </html>
