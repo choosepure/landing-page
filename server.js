@@ -96,6 +96,11 @@ async function connectToDatabase() {
         await suggestionsCollection.createIndex({ createdAt: -1 });
         console.log('✅ Product suggestions collection initialized');
         
+        // Create indexes for users collection
+        await usersCollection.createIndex({ email: 1 }, { unique: true });
+        await usersCollection.createIndex({ role: 1 });
+        console.log('✅ Users collection indexes created');
+
         // Check if admin user exists
         const adminCount = await usersCollection.countDocuments({ role: 'admin' });
         console.log('👤 Admin users found:', adminCount);
@@ -162,6 +167,472 @@ function authenticateAdmin(req, res, next) {
         });
     }
 }
+
+// User authentication middleware
+async function authenticateUser(req, res, next) {
+    const token = req.cookies.user_token;
+    
+    if (!token) {
+        return res.status(401).json({ 
+            success: false, 
+            message: 'Authentication required' 
+        });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        const { ObjectId } = require('mongodb');
+        const user = await usersCollection.findOne({ 
+            _id: new ObjectId(decoded.id), 
+            role: 'user' 
+        });
+        
+        if (!user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Authentication required' 
+            });
+        }
+        
+        req.user = { 
+            id: user._id, 
+            email: user.email, 
+            name: user.name, 
+            phone: user.phone 
+        };
+        next();
+    } catch (error) {
+        return res.status(401).json({ 
+            success: false, 
+            message: 'Authentication required' 
+        });
+    }
+}
+
+// User registration endpoint
+app.post('/api/user/register', async (req, res) => {
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { name, email, phone, password } = req.body;
+
+        // Validate required fields
+        const missingFields = [];
+        if (!name) missingFields.push('name');
+        if (!email) missingFields.push('email');
+        if (!phone) missingFields.push('phone');
+        if (!password) missingFields.push('password');
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Missing required fields: ${missingFields.join(', ')}` 
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid email address' 
+            });
+        }
+
+        // Validate phone (exactly 10 digits)
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid 10-digit phone number' 
+            });
+        }
+
+        // Validate password length
+        if (password.length < 8) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Password must be at least 8 characters' 
+            });
+        }
+
+        // Check email uniqueness
+        const existingUser = await usersCollection.findOne({ email: email });
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This email is already registered' 
+            });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Insert user document
+        const result = await usersCollection.insertOne({
+            name,
+            email,
+            phone,
+            password: hashedPassword,
+            role: 'user',
+            createdAt: new Date()
+        });
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { 
+                id: result.insertedId, 
+                email: email, 
+                role: 'user' 
+            },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // Set httpOnly cookie
+        res.cookie('user_token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        console.log('✅ User registered:', email);
+
+        res.json({ 
+            success: true, 
+            user: { name, email } 
+        });
+    } catch (error) {
+        console.error('❌ Registration error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Registration failed' 
+        });
+    }
+});
+
+// User login endpoint
+app.post('/api/user/login', async (req, res) => {
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { email, password } = req.body;
+
+        // Validate required fields
+        if (!email || !password) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Email and password are required' 
+            });
+        }
+
+        // Find user with matching email and role
+        const user = await usersCollection.findOne({ 
+            email: email, 
+            role: 'user' 
+        });
+
+        if (!user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, user.password);
+
+        if (!isValidPassword) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
+        }
+
+        // Update last_login timestamp
+        await usersCollection.updateOne(
+            { _id: user._id },
+            { $set: { last_login: new Date() } }
+        );
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { 
+                id: user._id, 
+                email: user.email, 
+                role: 'user' 
+            },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // Set httpOnly cookie
+        res.cookie('user_token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        console.log('✅ User logged in:', email);
+
+        res.json({ 
+            success: true, 
+            user: { 
+                name: user.name, 
+                email: user.email, 
+                phone: user.phone 
+            } 
+        });
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Login failed' 
+        });
+    }
+});
+
+// User logout endpoint
+app.post('/api/user/logout', (req, res) => {
+    res.clearCookie('user_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none'
+    });
+    res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Get current user profile (session check)
+app.get('/api/user/me', authenticateUser, (req, res) => {
+    res.json({ 
+        success: true, 
+        user: { 
+            name: req.user.name, 
+            email: req.user.email, 
+            phone: req.user.phone 
+        } 
+    });
+});
+
+// User forgot password endpoint
+app.post('/api/user/forgot-password', async (req, res) => {
+    const { email } = req.body;
+
+    // Always return this same response to prevent email enumeration
+    const successResponse = {
+        success: true,
+        message: 'If the email exists, a reset link has been sent'
+    };
+
+    if (!email) {
+        return res.status(400).json({
+            success: false,
+            message: 'Email is required'
+        });
+    }
+
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database not connected'
+            });
+        }
+
+        // Find user with role "user"
+        const user = await usersCollection.findOne({
+            email: email,
+            role: 'user'
+        });
+
+        // If user not found, still return success to prevent email enumeration
+        if (!user) {
+            console.log('⚠️ User password reset requested for non-existent email:', email);
+            return res.json(successResponse);
+        }
+
+        // Generate JWT reset token (valid for 1 hour)
+        const resetToken = jwt.sign(
+            { id: user._id, email: user.email },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        // Store reset token and expiry in user document
+        await usersCollection.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    reset_token: resetToken,
+                    reset_token_expires: new Date(Date.now() + 3600000) // 1 hour
+                }
+            }
+        );
+
+        // Send password reset email via Mailgun
+        const resetLink = `https://choosepure.in/user/reset-password?token=${resetToken}`;
+
+        console.log('📧 Sending user password reset email to:', email);
+        console.log('🔗 Reset link:', resetLink);
+
+        try {
+            const messageData = {
+                from: process.env.MAILGUN_FROM_EMAIL ? `ChoosePure <${process.env.MAILGUN_FROM_EMAIL}>` : 'ChoosePure <support@choosepure.in>',
+                to: email,
+                subject: 'Password Reset - ChoosePure',
+                'h:Reply-To': 'support@choosepure.in',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #1E7F5C;">Password Reset Request</h2>
+                        <p>You requested to reset your password for your ChoosePure account.</p>
+                        
+                        <p>Click the button below to reset your password:</p>
+                        
+                        <div style="margin: 30px 0;">
+                            <a href="${resetLink}" 
+                               style="background: #1E7F5C; color: white; padding: 15px 30px; 
+                                      text-decoration: none; border-radius: 8px; display: inline-block;">
+                                Reset Password
+                            </a>
+                        </div>
+                        
+                        <p style="color: #666; font-size: 14px;">
+                            This link will expire in 1 hour.<br>
+                            If you didn't request this, please ignore this email.
+                        </p>
+                        
+                        <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                            Or copy and paste this link:<br>
+                            ${resetLink}
+                        </p>
+                    </div>
+                `
+            };
+
+            const result = await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', messageData);
+            console.log('✅ User password reset email sent successfully:', result);
+        } catch (emailError) {
+            // Log error server-side but still return success to user
+            console.error('❌ Failed to send user reset email:', emailError);
+            console.error('Error details:', {
+                message: emailError.message,
+                status: emailError.status,
+                details: emailError.details
+            });
+        }
+
+        res.json(successResponse);
+    } catch (error) {
+        console.error('❌ User forgot password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred. Please try again.'
+        });
+    }
+});
+
+// User reset password endpoint
+app.post('/api/user/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid or expired reset token'
+        });
+    }
+
+    if (password.length < 8) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password must be at least 8 characters'
+        });
+    }
+
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database not connected'
+            });
+        }
+
+        // Verify JWT token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired reset token'
+            });
+        }
+
+        // Find user with matching reset_token
+        const { ObjectId } = require('mongodb');
+        const user = await usersCollection.findOne({
+            _id: new ObjectId(decoded.id),
+            reset_token: token,
+            role: 'user'
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired reset token'
+            });
+        }
+
+        // Check if reset token has expired
+        if (user.reset_token_expires && new Date() > new Date(user.reset_token_expires)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired reset token'
+            });
+        }
+
+        // Hash new password with bcrypt (cost 12)
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Update password and clear reset token fields
+        await usersCollection.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    password: hashedPassword,
+                    reset_token: null,
+                    reset_token_expires: null
+                }
+            }
+        );
+
+        console.log('✅ User password reset successful for:', user.email);
+
+        res.json({
+            success: true,
+            message: 'Password reset successfully'
+        });
+    } catch (error) {
+        console.error('❌ User reset password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred. Please try again.'
+        });
+    }
+});
 
 // Send email to user
 async function sendUserEmail(email, name, whatsappLink) {
@@ -526,6 +997,11 @@ app.get('/admin/forgot-password', (req, res) => {
 // Serve reset password page
 app.get('/admin/reset-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin-reset-password.html'));
+});
+
+// Serve user reset password page
+app.get('/user/reset-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'user-reset-password.html'));
 });
 
 // Admin login endpoint
@@ -1359,8 +1835,8 @@ app.get('/api/polls/products', async (req, res) => {
     }
 });
 
-// Public API: Create Razorpay order for vote payment
-app.post('/api/polls/vote', async (req, res) => {
+// Authenticated API: Create Razorpay order for vote payment
+app.post('/api/polls/vote', authenticateUser, async (req, res) => {
     try {
         if (!productsCollection) {
             return res.status(500).json({ 
@@ -1369,33 +1845,10 @@ app.post('/api/polls/vote', async (req, res) => {
             });
         }
 
-        const { productId, voteCount, userName, userEmail, userPhone } = req.body;
-
-        // Validate required fields
-        if (!userName || !userEmail || !userPhone) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Name, email, and phone are required' 
-            });
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(userEmail)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please enter a valid email address' 
-            });
-        }
-
-        // Validate phone (10 digits)
-        const phoneRegex = /^[0-9]{10}$/;
-        if (!phoneRegex.test(userPhone)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please enter a valid 10-digit phone number' 
-            });
-        }
+        const { productId, voteCount } = req.body;
+        const userName = req.user.name;
+        const userEmail = req.user.email;
+        const userPhone = req.user.phone;
 
         // Validate voteCount (1–50)
         if (!voteCount || typeof voteCount !== 'number' || voteCount < 1 || voteCount > 50 || !Number.isInteger(voteCount)) {
@@ -1456,8 +1909,8 @@ app.post('/api/polls/vote', async (req, res) => {
     }
 });
 
-// Public API: Verify payment and record votes
-app.post('/api/polls/verify-payment', async (req, res) => {
+// Authenticated API: Verify payment and record votes
+app.post('/api/polls/verify-payment', authenticateUser, async (req, res) => {
     try {
         if (!productsCollection || !voteTransactionsCollection) {
             return res.status(500).json({ 
@@ -1471,11 +1924,12 @@ app.post('/api/polls/verify-payment', async (req, res) => {
             razorpay_payment_id, 
             razorpay_signature, 
             productId, 
-            voteCount, 
-            userName, 
-            userEmail, 
-            userPhone 
+            voteCount
         } = req.body;
+
+        const userName = req.user.name;
+        const userEmail = req.user.email;
+        const userPhone = req.user.phone;
 
         // Validate required payment fields
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -1514,6 +1968,7 @@ app.post('/api/polls/verify-payment', async (req, res) => {
         await voteTransactionsCollection.insertOne({
             productId: new ObjectId(productId),
             productName: product.name,
+            userId: req.user.id,
             userName,
             userEmail,
             userPhone,
@@ -1552,29 +2007,23 @@ app.post('/api/polls/verify-payment', async (req, res) => {
 // PRODUCT SUGGESTIONS API
 // ==========================================
 
-// Public API: Submit a product suggestion
-app.post('/api/suggestions', async (req, res) => {
+// Protected API: Submit a product suggestion (requires authentication)
+app.post('/api/suggestions', authenticateUser, async (req, res) => {
     try {
         if (!suggestionsCollection) {
             return res.status(500).json({ success: false, message: 'Database not connected' });
         }
 
-        const { productName, category, reason, userName, userEmail } = req.body;
+        const { productName, category, reason } = req.body;
+        const userName = req.user.name;
+        const userEmail = req.user.email;
 
         // Validate required fields
         const missing = [];
         if (!productName) missing.push('productName');
         if (!category) missing.push('category');
-        if (!userName) missing.push('userName');
-        if (!userEmail) missing.push('userEmail');
         if (missing.length > 0) {
             return res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(', ')}` });
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(userEmail)) {
-            return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
         }
 
         const suggestion = {
@@ -1583,6 +2032,7 @@ app.post('/api/suggestions', async (req, res) => {
             reason: reason || '',
             userName,
             userEmail,
+            userId: req.user.id,
             upvotes: 0,
             status: 'pending',
             createdAt: new Date()
@@ -1618,23 +2068,38 @@ app.get('/api/suggestions', async (req, res) => {
     }
 });
 
-// Public API: Upvote a suggestion
-app.post('/api/suggestions/:id/upvote', async (req, res) => {
+// Authenticated API: Upvote a suggestion
+app.post('/api/suggestions/:id/upvote', authenticateUser, async (req, res) => {
     try {
         if (!suggestionsCollection) {
             return res.status(500).json({ success: false, message: 'Database not connected' });
         }
 
         const { ObjectId } = require('mongodb');
-        const result = await suggestionsCollection.findOneAndUpdate(
-            { _id: new ObjectId(req.params.id) },
-            { $inc: { upvotes: 1 } },
-            { returnDocument: 'after' }
-        );
+        const suggestionId = new ObjectId(req.params.id);
+        const userId = req.user.id;
 
-        if (!result) {
+        // Check if user has already upvoted this suggestion
+        const suggestion = await suggestionsCollection.findOne({ _id: suggestionId });
+
+        if (!suggestion) {
             return res.status(404).json({ success: false, message: 'Suggestion not found' });
         }
+
+        const upvotedBy = suggestion.upvotedBy || [];
+        if (upvotedBy.some(id => id.toString() === userId.toString())) {
+            return res.status(400).json({ success: false, message: 'You have already upvoted this suggestion' });
+        }
+
+        // Add user to upvotedBy array and increment upvotes
+        const result = await suggestionsCollection.findOneAndUpdate(
+            { _id: suggestionId },
+            { 
+                $inc: { upvotes: 1 },
+                $addToSet: { upvotedBy: userId }
+            },
+            { returnDocument: 'after' }
+        );
 
         res.json({ success: true, upvotes: result.upvotes });
     } catch (error) {
