@@ -919,6 +919,19 @@
         .lab-badge span:first-child {
             font-size: 18px;
         }
+        .quotation-link {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--deep-leaf-green);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .quotation-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -1011,6 +1024,7 @@
                         <span>🏛️</span>
                         <span>Tested by <strong>SGS India Pvt Ltd</strong> · NABL Accredited (ISO 17025) · 8 working days TAT</span>
                     </div>
+                    <a href="/public/sgs-quotation.pdf" target="_blank" class="quotation-link">📄 View Full SGS Quotation (PDF)</a>
                 </div>
             </div>
         </div>
