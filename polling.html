@@ -839,6 +839,87 @@
             cursor: not-allowed;
         }
 
+        /* Testing Cost Info */
+        .testing-info-section {
+            margin-bottom: 40px;
+        }
+        .testing-info-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #E8F0ED;
+        }
+        .testing-info-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .testing-info-icon {
+            font-size: 28px;
+        }
+        .testing-info-header h2 {
+            font-size: 22px;
+            color: var(--deep-leaf-green);
+            margin: 0;
+        }
+        .testing-info-desc {
+            font-size: 15px;
+            color: var(--lab-grey);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .highlight-amount {
+            font-family: var(--font-data);
+            font-weight: 700;
+            color: var(--deep-leaf-green);
+        }
+        .testing-info-panels {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .panel-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #F0F8F5;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .panel-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .panel-item strong {
+            display: block;
+            font-size: 13px;
+            color: #0F2419;
+            margin-bottom: 2px;
+        }
+        .panel-item span {
+            font-size: 12px;
+            color: var(--lab-grey);
+            line-height: 1.4;
+        }
+        .testing-info-footer {
+            border-top: 1px solid #E8F0ED;
+            padding-top: 16px;
+        }
+        .lab-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--grain-brown);
+        }
+        .lab-badge span:first-child {
+            font-size: 18px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .hero h1 { font-size: 28px; }
@@ -852,6 +933,9 @@
             .auth-header-section { border-left: none; padding-left: 0; margin-left: 0; }
             .modal { border-radius: 16px; }
             .auth-modal-content { border-radius: 16px; }
+            .testing-info-card { padding: 20px; }
+            .testing-info-panels { grid-template-columns: 1fr; }
+            .lab-badge { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -880,6 +964,55 @@
         <div class="hero">
             <h1>Vote for What Gets Tested Next</h1>
             <p>Your votes decide which products our community tests. Cast your vote and help parents make informed choices.</p>
+        </div>
+
+        <!-- Testing Cost Info -->
+        <div class="testing-info-section">
+            <div class="testing-info-card">
+                <div class="testing-info-header">
+                    <span class="testing-info-icon">🔬</span>
+                    <h2>Why 610 Votes?</h2>
+                </div>
+                <p class="testing-info-desc">A comprehensive milk test costs <span class="highlight-amount">₹1,81,720</span> (including 18% GST). At ₹299 per vote, we need ~610 votes to fund independent lab testing for each product.</p>
+                
+                <div class="testing-info-panels">
+                    <div class="panel-item">
+                        <span class="panel-icon">🧪</span>
+                        <div>
+                            <strong>Nutritional Profile</strong>
+                            <span>Fat, protein, vitamins, minerals & more</span>
+                        </div>
+                    </div>
+                    <div class="panel-item">
+                        <span class="panel-icon">⚠️</span>
+                        <div>
+                            <strong>Chemical Contaminants</strong>
+                            <span>200+ pesticides, antibiotics, heavy metals, hormones, melamine</span>
+                        </div>
+                    </div>
+                    <div class="panel-item">
+                        <span class="panel-icon">🔍</span>
+                        <div>
+                            <strong>Adulteration & Quality</strong>
+                            <span>20+ adulterant tests for purity verification</span>
+                        </div>
+                    </div>
+                    <div class="panel-item">
+                        <span class="panel-icon">🦠</span>
+                        <div>
+                            <strong>Microbiological Safety</strong>
+                            <span>Bacteria, pathogens & contamination checks</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testing-info-footer">
+                    <div class="lab-badge">
+                        <span>🏛️</span>
+                        <span>Tested by <strong>SGS India Pvt Ltd</strong> · NABL Accredited (ISO 17025) · 8 working days TAT</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Loading State -->
