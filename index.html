@@ -908,6 +908,7 @@
         <div id="waitlist-form">
             <form id="signup-form">
                 <h3>Join the Waitlist</h3>
+                <p style="font-size: 15px; color: #8A6E4B; margin: 0 0 16px; line-height: 1.5;">Join now to access our first independent milk test report 🥛</p>
                 <div id="form-message" class="form-message"></div>
                 <input type="text" name="name" id="name" placeholder="Your name" required />
                 <input type="email" name="email" id="email" placeholder="Email address" required />
@@ -1181,7 +1182,7 @@
                     }
                     
                     messageDiv.className = 'form-message success';
-                    messageDiv.textContent = '🎉 Success! Check your email for the WhatsApp community link.';
+                    messageDiv.innerHTML = '🎉 You\'re in! You\'ll receive our first independent milk test report within 24 hours in your inbox.<br><br>📲 <a href="https://chat.whatsapp.com/BH5yWU8VpS7C73iobfxBPn" target="_blank" style="color: #1F6B4E; font-weight: 600; text-decoration: underline;">Join our WhatsApp community</a> to get the latest updates on food testing and new reports.';
                     messageDiv.style.display = 'block';
                     document.getElementById('signup-form').reset();
                     
