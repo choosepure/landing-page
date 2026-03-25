@@ -786,7 +786,7 @@
         
         <!-- CTA BUTTONS -->
         <div class="cta-buttons">
-            <button class="btn-primary" onclick="trackEvent('cta_click', 'join_waitlist_hero'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">👉 Join the Waitlist</button>
+            <button class="btn-primary" onclick="trackEvent('cta_click', 'get_milk_report_hero'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">🥛 Get Milk Test Report</button>
             <button class="btn-secondary" onclick="trackEvent('cta_click', 'how_it_works'); document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">👉 See How It Works</button>
             <button class="btn-secondary" onclick="trackEvent('vision_click', 'engagement', 'hero'); window.location.href='/vision.html'">🌱 Read Our Vision</button>
             <button class="btn-secondary" onclick="trackEvent('polling_click', 'engagement', 'hero'); window.location.href='/polling'">🗳️ Vote for Products</button>
@@ -817,6 +817,53 @@
                     <path d="M8 12L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <span>100% Transparent</span>
+            </div>
+        </div>
+
+        <!-- 600 Parents Tagline -->
+        <div style="text-align: center; margin: 40px 0 20px; padding: 24px; background: linear-gradient(135deg, #1F6B4E, #2a8a64); border-radius: 16px; color: white;">
+            <p style="font-size: 28px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.02em;">600 parents = 1 product tested</p>
+            <p style="font-size: 15px; opacity: 0.9; margin: 0;">Parents control what gets tested. Not brands. Not ads. You.</p>
+        </div>
+
+        <!-- What You Get -->
+        <div style="background: white; border-radius: 20px; padding: 48px 32px; margin: 32px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #E8F0ED;">
+            <h2 style="font-family: 'Playfair Display', serif; font-size: 32px; color: #1F6B4E; text-align: center; margin-bottom: 32px;">What You Get</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 36px; margin-bottom: 12px;">📊</div>
+                    <h3 style="font-size: 16px; color: #0F2419; margin-bottom: 8px;">Independent Test Reports</h3>
+                    <p style="font-size: 14px; color: #6B6B6B; line-height: 1.5;">Lab-tested results from NABL-accredited labs. No brand influence.</p>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 36px; margin-bottom: 12px;">🗳️</div>
+                    <h3 style="font-size: 16px; color: #0F2419; margin-bottom: 8px;">You Choose What Gets Tested</h3>
+                    <p style="font-size: 14px; color: #6B6B6B; line-height: 1.5;">Vote for the products you want tested. 600 votes = 1 product in the lab.</p>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 36px; margin-bottom: 12px;">👨‍👩‍👧</div>
+                    <h3 style="font-size: 16px; color: #0F2419; margin-bottom: 8px;">Community of Parents</h3>
+                    <p style="font-size: 14px; color: #6B6B6B; line-height: 1.5;">Join a growing community making informed food choices for their families.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testimonials -->
+        <div style="background: white; border-radius: 20px; padding: 48px 32px; margin: 32px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #E8F0ED;">
+            <h2 style="font-family: 'Playfair Display', serif; font-size: 32px; color: #1F6B4E; text-align: center; margin-bottom: 32px;">What Parents Are Saying</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div style="background: #FAFAF7; border-radius: 12px; padding: 24px; border: 1px solid #E8F0ED;">
+                    <p style="font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 12px;">"Finally someone is testing what we actually feed our kids. I've been waiting for something like this."</p>
+                    <p style="font-size: 13px; color: #8A6E4B; font-weight: 600;">— Priya, Mother of 2, Bangalore</p>
+                </div>
+                <div style="background: #FAFAF7; border-radius: 12px; padding: 24px; border: 1px solid #E8F0ED;">
+                    <p style="font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 12px;">"The transparency is what got me. No brand sponsorship, just real lab data. This is what parents need."</p>
+                    <p style="font-size: 13px; color: #8A6E4B; font-weight: 600;">— Rahul, Father of 1, Bangalore</p>
+                </div>
+                <div style="background: #FAFAF7; border-radius: 12px; padding: 24px; border: 1px solid #E8F0ED;">
+                    <p style="font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 12px;">"I voted for milk testing and got the report. Now I know exactly which brand to trust. Worth every rupee."</p>
+                    <p style="font-size: 13px; color: #8A6E4B; font-weight: 600;">— Sneha, Mother of 1, Bangalore</p>
+                </div>
             </div>
         </div>
         
@@ -954,8 +1001,8 @@
     <!-- STICKY CTA BAR -->
     <div class="sticky-cta" id="sticky-cta">
         <div class="sticky-content">
-            <span>Ready to know what's really in your food?</span>
-            <button onclick="trackEvent('cta_click', 'join_waitlist_sticky'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">Join the Waitlist</button>
+            <span>600 parents = 1 product tested. Join us.</span>
+            <button onclick="trackEvent('cta_click', 'get_report_sticky'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">Get Milk Test Report</button>
         </div>
     </div>
     
