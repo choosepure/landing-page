@@ -220,13 +220,14 @@ app.post('/api/user/register', async (req, res) => {
             });
         }
 
-        const { name, email, phone, password } = req.body;
+        const { name, email, phone, pincode, password } = req.body;
 
         // Validate required fields
         const missingFields = [];
         if (!name) missingFields.push('name');
         if (!email) missingFields.push('email');
         if (!phone) missingFields.push('phone');
+        if (!pincode) missingFields.push('pincode');
         if (!password) missingFields.push('password');
 
         if (missingFields.length > 0) {
@@ -279,6 +280,7 @@ app.post('/api/user/register', async (req, res) => {
             name,
             email,
             phone,
+            pincode,
             password: hashedPassword,
             role: 'user',
             createdAt: new Date()

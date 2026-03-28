@@ -750,6 +750,39 @@
             box-shadow: 0 6px 20px rgba(30, 127, 92, 0.4);
         }
         
+
+        /* Auth */
+        .auth-header-section { display: flex; align-items: center; gap: 12px; margin-left: 8px; padding-left: 16px; border-left: 1px solid #E5E5E5; }
+        .auth-signin-link { color: var(--deep-leaf-green); text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font-primary); }
+        .auth-signin-link:hover { opacity: 0.8; }
+        .auth-user-info { display: flex; align-items: center; gap: 10px; font-family: var(--font-primary); }
+        .auth-user-name { font-size: 14px; font-weight: 500; color: var(--deep-leaf-green); }
+        .auth-signout-link { color: var(--lab-grey); text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; }
+        .auth-signout-link:hover { color: var(--fail-red); }
+        .auth-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .auth-modal-overlay.active { display: flex; }
+        .auth-modal-content { background: white; border-radius: 12px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .auth-modal-header { padding: 20px 24px 0; display: flex; justify-content: flex-end; }
+        .auth-modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--lab-grey); padding: 4px; line-height: 1; }
+        .auth-modal-close:hover { color: #0F2419; }
+        .auth-modal-tabs { display: flex; margin: 0 24px; border-bottom: 2px solid #E5E5E5; }
+        .auth-modal-tab { flex: 1; padding: 12px 0; text-align: center; font-size: 15px; font-weight: 600; color: var(--lab-grey); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; font-family: var(--font-primary); transition: color 0.2s; }
+        .auth-modal-tab:hover { color: var(--deep-leaf-green); }
+        .auth-modal-tab.active { color: var(--deep-leaf-green); border-bottom-color: var(--deep-leaf-green); }
+        .auth-modal-form { display: none; padding: 24px; }
+        .auth-modal-form.active { display: block; }
+        .auth-modal-form .form-group { margin-bottom: 16px; }
+        .auth-modal-form .form-group label { display: block; font-size: 14px; font-weight: 500; color: #0F2419; margin-bottom: 6px; }
+        .auth-modal-form .form-group input { width: 100%; padding: 12px 16px; border: 1px solid #D1D1D1; border-radius: 8px; font-size: 14px; font-family: var(--font-primary); background: white; transition: border-color 0.2s; }
+        .auth-modal-form .form-group input:focus { outline: none; border-color: var(--deep-leaf-green); box-shadow: 0 0 0 3px rgba(31,107,78,0.1); }
+        .auth-modal-forgot-link, .auth-modal-back-link { display: inline-block; font-size: 13px; color: var(--deep-leaf-green); text-decoration: none; cursor: pointer; margin-bottom: 16px; font-weight: 500; }
+        .auth-modal-forgot-link:hover, .auth-modal-back-link:hover { text-decoration: underline; }
+        .auth-modal-submit { width: 100%; padding: 12px 24px; background: var(--deep-leaf-green); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font-primary); transition: background 0.2s; }
+        .auth-modal-submit:hover { background: #185A3F; }
+        .auth-modal-submit:disabled { background: #8FA39A; cursor: not-allowed; }
+        .auth-error-message { display: none; padding: 12px 16px; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+        .auth-error-message.visible { display: block; }
+
         @media (max-width: 768px) {
             .share-button {
                 width: 50px;
@@ -1187,6 +1220,10 @@
                     <input type="tel" id="auth-register-phone" placeholder="10-digit phone number" maxlength="10" autocomplete="tel" />
                 </div>
                 <div class="form-group">
+                    <label for="auth-register-pincode">Pincode</label>
+                    <input type="text" id="auth-register-pincode" placeholder="6-digit pincode" maxlength="6" pattern="[0-9]{6}" autocomplete="postal-code" />
+                </div>
+                <div class="form-group">
                     <label for="auth-register-password">Password</label>
                     <input type="password" id="auth-register-password" placeholder="Min 8 characters" autocomplete="new-password" />
                 </div>
@@ -1574,14 +1611,15 @@
             const name = document.getElementById('auth-register-name').value.trim();
             const email = document.getElementById('auth-register-email').value.trim();
             const phone = document.getElementById('auth-register-phone').value.trim();
+            const pincode = document.getElementById('auth-register-pincode').value.trim();
             const password = document.getElementById('auth-register-password').value;
-            if (!name || !email || !phone || !password) { showAuthError(errorEl, 'All fields are required.'); return; }
+            if (!name || !email || !phone || !pincode || !password) { showAuthError(errorEl, 'All fields are required.'); return; }
             const btn = document.getElementById('auth-register-submit');
             btn.disabled = true; btn.textContent = 'Registering...';
             try {
                 const res = await fetch(API_BASE + '/api/user/register', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include', body: JSON.stringify({ name, email, phone, password })
+                    credentials: 'include', body: JSON.stringify({ name, email, phone, pincode, password })
                 });
                 const data = await res.json();
                 if (!res.ok) { showAuthError(errorEl, data.message || 'Registration failed.'); btn.disabled = false; btn.textContent = 'Register'; return; }

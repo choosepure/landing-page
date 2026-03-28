@@ -1354,6 +1354,10 @@
                     <input type="tel" id="auth-register-phone" placeholder="10-digit phone number" maxlength="10" autocomplete="tel" />
                 </div>
                 <div class="form-group">
+                    <label for="auth-register-pincode">Pincode</label>
+                    <input type="text" id="auth-register-pincode" placeholder="6-digit pincode" maxlength="6" pattern="[0-9]{6}" autocomplete="postal-code" />
+                </div>
+                <div class="form-group">
                     <label for="auth-register-password">Password</label>
                     <input type="password" id="auth-register-password" placeholder="Min 8 characters" autocomplete="new-password" />
                 </div>
@@ -1528,8 +1532,9 @@
             const name = document.getElementById('auth-register-name').value.trim();
             const email = document.getElementById('auth-register-email').value.trim();
             const phone = document.getElementById('auth-register-phone').value.trim();
+            const pincode = document.getElementById('auth-register-pincode').value.trim();
             const password = document.getElementById('auth-register-password').value;
-            if (!name || !email || !phone || !password) { showAuthError(errorEl, 'All fields are required.'); return; }
+            if (!name || !email || !phone || !pincode || !password) { showAuthError(errorEl, 'All fields are required.'); return; }
 
             const btn = document.getElementById('auth-register-submit');
             btn.disabled = true; btn.textContent = 'Registering...';
@@ -1538,7 +1543,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ name, email, phone, password })
+                    body: JSON.stringify({ name, email, phone, pincode, password })
                 });
                 const data = await res.json();
                 if (!res.ok) { showAuthError(errorEl, data.message || 'Registration failed.'); btn.disabled = false; btn.textContent = 'Register'; return; }
