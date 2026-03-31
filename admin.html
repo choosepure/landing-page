@@ -416,6 +416,124 @@
             </div>
         </div>
 
+        <!-- Test Reports Management -->
+            <div class="table-container" style="margin-top: 20px;">
+                <h2 style="margin-bottom: 20px;">🧪 Test Reports Management</h2>
+                
+                <!-- Create Report Form -->
+                <div class="actions" style="box-shadow: none; padding: 0; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">Add New Test Report</h3>
+                    <div id="report-message" class="message"></div>
+                    <form id="add-report-form">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Product Name *</label>
+                                <input type="text" id="report-product-name" required placeholder="e.g., Amul Gold Milk">
+                            </div>
+                            <div class="form-group">
+                                <label>Brand Name *</label>
+                                <input type="text" id="report-brand-name" required placeholder="e.g., Amul">
+                            </div>
+                            <div class="form-group">
+                                <label>Category *</label>
+                                <input type="text" id="report-category" required placeholder="e.g., Dairy">
+                            </div>
+                            <div class="form-group">
+                                <label>Image URL *</label>
+                                <input type="url" id="report-image-url" required placeholder="https://example.com/image.jpg">
+                            </div>
+                            <div class="form-group">
+                                <label>Purity Score (0-10) *</label>
+                                <input type="number" id="report-purity-score" required min="0" max="10" step="0.1" placeholder="e.g., 8.5">
+                            </div>
+                            <div class="form-group">
+                                <label>Batch Code</label>
+                                <input type="text" id="report-batch-code" placeholder="e.g., BATCH-2024-001">
+                            </div>
+                            <div class="form-group">
+                                <label>Shelf Life</label>
+                                <input type="text" id="report-shelf-life" placeholder="e.g., 6 months">
+                            </div>
+                            <div class="form-group">
+                                <label>Status Badges (comma-separated)</label>
+                                <input type="text" id="report-status-badges" placeholder="e.g., Recent Test, Top Rated">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Methodology</label>
+                            <input type="text" id="report-methodology" placeholder="e.g., FSSAI-accredited lab testing" style="width: 100%;">
+                        </div>
+                        
+                        <!-- Test Parameters Section -->
+                        <div style="margin-top: 15px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label style="font-weight: 600; color: #333;">Test Parameters</label>
+                                <button type="button" class="btn btn-primary btn-small" onclick="addTestParameterRow()">+ Add Parameter</button>
+                            </div>
+                            <div id="test-parameters-container">
+                                <div class="test-param-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 120px 40px; gap: 8px; margin-bottom: 8px; align-items: end;">
+                                    <div>
+                                        <label style="font-size: 12px; color: #666;">Section Name</label>
+                                        <input type="text" class="param-section" placeholder="e.g., Heavy Metals" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 12px; color: #666;">Parameter Name</label>
+                                        <input type="text" class="param-name" placeholder="e.g., Lead" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 12px; color: #666;">Measured Value</label>
+                                        <input type="text" class="param-value" placeholder="e.g., 0.02 mg/kg" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 12px; color: #666;">Acceptable Range</label>
+                                        <input type="text" class="param-range" placeholder="e.g., < 0.1 mg/kg" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 12px; color: #666;">Status</label>
+                                        <select class="param-status" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                                            <option value="pass">Pass</option>
+                                            <option value="warning">Warning</option>
+                                            <option value="fail">Fail</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-danger btn-small" onclick="removeTestParameterRow(this)" style="margin-top: 18px;">✕</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Expert Commentary</label>
+                            <textarea id="report-expert-commentary" rows="3" placeholder="Dr. Aman Mann's expert commentary on the test results..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Create Test Report</button>
+                    </form>
+                </div>
+                
+                <!-- Reports List Table -->
+                <h3 style="margin-bottom: 15px; color: #333;">Existing Reports</h3>
+                <div id="reports-loading" class="loading">Loading reports...</div>
+                <table id="reports-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Score</th>
+                            <th>Badges</th>
+                            <th>Published</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reports-body"></tbody>
+                </table>
+                <div id="reports-empty" style="display:none; text-align:center; color:#666; padding:20px;">No test reports yet.</div>
+            </div>
+        </div>
+
         <!-- Bulk Email Modal -->
         <div id="bulk-email-modal" class="modal">
             <div class="modal-content" style="max-width: 900px;">
@@ -1115,6 +1233,188 @@
             } catch(e) { alert('Error converting suggestion'); }
             btn.disabled = false; btn.textContent = 'Convert to Product';
         }
+
+        // ========== Test Reports Management Functions ==========
+        function addTestParameterRow() {
+            const container = document.getElementById('test-parameters-container');
+            const row = document.createElement('div');
+            row.className = 'test-param-row';
+            row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 120px 40px; gap: 8px; margin-bottom: 8px; align-items: end;';
+            row.innerHTML = `
+                <div>
+                    <input type="text" class="param-section" placeholder="e.g., Heavy Metals" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                </div>
+                <div>
+                    <input type="text" class="param-name" placeholder="e.g., Lead" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                </div>
+                <div>
+                    <input type="text" class="param-value" placeholder="e.g., 0.02 mg/kg" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                </div>
+                <div>
+                    <input type="text" class="param-range" placeholder="e.g., < 0.1 mg/kg" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                </div>
+                <div>
+                    <select class="param-status" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%;">
+                        <option value="pass">Pass</option>
+                        <option value="warning">Warning</option>
+                        <option value="fail">Fail</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-danger btn-small" onclick="removeTestParameterRow(this)">✕</button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeTestParameterRow(btn) {
+            const container = document.getElementById('test-parameters-container');
+            const row = btn.closest('.test-param-row');
+            if (container.children.length > 1) {
+                row.remove();
+            } else {
+                // Clear the last row instead of removing it
+                row.querySelectorAll('input').forEach(input => input.value = '');
+                row.querySelector('.param-status').value = 'pass';
+            }
+        }
+
+        function collectTestParameters() {
+            const rows = document.querySelectorAll('#test-parameters-container .test-param-row');
+            const sectionsMap = {};
+            rows.forEach(row => {
+                const section = row.querySelector('.param-section').value.trim();
+                const name = row.querySelector('.param-name').value.trim();
+                const measuredValue = row.querySelector('.param-value').value.trim();
+                const acceptableRange = row.querySelector('.param-range').value.trim();
+                const status = row.querySelector('.param-status').value;
+                if (section && name) {
+                    if (!sectionsMap[section]) {
+                        sectionsMap[section] = [];
+                    }
+                    sectionsMap[section].push({ name, measuredValue, acceptableRange, status });
+                }
+            });
+            return Object.entries(sectionsMap).map(([section, parameters]) => ({ section, parameters }));
+        }
+
+        document.getElementById('add-report-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const messageDiv = document.getElementById('report-message');
+            const badgesInput = document.getElementById('report-status-badges').value.trim();
+            const statusBadges = badgesInput ? badgesInput.split(',').map(b => b.trim()).filter(b => b) : [];
+
+            const reportData = {
+                productName: document.getElementById('report-product-name').value.trim(),
+                brandName: document.getElementById('report-brand-name').value.trim(),
+                category: document.getElementById('report-category').value.trim(),
+                imageUrl: document.getElementById('report-image-url').value.trim(),
+                purityScore: parseFloat(document.getElementById('report-purity-score').value),
+                testParameters: collectTestParameters(),
+                expertCommentary: document.getElementById('report-expert-commentary').value.trim(),
+                statusBadges: statusBadges,
+                batchCode: document.getElementById('report-batch-code').value.trim(),
+                shelfLife: document.getElementById('report-shelf-life').value.trim(),
+                methodology: document.getElementById('report-methodology').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/admin/reports', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(reportData)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Test report created successfully!';
+                    document.getElementById('add-report-form').reset();
+                    // Reset test parameters to single empty row
+                    const container = document.getElementById('test-parameters-container');
+                    const rows = container.querySelectorAll('.test-param-row');
+                    rows.forEach((row, i) => { if (i > 0) row.remove(); });
+                    const firstRow = container.querySelector('.test-param-row');
+                    if (firstRow) {
+                        firstRow.querySelectorAll('input').forEach(input => input.value = '');
+                        firstRow.querySelector('.param-status').value = 'pass';
+                    }
+                    loadReports();
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = result.message || 'Failed to create report';
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Network error. Please try again.';
+            }
+        });
+
+        async function loadReports() {
+            const loading = document.getElementById('reports-loading');
+            const table = document.getElementById('reports-table');
+            const empty = document.getElementById('reports-empty');
+            const tbody = document.getElementById('reports-body');
+            try {
+                const res = await fetch('/api/admin/reports', { credentials: 'include' });
+                if (res.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                const data = await res.json();
+                loading.style.display = 'none';
+                if (!data.success || !data.reports || !data.reports.length) {
+                    empty.style.display = 'block';
+                    table.style.display = 'none';
+                    return;
+                }
+                empty.style.display = 'none';
+                table.style.display = 'table';
+                tbody.innerHTML = data.reports.map(r => {
+                    const date = new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const badges = (r.statusBadges || []).map(b => `<span style="background:#1E7F5C;color:white;padding:2px 6px;border-radius:4px;font-size:11px;margin:1px;">${b}</span>`).join(' ');
+                    const publishedBadge = r.published !== false
+                        ? '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:4px;font-size:12px;">Yes</span>'
+                        : '<span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:4px;font-size:12px;">No</span>';
+                    const scoreColor = r.purityScore >= 7 ? '#1F6B4E' : r.purityScore >= 4 ? '#FFB703' : '#D62828';
+                    return `<tr>
+                        <td>${r.productName}</td>
+                        <td>${r.brandName}</td>
+                        <td>${r.category}</td>
+                        <td><strong style="color:${scoreColor}">${r.purityScore.toFixed(1)}/10</strong></td>
+                        <td>${badges || '-'}</td>
+                        <td>${publishedBadge}</td>
+                        <td>${date}</td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn btn-danger btn-small" onclick="deleteReport('${r._id}', '${r.productName.replace(/'/g, "\\'")}')">Delete</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch (e) {
+                loading.textContent = 'Failed to load reports.';
+            }
+        }
+
+        async function deleteReport(id, name) {
+            if (!confirm(`Are you sure you want to delete the report for "${name}"?`)) return;
+            try {
+                const res = await fetch(`/api/admin/reports/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadReports();
+                } else {
+                    alert(data.message || 'Failed to delete report');
+                }
+            } catch (e) {
+                alert('Error deleting report. Please try again.');
+            }
+        }
+
+        // Load reports on page load
+        loadReports();
     </script>
 </body>
 </html>

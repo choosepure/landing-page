@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChoosePure – Deep Dive Report</title>
+
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '3534907673428830');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=3534907673428830&ev=PageView&noscript=1"/>
+    </noscript>
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MJ1Y3XWYQ4"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-MJ1Y3XWYQ4', {
+            'send_page_view': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+    </script>
+
+    <!-- Mixpanel -->
+    <script type="text/javascript">
+        (function(e,c){if(!c.__SV){var l,h;window.mixpanel=c;c._i=[];c.init=function(q,r,f){function t(d,a){var g=a.split(".");2==g.length&&(d=d[g[0]],a=g[1]);d[a]=function(){d.push([a].concat(Array.prototype.slice.call(arguments,0)))}}var b=c;"undefined"!==typeof f?b=c[f]=[]:f="mixpanel";b.people=b.people||[];b.toString=function(d){var a="mixpanel";"mixpanel"!==f&&(a+="."+f);d||(a+=" (stub)");return a};b.people.toString=function(){return b.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders start_session_recording stop_session_recording people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)t(b,l[h]);var n="set set_once union unset remove delete".split(" ");b.get_group=function(){function d(p){a[p]=function(){b.push([g,[p].concat(Array.prototype.slice.call(arguments,0))])}}for(var a={},g=["get_group"].concat(Array.prototype.slice.call(arguments,0)),m=0;m<n.length;m++)d(n[m]);return a};c._i.push([q,r,f])};c.__SV=1.2;var k=e.createElement("script");k.type="text/javascript";k.async=!0;k.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";e=e.getElementsByTagName("script")[0];e.parentNode.insertBefore(k,e)}})(document,window.mixpanel||[]);
+        mixpanel.init('6921e08f65e4331fdd48e6a18a822ab4', {
+            autocapture: true,
+            record_sessions_percent: 100,
+        });
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon.png" />
+    <link rel="shortcut icon" href="/public/favicon.png" />
+    <link rel="apple-touch-icon" href="/public/favicon.png" />
+
+    <!-- Meta tags for sharing -->
+    <meta property="og:title" content="ChoosePure – Deep Dive Report" />
+    <meta property="og:description" content="Detailed lab analysis with expert commentary. Independent testing, no brand influence." />
+    <meta property="og:image" content="https://choosepure.in/public/logo.png" />
+    <meta property="og:url" content="https://choosepure.in/deep-dive" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --pure-ivory: #FAFAF7;
+            --deep-leaf-green: #1F6B4E;
+            --grain-brown: #8A6E4B;
+            --lab-grey: #6B6B6B;
+            --mint: #95db93;
+            --warning-amber: #FFB703;
+            --fail-red: #D62828;
+            --font-primary: 'Inter', sans-serif;
+            --font-data: 'Roboto Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-primary);
+            background: var(--pure-ivory);
+            color: var(--lab-grey);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #E5E5E5;
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-logo { height: 72px; }
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .header-nav a {
+            color: var(--deep-leaf-green);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .header-nav a:hover { opacity: 0.8; }
+        .header-nav .nav-cta {
+            background: var(--deep-leaf-green);
+            color: white !important;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .header-nav .nav-cta:hover { background: #185A3F; }
+
+        /* Auth header */
+        .auth-header-section { display: flex; align-items: center; gap: 12px; margin-left: 8px; padding-left: 16px; border-left: 1px solid #E5E5E5; }
+        .auth-user-info { display: flex; align-items: center; gap: 10px; }
+        .auth-user-name { font-size: 14px; font-weight: 500; color: var(--deep-leaf-green); }
+        .auth-signout-link { color: var(--lab-grey); text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; }
+        .auth-signout-link:hover { color: var(--fail-red); }
+
+        /* Container */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 24px 80px;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            font-size: 14px;
+            color: var(--lab-grey);
+            margin-bottom: 24px;
+        }
+        .breadcrumb a {
+            color: var(--deep-leaf-green);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb span { margin: 0 6px; color: #CCC; }
+
+        /* Product header */
+        .product-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 32px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        .product-info { flex: 1; min-width: 280px; }
+        .product-info h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0F2419;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+        .product-category {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--deep-leaf-green);
+            margin-bottom: 16px;
+        }
+        .product-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .product-badges .badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .badge-green { background: #E8F5E9; color: var(--deep-leaf-green); }
+        .badge-amber { background: #FFF8E1; color: #E65100; }
+        .badge-red { background: #FFEBEE; color: var(--fail-red); }
+
+        /* Score circle (large) */
+        .score-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .score-circle-lg {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-data);
+            font-size: 28px;
+            font-weight: 500;
+            color: white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .score-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+        }
+
+        /* Test sections */
+        .test-section {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .test-section-header {
+            padding: 16px 20px;
+            background: var(--pure-ivory);
+            border-bottom: 1px solid #E5E5E5;
+            font-size: 16px;
+            font-weight: 600;
+            color: #0F2419;
+        }
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .test-table th {
+            text-align: left;
+            padding: 12px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--lab-grey);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #E5E5E5;
+        }
+        .test-table td {
+            padding: 12px 20px;
+            font-size: 14px;
+            color: #0F2419;
+            border-bottom: 1px solid #F0F0F0;
+        }
+        .test-table tr:last-child td { border-bottom: none; }
+        .test-table .measured-value {
+            font-family: var(--font-data);
+            font-size: 13px;
+        }
+        .test-table .status-pass { color: var(--deep-leaf-green); font-weight: 600; }
+        .test-table .status-warning { color: var(--warning-amber); font-weight: 600; }
+        .test-table .status-fail { color: var(--fail-red); font-weight: 600; }
+
+        /* Expert commentary */
+        .expert-card {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 24px;
+            display: flex;
+            gap: 20px;
+            margin-bottom: 24px;
+            align-items: flex-start;
+        }
+        .expert-photo {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .expert-content { flex: 1; }
+        .expert-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0F2419;
+            margin-bottom: 2px;
+        }
+        .expert-title {
+            font-size: 13px;
+            color: var(--deep-leaf-green);
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        .expert-quote {
+            font-size: 15px;
+            color: var(--lab-grey);
+            line-height: 1.7;
+            font-style: italic;
+        }
+
+        /* Product image card */
+        .product-image-card {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .product-image-card img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .product-meta { flex: 1; min-width: 200px; }
+        .product-meta-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #F0F0F0;
+            font-size: 14px;
+        }
+        .product-meta-row:last-child { border-bottom: none; }
+        .product-meta-label { color: var(--lab-grey); font-weight: 500; }
+        .product-meta-value { color: #0F2419; font-weight: 600; }
+
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: var(--deep-leaf-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            transition: background 0.2s;
+            margin-bottom: 24px;
+        }
+        .download-btn:hover { background: #185A3F; }
+        .download-btn:disabled { background: #8FA39A; cursor: not-allowed; }
+
+        /* Methodology */
+        .methodology-note {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .methodology-note h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0F2419;
+            margin-bottom: 8px;
+        }
+        .methodology-note p {
+            font-size: 14px;
+            color: var(--lab-grey);
+            line-height: 1.7;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            text-align: center;
+            padding: 80px 24px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #E5E5E5;
+            border-top-color: var(--deep-leaf-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Error state */
+        .error-state {
+            text-align: center;
+            padding: 80px 24px;
+            color: var(--lab-grey);
+        }
+        .error-state .error-icon { font-size: 48px; margin-bottom: 16px; }
+        .error-state h2 { font-size: 20px; color: #0F2419; margin-bottom: 8px; }
+        .error-state p { font-size: 15px; margin-bottom: 16px; }
+        .error-state .retry-btn {
+            padding: 10px 20px;
+            background: var(--deep-leaf-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .error-state .retry-btn:hover { background: #185A3F; }
+
+        /* Footer */
+        .footer {
+            font-size: 13px;
+            color: #7A9188;
+            margin-top: 48px;
+            line-height: 1.6;
+            text-align: center;
+            padding: 0 24px 40px;
+        }
+        .footer a { color: var(--deep-leaf-green); text-decoration: none; margin: 0 8px; }
+
+        @media (max-width: 768px) {
+            .header-nav > a:not(.nav-cta) { display: none; }
+            .nav-cta { padding: 6px 14px !important; font-size: 12px !important; }
+            .auth-header-section { border-left: none; padding-left: 0; margin-left: 0; }
+            .container { padding: 24px 16px 60px; }
+            .product-header { flex-direction: column; align-items: center; text-align: center; }
+            .product-info h1 { font-size: 24px; }
+            .product-badges { justify-content: center; }
+            .expert-card { flex-direction: column; align-items: center; text-align: center; }
+            .product-image-card { flex-direction: column; align-items: center; text-align: center; }
+            .product-image-card img { width: 160px; height: 160px; }
+            .test-table th, .test-table td { padding: 10px 12px; font-size: 12px; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <a href="/"><img src="/public/choosepure-logo.png" alt="ChoosePure" class="header-logo" /></a>
+            <nav class="header-nav">
+                <a href="/">Dashboard</a>
+                <a href="/purity-wall">Lab Reports</a>
+                <a href="/polling">Vote</a>
+                <a href="#" class="nav-cta">Get Report</a>
+                <div id="auth-header-section" class="auth-header-section">
+                    <div id="auth-user-info" class="auth-user-info">
+                        <span>Hi, <span id="auth-user-name"></span></span>
+                        <a id="auth-signout-link" class="auth-signout-link" onclick="handleSignOut()">Sign Out</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Loading -->
+        <div id="loading" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading report...</p>
+        </div>
+
+        <!-- Error state -->
+        <div id="error-state" class="error-state" style="display:none;">
+            <div class="error-icon">⚠️</div>
+            <h2 id="error-title">Unable to load report</h2>
+            <p id="error-message">Please check your internet connection and try again.</p>
+            <button class="retry-btn" onclick="window.location.reload()">Retry</button>
+        </div>
+
+        <!-- Report content (hidden until loaded) -->
+        <div id="report-content" style="display:none;">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="/purity-wall">Products</a>
+                <span>›</span>
+                <a href="/purity-wall" id="breadcrumb-category"></a>
+                <span>›</span>
+                <span id="breadcrumb-product"></span>
+            </nav>
+
+            <!-- Product header with score -->
+            <div class="product-header">
+                <div class="product-info">
+                    <h1 id="product-name"></h1>
+                    <div class="product-category" id="product-category"></div>
+                    <div class="product-badges" id="product-badges"></div>
+                </div>
+                <div class="score-section">
+                    <div class="score-circle-lg" id="score-circle"></div>
+                    <div class="score-label" id="score-label"></div>
+                </div>
+            </div>
+
+            <!-- Test parameter sections -->
+            <div id="test-sections"></div>
+
+            <!-- Expert commentary -->
+            <div id="expert-card" class="expert-card" style="display:none;">
+                <img src="/public/Aman.png" alt="Dr. Aman Mann" class="expert-photo" />
+                <div class="expert-content">
+                    <div class="expert-name">Dr. Aman Mann</div>
+                    <div class="expert-title">Chief Scientific Editor</div>
+                    <p class="expert-quote" id="expert-quote"></p>
+                </div>
+            </div>
+
+            <!-- Product image with meta -->
+            <div id="product-image-card" class="product-image-card" style="display:none;">
+                <img id="product-image" src="" alt="" />
+                <div class="product-meta" id="product-meta"></div>
+            </div>
+
+            <!-- Download buttons -->
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+                <button class="download-btn" id="download-pdf-btn" onclick="downloadPDF()">
+                    📄 Download PDF Report
+                </button>
+            </div>
+
+            <!-- Methodology -->
+            <div id="methodology-section" class="methodology-note" style="display:none;">
+                <h3>Testing Methodology</h3>
+                <p id="methodology-text"></p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Testing conducted in accredited labs. Reports are shared for consumer awareness.<br/>
+            <div style="margin-top: 12px;">
+                <a href="/vision.html">Our Vision</a> |
+                <a href="https://blog.choosepure.in" target="_blank">Blog</a> |
+                <a href="/polling">Product Polling</a> |
+                <a href="/privacy-policy.html">Privacy Policy</a> |
+                <a href="/terms-conditions.html">Terms & Conditions</a> |
+                <a href="/refund-policy.html">Refund Policy</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://api.choosepure.in';
+        let currentUser = null;
+
+        // ── Analytics ──
+        function trackEvent(eventName, eventCategory, eventLabel) {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', eventName, { event_category: eventCategory, event_label: eventLabel });
+            }
+            if (typeof fbq !== 'undefined') {
+                fbq('trackCustom', eventName, { category: eventCategory, label: eventLabel });
+            }
+            if (typeof mixpanel !== 'undefined') {
+                mixpanel.track(eventName, { category: eventCategory, label: eventLabel });
+            }
+        }
+
+        // ── Score helpers ──
+        function getScoreColor(score) {
+            if (score >= 7.0) return '#1F6B4E';
+            if (score >= 4.0) return '#FFB703';
+            return '#D62828';
+        }
+        function formatScore(score) {
+            return parseFloat(score).toFixed(1) + '/10';
+        }
+        function getScoreGrade(score) {
+            if (score >= 7.0) return 'SAFE & GRADE-A';
+            if (score >= 4.0) return 'MODERATE';
+            return 'UNSAFE';
+        }
+        function getBadgeClass(badge) {
+            const lower = (badge || '').toLowerCase();
+            if (lower.includes('alert') || lower.includes('fail')) return 'badge-red';
+            if (lower.includes('warning')) return 'badge-amber';
+            return 'badge-green';
+        }
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        // ── Auth ──
+        function updateAuthHeader(user) {
+            const userInfo = document.getElementById('auth-user-info');
+            const userName = document.getElementById('auth-user-name');
+            if (user) {
+                currentUser = user;
+                userName.textContent = user.name;
+                userInfo.style.display = 'flex';
+            } else {
+                currentUser = null;
+                userInfo.style.display = 'none';
+            }
+        }
+
+        async function handleSignOut() {
+            try { mixpanel.track('User Signed Out'); } catch(e) {}
+            try { await fetch(API_BASE + '/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
+            updateAuthHeader(null);
+            window.location.href = '/purity-wall';
+        }
+
+        // ── Get report ID from URL ──
+        function getReportId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // ── Render report ──
+        function renderReport(report) {
+            const content = document.getElementById('report-content');
+            const loading = document.getElementById('loading');
+            loading.style.display = 'none';
+            content.style.display = '';
+
+            // Breadcrumb
+            document.getElementById('breadcrumb-category').textContent = report.category || '';
+            document.getElementById('breadcrumb-product').textContent = report.productName || '';
+
+            // Product header
+            document.getElementById('product-name').textContent = report.productName || '';
+            document.getElementById('product-category').textContent = report.category || '';
+
+            // Badges
+            const badgesEl = document.getElementById('product-badges');
+            badgesEl.innerHTML = '';
+            if (report.statusBadges && report.statusBadges.length > 0) {
+                report.statusBadges.forEach(badge => {
+                    const span = document.createElement('span');
+                    span.className = 'badge ' + getBadgeClass(badge);
+                    span.textContent = badge;
+                    badgesEl.appendChild(span);
+                });
+            }
+
+            // Score circle
+            const scoreColor = getScoreColor(report.purityScore);
+            const scoreCircle = document.getElementById('score-circle');
+            scoreCircle.style.background = scoreColor;
+            scoreCircle.textContent = formatScore(report.purityScore);
+            const scoreLabel = document.getElementById('score-label');
+            scoreLabel.textContent = getScoreGrade(report.purityScore);
+            scoreLabel.style.color = scoreColor;
+
+            // Test parameter sections
+            const sectionsEl = document.getElementById('test-sections');
+            sectionsEl.innerHTML = '';
+            if (report.testParameters && report.testParameters.length > 0) {
+                report.testParameters.forEach(section => {
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.className = 'test-section';
+
+                    let html = '<div class="test-section-header">' + escapeHtml(section.section) + '</div>';
+                    html += '<table class="test-table"><thead><tr>';
+                    html += '<th>Parameter</th><th>Measured Value</th><th>Acceptable Range</th><th>Status</th>';
+                    html += '</tr></thead><tbody>';
+
+                    (section.parameters || []).forEach(param => {
+                        const statusClass = param.status === 'pass' ? 'status-pass' :
+                                            param.status === 'warning' ? 'status-warning' : 'status-fail';
+                        const statusIcon = param.status === 'pass' ? '✅' :
+                                           param.status === 'warning' ? '⚠️' : '❌';
+                        const statusText = param.status === 'pass' ? 'Pass' :
+                                           param.status === 'warning' ? 'Warning' : 'Fail';
+                        // Handle Negative/Positive style parameters
+                        const displayValue = param.measuredValue || '—';
+                        const displayRange = param.acceptableRange || '—';
+
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(param.name) + '</td>';
+                        html += '<td class="measured-value">' + escapeHtml(displayValue) + '</td>';
+                        html += '<td class="measured-value">' + escapeHtml(displayRange) + '</td>';
+                        html += '<td class="' + statusClass + '">' + statusIcon + ' ' + statusText + '</td>';
+                        html += '</tr>';
+                    });
+
+                    html += '</tbody></table>';
+                    sectionDiv.innerHTML = html;
+                    sectionsEl.appendChild(sectionDiv);
+                });
+            }
+
+            // Expert commentary
+            if (report.expertCommentary) {
+                document.getElementById('expert-card').style.display = '';
+                document.getElementById('expert-quote').textContent = report.expertCommentary;
+            }
+
+            // Product image + meta
+            if (report.imageUrl) {
+                const imageCard = document.getElementById('product-image-card');
+                imageCard.style.display = '';
+                const img = document.getElementById('product-image');
+                img.src = report.imageUrl;
+                img.alt = report.productName || '';
+
+                const metaEl = document.getElementById('product-meta');
+                let metaHtml = '';
+                metaHtml += '<div class="product-meta-row"><span class="product-meta-label">Brand</span><span class="product-meta-value">' + escapeHtml(report.brandName) + '</span></div>';
+                metaHtml += '<div class="product-meta-row"><span class="product-meta-label">Category</span><span class="product-meta-value">' + escapeHtml(report.category) + '</span></div>';
+                if (report.batchCode) {
+                    metaHtml += '<div class="product-meta-row"><span class="product-meta-label">Batch Code</span><span class="product-meta-value">' + escapeHtml(report.batchCode) + '</span></div>';
+                }
+                if (report.shelfLife) {
+                    metaHtml += '<div class="product-meta-row"><span class="product-meta-label">Shelf Life</span><span class="product-meta-value">' + escapeHtml(report.shelfLife) + '</span></div>';
+                }
+                if (report.testDate) {
+                    const d = new Date(report.testDate);
+                    metaHtml += '<div class="product-meta-row"><span class="product-meta-label">Test Date</span><span class="product-meta-value">' + d.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) + '</span></div>';
+                }
+                metaEl.innerHTML = metaHtml;
+            }
+
+            // Methodology
+            if (report.methodology) {
+                document.getElementById('methodology-section').style.display = '';
+                document.getElementById('methodology-text').textContent = report.methodology;
+            }
+
+            // Update page title
+            document.title = 'ChoosePure – ' + (report.productName || 'Deep Dive Report');
+
+            trackEvent('deep_dive_view', 'engagement', report.productName);
+        }
+
+        function showError(title, message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('report-content').style.display = 'none';
+            const errorState = document.getElementById('error-state');
+            errorState.style.display = '';
+            document.getElementById('error-title').textContent = title || 'Unable to load report';
+            document.getElementById('error-message').textContent = message || 'Please try again.';
+        }
+
+        // ── Download PDF ──
+        async function downloadPDF() {
+            const reportId = getReportId();
+            if (!reportId) return;
+            const btn = document.getElementById('download-pdf-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating PDF...';
+            try {
+                const res = await fetch(API_BASE + '/api/reports/' + reportId + '/pdf', { credentials: 'include' });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    alert(data.message || 'Failed to download PDF.');
+                    btn.disabled = false;
+                    btn.innerHTML = '📄 Download PDF Report';
+                    return;
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'ChoosePure-Report.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                trackEvent('pdf_download', 'conversion', reportId);
+            } catch (err) {
+                alert('Unable to connect. Please check your internet connection and try again.');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '📄 Download PDF Report';
+        }
+
+        // ── Subscription gate & data loading ──
+        async function init() {
+            const reportId = getReportId();
+            if (!reportId) {
+                window.location.href = '/purity-wall';
+                return;
+            }
+
+            // Check subscription status
+            try {
+                const userRes = await fetch(API_BASE + '/api/user/me', { credentials: 'include' });
+                if (!userRes.ok) {
+                    // Not authenticated
+                    window.location.href = '/purity-wall';
+                    return;
+                }
+                const userData = await userRes.json();
+                if (!userData.success || !userData.user || userData.user.subscriptionStatus !== 'subscribed') {
+                    // Not subscribed
+                    window.location.href = '/purity-wall';
+                    return;
+                }
+                updateAuthHeader(userData.user);
+            } catch (err) {
+                // Network error — redirect
+                window.location.href = '/purity-wall';
+                return;
+            }
+
+            // Fetch full report
+            try {
+                const res = await fetch(API_BASE + '/api/reports/' + reportId, { credentials: 'include' });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (res.status === 403) {
+                        window.location.href = '/purity-wall';
+                        return;
+                    }
+                    showError('Report not found', data.message || 'This report may have been removed.');
+                    return;
+                }
+                const data = await res.json();
+                if (data.success && data.report) {
+                    renderReport(data.report);
+                } else {
+                    showError('Report not found', 'This report may have been removed.');
+                }
+            } catch (err) {
+                showError('Unable to connect', 'Please check your internet connection and try again.');
+            }
+        }
+
+        init();
+
+        // Wake up server
+        fetch(API_BASE + '/api/health').catch(() => {});
+    </script>
+</body>
+</html>

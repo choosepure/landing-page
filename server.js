@@ -42,6 +42,8 @@ let usersCollection;
 let productsCollection;
 let voteTransactionsCollection;
 let suggestionsCollection;
+let testReportsCollection;
+let subscriptionTransactionsCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -95,6 +97,18 @@ async function connectToDatabase() {
         await suggestionsCollection.createIndex({ status: 1, upvotes: -1 });
         await suggestionsCollection.createIndex({ createdAt: -1 });
         console.log('✅ Product suggestions collection initialized');
+        
+        // Initialize test_reports collection
+        testReportsCollection = db.collection('test_reports');
+        await testReportsCollection.createIndex({ published: 1, createdAt: -1 });
+        await testReportsCollection.createIndex({ category: 1 });
+        console.log('✅ Test reports collection initialized');
+        
+        // Initialize subscription_transactions collection
+        subscriptionTransactionsCollection = db.collection('subscription_transactions');
+        await subscriptionTransactionsCollection.createIndex({ userId: 1 });
+        await subscriptionTransactionsCollection.createIndex({ createdAt: -1 });
+        console.log('✅ Subscription transactions collection initialized');
         
         // Create indexes for users collection
         await usersCollection.createIndex({ email: 1 }, { unique: true });
@@ -199,7 +213,8 @@ async function authenticateUser(req, res, next) {
             id: user._id, 
             email: user.email, 
             name: user.name, 
-            phone: user.phone 
+            phone: user.phone,
+            subscriptionStatus: user.subscriptionStatus || 'free'
         };
         next();
     } catch (error) {
@@ -208,6 +223,22 @@ async function authenticateUser(req, res, next) {
             message: 'Authentication required' 
         });
     }
+}
+
+// Subscribed user authentication middleware
+async function authenticateSubscribedUser(req, res, next) {
+    // First run authenticateUser
+    await authenticateUser(req, res, () => {
+        // After authenticateUser succeeds, check subscription status
+        if (!req.user || req.user.subscriptionStatus !== 'subscribed') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Subscription required',
+                redirect: '/purity-wall'
+            });
+        }
+        next();
+    });
 }
 
 // User registration endpoint
@@ -283,6 +314,7 @@ app.post('/api/user/register', async (req, res) => {
             pincode,
             password: hashedPassword,
             role: 'user',
+            subscriptionStatus: 'free',
             createdAt: new Date()
         });
 
@@ -424,7 +456,8 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
         user: { 
             name: req.user.name, 
             email: req.user.email, 
-            phone: req.user.phone 
+            phone: req.user.phone,
+            subscriptionStatus: req.user.subscriptionStatus
         } 
     });
 });
@@ -2241,6 +2274,565 @@ app.post('/api/admin/suggestions/:id/convert', authenticateAdmin, async (req, re
         console.error('❌ Error converting suggestion:', error);
         res.status(500).json({ success: false, message: 'Failed to convert suggestion' });
     }
+});
+
+// Admin API: Create a new test report (protected)
+app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
+    try {
+        if (!testReportsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { productName, brandName, category, imageUrl, purityScore, testParameters,
+                expertCommentary, statusBadges, batchCode, shelfLife, testDate, methodology } = req.body;
+
+        // Validate required fields
+        const missingFields = [];
+        if (!productName) missingFields.push('productName');
+        if (!brandName) missingFields.push('brandName');
+        if (!category) missingFields.push('category');
+        if (!imageUrl) missingFields.push('imageUrl');
+        if (purityScore === undefined || purityScore === null || purityScore === '') missingFields.push('purityScore');
+        if (!testParameters) missingFields.push('testParameters');
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Missing required fields: ${missingFields.join(', ')}` 
+            });
+        }
+
+        // Validate purityScore range
+        if (typeof purityScore !== 'number' || purityScore < 0 || purityScore > 10) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Purity score must be between 0 and 10' 
+            });
+        }
+
+        const now = new Date();
+        const report = {
+            productName,
+            brandName,
+            category,
+            imageUrl,
+            purityScore,
+            testParameters,
+            expertCommentary: expertCommentary || '',
+            statusBadges: statusBadges || [],
+            batchCode: batchCode || '',
+            shelfLife: shelfLife || '',
+            testDate: testDate ? new Date(testDate) : null,
+            methodology: methodology || '',
+            published: true,
+            createdAt: now,
+            updatedAt: now
+        };
+
+        const result = await testReportsCollection.insertOne(report);
+        console.log('✅ Test report created:', result.insertedId);
+
+        res.json({ 
+            success: true, 
+            message: 'Test report created successfully',
+            report: { ...report, _id: result.insertedId }
+        });
+    } catch (error) {
+        console.error('❌ Error creating test report:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to create test report' 
+        });
+    }
+});
+
+// Admin API: List all test reports including unpublished (protected)
+app.get('/api/admin/reports', authenticateAdmin, async (req, res) => {
+    try {
+        if (!testReportsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const reports = await testReportsCollection
+            .find({})
+            .sort({ createdAt: -1 })
+            .toArray();
+
+        res.json({ 
+            success: true, 
+            reports: reports 
+        });
+    } catch (error) {
+        console.error('❌ Error fetching test reports:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch test reports' 
+        });
+    }
+});
+
+// Admin API: Update a test report (protected)
+app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
+    try {
+        if (!testReportsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const reportId = new ObjectId(req.params.id);
+
+        // Check if report exists
+        const existingReport = await testReportsCollection.findOne({ _id: reportId });
+        if (!existingReport) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Report not found' 
+            });
+        }
+
+        // Validate purityScore range if provided
+        if (req.body.purityScore !== undefined && req.body.purityScore !== null) {
+            if (typeof req.body.purityScore !== 'number' || req.body.purityScore < 0 || req.body.purityScore > 10) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Purity score must be between 0 and 10' 
+                });
+            }
+        }
+
+        // Build update object from provided fields
+        const updateFields = {};
+        const allowedFields = ['productName', 'brandName', 'category', 'imageUrl', 'purityScore',
+            'testParameters', 'expertCommentary', 'statusBadges', 'batchCode', 'shelfLife',
+            'testDate', 'methodology', 'published'];
+
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updateFields[field] = req.body[field];
+            }
+        }
+
+        // Convert testDate string to Date if provided
+        if (updateFields.testDate && typeof updateFields.testDate === 'string') {
+            updateFields.testDate = new Date(updateFields.testDate);
+        }
+
+        updateFields.updatedAt = new Date();
+
+        await testReportsCollection.updateOne(
+            { _id: reportId },
+            { $set: updateFields }
+        );
+
+        const updatedReport = await testReportsCollection.findOne({ _id: reportId });
+        console.log('✅ Test report updated:', req.params.id);
+
+        res.json({ 
+            success: true, 
+            message: 'Test report updated successfully',
+            report: updatedReport
+        });
+    } catch (error) {
+        console.error('❌ Error updating test report:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update test report' 
+        });
+    }
+});
+
+// Admin API: Delete a test report (protected)
+app.delete('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
+    try {
+        if (!testReportsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const result = await testReportsCollection.deleteOne({ 
+            _id: new ObjectId(req.params.id) 
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Report not found' 
+            });
+        }
+
+        console.log('✅ Test report deleted:', req.params.id);
+
+        res.json({ 
+            success: true, 
+            message: 'Test report deleted successfully' 
+        });
+    } catch (error) {
+        console.error('❌ Error deleting test report:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to delete test report' 
+        });
+    }
+});
+
+// Public API: List published test reports (optional auth for subscription check)
+app.get('/api/reports', async (req, res) => {
+    try {
+        if (!testReportsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        // Optional auth check — try to read JWT but don't fail if absent
+        let isSubscribed = false;
+        const token = req.cookies.user_token;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                const { ObjectId } = require('mongodb');
+                const user = await usersCollection.findOne({ 
+                    _id: new ObjectId(decoded.id), 
+                    role: 'user' 
+                });
+                if (user && user.subscriptionStatus === 'subscribed') {
+                    isSubscribed = true;
+                }
+            } catch (e) {
+                // Token invalid or expired — treat as unauthenticated
+            }
+        }
+
+        const reports = await testReportsCollection
+            .find({ published: true })
+            .sort({ createdAt: -1 })
+            .toArray();
+
+        const mapped = reports.map((report, index) => {
+            const base = {
+                _id: report._id,
+                productName: report.productName,
+                brandName: report.brandName,
+                category: report.category,
+                imageUrl: report.imageUrl,
+                statusBadges: report.statusBadges || []
+            };
+
+            // Subscribed users get purityScore on all reports
+            // Non-subscribed/unauthenticated get purityScore only on the first report
+            if (isSubscribed || index === 0) {
+                base.purityScore = report.purityScore;
+            }
+
+            return base;
+        });
+
+        res.json({ success: true, reports: mapped });
+    } catch (error) {
+        console.error('❌ Error fetching public reports:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch reports' 
+        });
+    }
+});
+
+// Public API: Get full test report for deep-dive (subscribed users only)
+app.get('/api/reports/:id', authenticateSubscribedUser, async (req, res) => {
+    try {
+        if (!testReportsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        let reportId;
+        try {
+            reportId = new ObjectId(req.params.id);
+        } catch (e) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Report not found' 
+            });
+        }
+
+        const report = await testReportsCollection.findOne({ 
+            _id: reportId, 
+            published: true 
+        });
+
+        if (!report) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Report not found' 
+            });
+        }
+
+        res.json({ success: true, report });
+    } catch (error) {
+        console.error('❌ Error fetching report:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch report' 
+        });
+    }
+});
+
+// Public API: Download PDF report (subscribed users only)
+app.get('/api/reports/:id/pdf', authenticateSubscribedUser, async (req, res) => {
+    try {
+        if (!testReportsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        let reportId;
+        try {
+            reportId = new ObjectId(req.params.id);
+        } catch (e) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Report not found' 
+            });
+        }
+
+        const report = await testReportsCollection.findOne({ 
+            _id: reportId, 
+            published: true 
+        });
+
+        if (!report) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Report not found' 
+            });
+        }
+
+        const PDFDocument = require('pdfkit');
+        const doc = new PDFDocument({ margin: 50 });
+
+        const safeName = (report.productName || 'report').replace(/[^a-zA-Z0-9-_ ]/g, '');
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeName}-purity-report.pdf"`);
+
+        doc.pipe(res);
+
+        // Title
+        doc.fontSize(22).font('Helvetica-Bold').text('ChoosePure Lab Report', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666').text('Independent Food Testing for Parents', { align: 'center' });
+        doc.moveDown(1.5);
+
+        // Product info
+        doc.fillColor('#000000');
+        doc.fontSize(16).font('Helvetica-Bold').text(report.productName);
+        doc.moveDown(0.3);
+        doc.fontSize(12).font('Helvetica').text(`Brand: ${report.brandName}`);
+        doc.text(`Category: ${report.category}`);
+        doc.moveDown(0.5);
+
+        // Purity score
+        const scoreColor = report.purityScore >= 7.0 ? '#1F6B4E' : report.purityScore >= 4.0 ? '#FFB703' : '#D62828';
+        doc.fontSize(14).font('Helvetica-Bold').fillColor(scoreColor).text(`Purity Score: ${report.purityScore.toFixed(1)}/10`);
+        doc.fillColor('#000000');
+        doc.moveDown(1);
+
+        // Test parameters
+        if (report.testParameters && report.testParameters.length > 0) {
+            doc.fontSize(14).font('Helvetica-Bold').text('Test Parameters');
+            doc.moveDown(0.5);
+
+            for (const section of report.testParameters) {
+                doc.fontSize(12).font('Helvetica-Bold').text(section.section || 'Test Section');
+                doc.moveDown(0.3);
+
+                if (section.parameters && section.parameters.length > 0) {
+                    for (const param of section.parameters) {
+                        const statusIcon = param.status === 'pass' ? '✓' : param.status === 'warning' ? '⚠' : '✗';
+                        doc.fontSize(10).font('Helvetica')
+                            .text(`${statusIcon} ${param.name}: ${param.measuredValue} (Acceptable: ${param.acceptableRange})`, {
+                                indent: 20
+                            });
+                    }
+                }
+                doc.moveDown(0.5);
+            }
+        }
+
+        // Expert commentary
+        if (report.expertCommentary) {
+            doc.moveDown(0.5);
+            doc.fontSize(14).font('Helvetica-Bold').text('Expert Commentary');
+            doc.moveDown(0.3);
+            doc.fontSize(10).font('Helvetica').text(report.expertCommentary);
+        }
+
+        // Status badges
+        if (report.statusBadges && report.statusBadges.length > 0) {
+            doc.moveDown(1);
+            doc.fontSize(10).font('Helvetica').fillColor('#666666').text(`Status: ${report.statusBadges.join(', ')}`);
+        }
+
+        // Footer
+        doc.moveDown(2);
+        doc.fillColor('#999999').fontSize(8).text(`Generated on ${new Date().toLocaleDateString()} by ChoosePure`, { align: 'center' });
+
+        doc.end();
+    } catch (error) {
+        console.error('❌ Error generating PDF report:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to generate PDF report' 
+        });
+    }
+});
+
+// ==========================================
+// SUBSCRIPTION PAYMENT API
+// ==========================================
+
+// Authenticated API: Create Razorpay order for subscription payment
+app.post('/api/subscription/create-order', authenticateUser, async (req, res) => {
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        // Check if user is already subscribed
+        if (req.user.subscriptionStatus === 'subscribed') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Already subscribed' 
+            });
+        }
+
+        // Create Razorpay order for ₹299 (29900 paise)
+        const order = await razorpay.orders.create({
+            amount: 29900,
+            currency: 'INR',
+            receipt: `sub_${Date.now()}`
+        });
+
+        console.log('✅ Subscription Razorpay order created:', order.id);
+
+        res.json({ 
+            success: true, 
+            orderId: order.id, 
+            amount: 29900, 
+            key: process.env.RAZORPAY_KEY_ID 
+        });
+    } catch (error) {
+        console.error('❌ Error creating subscription order:', error.message || error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Payment initialization failed. Please try again.' 
+        });
+    }
+});
+
+// Authenticated API: Verify subscription payment and activate subscription
+app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) => {
+    try {
+        if (!usersCollection || !subscriptionTransactionsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+        // Validate required payment fields
+        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Payment verification details are incomplete' 
+            });
+        }
+
+        // Verify signature using HMAC SHA256
+        const expectedSignature = crypto
+            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(razorpay_order_id + '|' + razorpay_payment_id)
+            .digest('hex');
+
+        if (expectedSignature !== razorpay_signature) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Payment verification failed' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+
+        // Update user subscription status
+        await usersCollection.updateOne(
+            { _id: new ObjectId(req.user.id) },
+            { 
+                $set: { 
+                    subscriptionStatus: 'subscribed', 
+                    subscribedAt: new Date() 
+                } 
+            }
+        );
+
+        // Insert subscription transaction record
+        await subscriptionTransactionsCollection.insertOne({
+            userId: new ObjectId(req.user.id),
+            userName: req.user.name,
+            userEmail: req.user.email,
+            amount: 299,
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+            status: 'completed',
+            createdAt: new Date()
+        });
+
+        console.log(`✅ Subscription payment verified for user ${req.user.email}`);
+
+        res.json({ 
+            success: true, 
+            message: 'Subscription activated successfully' 
+        });
+    } catch (error) {
+        console.error('❌ Error verifying subscription payment:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Payment verification failed' 
+        });
+    }
+});
+
+// Serve purity wall page
+app.get('/purity-wall', (req, res) => {
+    res.sendFile(path.join(__dirname, 'purity-wall.html'));
+});
+
+// Serve deep dive report page
+app.get('/deep-dive', (req, res) => {
+    res.sendFile(path.join(__dirname, 'deep-dive.html'));
 });
 
 app.listen(PORT, () => {
