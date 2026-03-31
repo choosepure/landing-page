@@ -452,8 +452,8 @@
                                 <input type="url" id="report-image-url" required placeholder="https://example.com/image.jpg">
                             </div>
                             <div class="form-group">
-                                <label>Purity Score (0-10) *</label>
-                                <input type="number" id="report-purity-score" required min="0" max="10" step="0.1" placeholder="e.g., 8.5">
+                                <label>Purity Score (0-100) *</label>
+                                <input type="number" id="report-purity-score" required min="0" max="100" step="1" placeholder="e.g., 92">
                             </div>
                             <div class="form-group">
                                 <label>Batch Code</label>
@@ -1358,6 +1358,53 @@
                 messageDiv.textContent = 'Network error. Please try again.';
             }
         });
+
+
+        async function importReport(filename) {
+            const msgEl = document.getElementById('report-message');
+            msgEl.className = 'message'; msgEl.style.display = 'none';
+            try {
+                const base = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
+                const res = await fetch(base + '/api/admin/parse-report/' + filename, { credentials: 'include' });
+                const result = await res.json();
+                if (!res.ok || !result.success) {
+                    msgEl.className = 'message error'; msgEl.textContent = result.message || 'Import failed'; msgEl.style.display = 'block';
+                    return;
+                }
+                const d = result.data;
+                document.getElementById('report-product-name').value = d.productName || '';
+                document.getElementById('report-brand-name').value = d.brandName || '';
+                document.getElementById('report-category').value = d.category || '';
+                document.getElementById('report-purity-score').value = d.purityScore || '';
+                document.getElementById('report-batch-code').value = d.batchCode || '';
+                document.getElementById('report-shelf-life').value = '';
+                document.getElementById('report-status-badges').value = (d.statusBadges || []).join(', ');
+                document.getElementById('report-methodology').value = d.methodology || '';
+                document.getElementById('report-expert-commentary').value = d.expertCommentary || '';
+                const container = document.getElementById('test-parameters-container');
+                container.innerHTML = '';
+                if (d.testParameters && d.testParameters.length > 0) {
+                    d.testParameters.forEach(function(section) {
+                        (section.parameters || []).forEach(function(param) {
+                            addTestParameterRow();
+                            var rows = container.querySelectorAll('.test-param-row');
+                            var lastRow = rows[rows.length - 1];
+                            lastRow.querySelector('.param-section').value = section.section || '';
+                            lastRow.querySelector('.param-name').value = param.name || '';
+                            lastRow.querySelector('.param-value').value = param.measuredValue || '';
+                            lastRow.querySelector('.param-range').value = param.acceptableRange || '';
+                            lastRow.querySelector('.param-status').value = param.status || 'pass';
+                        });
+                    });
+                }
+                msgEl.className = 'message success';
+                var count = d.testParameters.reduce(function(sum, s) { return sum + s.parameters.length; }, 0);
+                msgEl.textContent = 'Imported ' + count + ' parameters from ' + filename;
+                msgEl.style.display = 'block';
+            } catch (err) {
+                msgEl.className = 'message error'; msgEl.textContent = 'Network error importing report'; msgEl.style.display = 'block';
+            }
+        }
 
         async function loadReports() {
             const loading = document.getElementById('reports-loading');

@@ -2306,10 +2306,10 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
         }
 
         // Validate purityScore range
-        if (typeof purityScore !== 'number' || purityScore < 0 || purityScore > 10) {
+        if (typeof purityScore !== 'number' || purityScore < 0 || purityScore > 100) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Purity score must be between 0 and 10' 
+                message: 'Purity score must be between 0 and 100' 
             });
         }
 
@@ -2401,10 +2401,10 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
 
         // Validate purityScore range if provided
         if (req.body.purityScore !== undefined && req.body.purityScore !== null) {
-            if (typeof req.body.purityScore !== 'number' || req.body.purityScore < 0 || req.body.purityScore > 10) {
+            if (typeof req.body.purityScore !== 'number' || req.body.purityScore < 0 || req.body.purityScore > 100) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: 'Purity score must be between 0 and 10' 
+                    message: 'Purity score must be between 0 and 100' 
                 });
             }
         }
@@ -2650,8 +2650,8 @@ app.get('/api/reports/:id/pdf', authenticateSubscribedUser, async (req, res) => 
         doc.moveDown(0.5);
 
         // Purity score
-        const scoreColor = report.purityScore >= 7.0 ? '#1F6B4E' : report.purityScore >= 4.0 ? '#FFB703' : '#D62828';
-        doc.fontSize(14).font('Helvetica-Bold').fillColor(scoreColor).text(`Purity Score: ${report.purityScore.toFixed(1)}/10`);
+        const scoreColor = report.purityScore >= 70 ? '#1F6B4E' : report.purityScore >= 40 ? '#FFB703' : '#D62828';
+        doc.fontSize(14).font('Helvetica-Bold').fillColor(scoreColor).text(`Purity Score: ${Math.round(report.purityScore)}/100`);
         doc.fillColor('#000000');
         doc.moveDown(1);
 
@@ -2858,7 +2858,7 @@ app.get('/api/admin/parse-report/:filename', authenticateAdmin, async (req, res)
         
         // Extract score
         const scoreMatch = html.match(/class="score-circle"[^>]*>([\d.]+)/);
-        const purityScore = scoreMatch ? parseFloat(scoreMatch[1]) / 10 : 0;
+        const purityScore = scoreMatch ? parseFloat(scoreMatch[1]) : 0;
         
         // Extract meta info
         const batchMatch = html.match(/Batch No\..*?class="meta-value"[^>]*>([^<]+)/s);

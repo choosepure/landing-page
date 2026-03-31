@@ -658,12 +658,12 @@
 
         // ── Score helpers ──
         function getScoreColor(score) {
-            if (score >= 7.0) return '#1F6B4E';
-            if (score >= 4.0) return '#FFB703';
+            if (score >= 70) return '#1F6B4E';
+            if (score >= 40) return '#FFB703';
             return '#D62828';
         }
         function formatScore(score) {
-            return parseFloat(score).toFixed(1) + '/10';
+            return Math.round(score) + '/100';
         }
         function getBadgeClass(badge) {
             const lower = (badge || '').toLowerCase();
