@@ -424,6 +424,15 @@
                 <div class="actions" style="box-shadow: none; padding: 0; margin-bottom: 20px;">
                     <h3 style="margin-bottom: 15px; color: #333;">Add New Test Report</h3>
                     <div id="report-message" class="message"></div>
+
+                    <div style="margin-bottom: 20px; padding: 16px; background: #E8F5E9; border-radius: 8px; border: 1px solid #C8E6C9;">
+                        <label style="font-weight: 600; color: #1E7F5C; margin-bottom: 8px; display: block;">Import from Existing Report</label>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-primary btn-small" onclick="importReport('akshayakalpa-report.html')">Import Akshayakalpa Report</button>
+                            <button type="button" class="btn btn-primary btn-small" onclick="importReport('heritage-report.html')">Import Heritage Report</button>
+                        </div>
+                    </div>
+
                     <form id="add-report-form">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="form-group">
@@ -937,7 +946,7 @@
         }
 
         // ========== Product Polling Functions ==========
-        const POLLING_API_BASE = 'https://api.choosepure.in';
+        const POLLING_API_BASE = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
 
         async function loadProducts() {
             try {

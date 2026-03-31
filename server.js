@@ -2835,6 +2835,93 @@ app.get('/deep-dive', (req, res) => {
     res.sendFile(path.join(__dirname, 'deep-dive.html'));
 });
 
+
+// Admin API: Parse existing report HTML to extract test parameters
+app.get('/api/admin/parse-report/:filename', authenticateAdmin, async (req, res) => {
+    try {
+        const fs = require('fs');
+        const filePath = path.join(__dirname, req.params.filename);
+        
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'Report file not found' });
+        }
+        
+        const html = fs.readFileSync(filePath, 'utf8');
+        
+        // Extract product name from h1
+        const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
+        const productName = h1Match ? h1Match[1].trim() : '';
+        
+        // Extract brand name
+        const brandMatch = html.match(/class="brand-name"[^>]*>([^<]+)</);
+        const brandName = brandMatch ? brandMatch[1].trim() : '';
+        
+        // Extract score
+        const scoreMatch = html.match(/class="score-circle"[^>]*>([\d.]+)/);
+        const purityScore = scoreMatch ? parseFloat(scoreMatch[1]) / 10 : 0;
+        
+        // Extract meta info
+        const batchMatch = html.match(/Batch No\..*?class="meta-value"[^>]*>([^<]+)/s);
+        const batchCode = batchMatch ? batchMatch[1].trim() : '';
+        
+        const dateMatch = html.match(/Report Date.*?class="meta-value"[^>]*>([^<]+)/s);
+        const testDate = dateMatch ? dateMatch[1].trim() : '';
+        
+        const labMatch = html.match(/Testing Lab.*?class="meta-value"[^>]*>([^<]+)/s);
+        const methodology = labMatch ? 'Tested by ' + labMatch[1].trim() : '';
+        
+        // Extract sections and parameters from tables
+        const testParameters = [];
+        const sectionRegex = /class="section-title"[^>]*>([^<]+)<\/h2>[\s\S]*?<table class="parameters-table">[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/g;
+        let sectionMatch;
+        
+        while ((sectionMatch = sectionRegex.exec(html)) !== null) {
+            const sectionName = sectionMatch[1].replace(/^[\d️⃣]+\s*/, '').trim();
+            const tbody = sectionMatch[2];
+            const parameters = [];
+            
+            const rowRegex = /<tr>[\s\S]*?<td>([^<]*)<\/td>[\s\S]*?<td>([^<]*)<\/td>[\s\S]*?<td>([^<]*)<\/td>[\s\S]*?status-(pass|warning|fail)/g;
+            let rowMatch;
+            
+            while ((rowMatch = rowRegex.exec(tbody)) !== null) {
+                parameters.push({
+                    name: rowMatch[1].trim(),
+                    measuredValue: rowMatch[2].trim().replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+                    acceptableRange: rowMatch[3].trim().replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+                    status: rowMatch[4]
+                });
+            }
+            
+            if (parameters.length > 0) {
+                testParameters.push({ section: sectionName, parameters });
+            }
+        }
+        
+        // Extract expert commentary / summary
+        const summaryMatch = html.match(/Executive Summary[\s\S]*?<p>([^<]+)/);
+        const expertCommentary = summaryMatch ? summaryMatch[1].trim() : '';
+        
+        res.json({
+            success: true,
+            data: {
+                productName,
+                brandName: brandName || productName.split(' ')[0],
+                category: 'Dairy',
+                purityScore: Math.min(purityScore, 10),
+                testParameters,
+                expertCommentary,
+                batchCode,
+                testDate,
+                methodology,
+                statusBadges: purityScore >= 7 ? ['Top Rated'] : purityScore >= 4 ? ['Recent Test'] : ['Alert']
+            }
+        });
+    } catch (error) {
+        console.error('Error parsing report:', error);
+        res.status(500).json({ success: false, message: 'Failed to parse report' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log('📧 Email Configuration:');
