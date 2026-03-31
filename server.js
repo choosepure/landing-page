@@ -230,7 +230,7 @@ async function authenticateSubscribedUser(req, res, next) {
     // First run authenticateUser
     await authenticateUser(req, res, () => {
         // After authenticateUser succeeds, check subscription status
-        if (!req.user || req.user.subscriptionStatus !== 'subscribed') {
+        if (!req.user || req.user.subscriptionStatus !== 'subscribed' && req.user.subscriptionStatus !== 'cancelled') {
             return res.status(403).json({ 
                 success: false, 
                 message: 'Subscription required',
