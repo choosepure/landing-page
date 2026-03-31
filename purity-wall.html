@@ -873,7 +873,7 @@
                     currency: 'INR',
                     name: 'ChoosePure',
                     description: 'Monthly Subscription – Purity Reports',
-                    order_id: data.orderId,
+                    subscription_id: data.subscriptionId,
                     prefill: {
                         name: currentUser.name || '',
                         email: currentUser.email || ''
@@ -885,7 +885,7 @@
                                 headers: { 'Content-Type': 'application/json' },
                                 credentials: 'include',
                                 body: JSON.stringify({
-                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_subscription_id: response.razorpay_subscription_id,
                                     razorpay_payment_id: response.razorpay_payment_id,
                                     razorpay_signature: response.razorpay_signature
                                 })

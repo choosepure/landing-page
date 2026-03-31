@@ -2706,122 +2706,99 @@ app.get('/api/reports/:id/pdf', authenticateSubscribedUser, async (req, res) => 
 });
 
 // ==========================================
-// SUBSCRIPTION PAYMENT API
+// ==========================================
+// SUBSCRIPTION PAYMENT API (Razorpay Subscriptions)
 // ==========================================
 
-// Authenticated API: Create Razorpay order for subscription payment
+// Authenticated API: Create Razorpay subscription
 app.post('/api/subscription/create-order', authenticateUser, async (req, res) => {
     try {
         if (!usersCollection) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database not connected' 
-            });
+            return res.status(500).json({ success: false, message: 'Database not connected' });
         }
-
-        // Check if user is already subscribed
         if (req.user.subscriptionStatus === 'subscribed') {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Already subscribed' 
-            });
+            return res.status(400).json({ success: false, message: 'Already subscribed' });
         }
-
-        // Create Razorpay order for ₹299 (29900 paise)
-        const order = await razorpay.orders.create({
-            amount: 29900,
-            currency: 'INR',
-            receipt: `sub_${Date.now()}`
+        const subscription = await razorpay.subscriptions.create({
+            plan_id: process.env.RAZORPAY_PLAN_ID,
+            customer_notify: 1,
+            total_count: 12,
+            notes: { userId: req.user.id.toString(), userEmail: req.user.email }
         });
-
-        console.log('✅ Subscription Razorpay order created:', order.id);
-
-        res.json({ 
-            success: true, 
-            orderId: order.id, 
-            amount: 29900, 
-            key: process.env.RAZORPAY_KEY_ID 
-        });
+        console.log('Subscription created:', subscription.id);
+        res.json({ success: true, subscriptionId: subscription.id, key: process.env.RAZORPAY_KEY_ID });
     } catch (error) {
-        console.error('❌ Error creating subscription order:', error.message || error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Payment initialization failed. Please try again.' 
-        });
+        console.error('Error creating subscription:', error.message || error);
+        res.status(500).json({ success: false, message: 'Payment initialization failed. Please try again.' });
     }
 });
 
-// Authenticated API: Verify subscription payment and activate subscription
+// Authenticated API: Verify subscription payment
 app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) => {
     try {
         if (!usersCollection || !subscriptionTransactionsCollection) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database not connected' 
-            });
+            return res.status(500).json({ success: false, message: 'Database not connected' });
         }
-
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-        // Validate required payment fields
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Payment verification details are incomplete' 
-            });
+        const { razorpay_subscription_id, razorpay_payment_id, razorpay_signature } = req.body;
+        if (!razorpay_subscription_id || !razorpay_payment_id || !razorpay_signature) {
+            return res.status(400).json({ success: false, message: 'Payment verification details are incomplete' });
         }
-
-        // Verify signature using HMAC SHA256
         const expectedSignature = crypto
             .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-            .update(razorpay_order_id + '|' + razorpay_payment_id)
+            .update(razorpay_payment_id + '|' + razorpay_subscription_id)
             .digest('hex');
-
         if (expectedSignature !== razorpay_signature) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Payment verification failed' 
-            });
+            return res.status(400).json({ success: false, message: 'Payment verification failed' });
         }
-
         const { ObjectId } = require('mongodb');
-
-        // Update user subscription status
         await usersCollection.updateOne(
             { _id: new ObjectId(req.user.id) },
-            { 
-                $set: { 
-                    subscriptionStatus: 'subscribed', 
-                    subscribedAt: new Date() 
-                } 
-            }
+            { $set: { subscriptionStatus: 'subscribed', subscribedAt: new Date(), razorpaySubscriptionId: razorpay_subscription_id } }
         );
-
-        // Insert subscription transaction record
         await subscriptionTransactionsCollection.insertOne({
             userId: new ObjectId(req.user.id),
             userName: req.user.name,
             userEmail: req.user.email,
             amount: 299,
-            razorpayOrderId: razorpay_order_id,
+            razorpaySubscriptionId: razorpay_subscription_id,
             razorpayPaymentId: razorpay_payment_id,
             razorpaySignature: razorpay_signature,
-            status: 'completed',
+            status: 'active',
             createdAt: new Date()
         });
-
-        console.log(`✅ Subscription payment verified for user ${req.user.email}`);
-
-        res.json({ 
-            success: true, 
-            message: 'Subscription activated successfully' 
-        });
+        console.log('Subscription activated for:', req.user.email);
+        res.json({ success: true, message: 'Subscription activated successfully' });
     } catch (error) {
-        console.error('❌ Error verifying subscription payment:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Payment verification failed' 
-        });
+        console.error('Error verifying subscription:', error);
+        res.status(500).json({ success: false, message: 'Payment verification failed' });
+    }
+});
+
+// Authenticated API: Cancel subscription
+app.post('/api/subscription/cancel', authenticateUser, async (req, res) => {
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+        const user = await usersCollection.findOne({ _id: new ObjectId(req.user.id) });
+        if (!user || !user.razorpaySubscriptionId) {
+            return res.status(400).json({ success: false, message: 'No active subscription found' });
+        }
+        await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, { cancel_at_cycle_end: 1 });
+        await usersCollection.updateOne(
+            { _id: new ObjectId(req.user.id) },
+            { $set: { subscriptionStatus: 'cancelled', cancelledAt: new Date() } }
+        );
+        await subscriptionTransactionsCollection.updateOne(
+            { userId: new ObjectId(req.user.id), status: 'active' },
+            { $set: { status: 'cancelled', cancelledAt: new Date() } }
+        );
+        console.log('Subscription cancelled for:', req.user.email);
+        res.json({ success: true, message: 'Subscription cancelled. Access continues until end of billing cycle.' });
+    } catch (error) {
+        console.error('Error cancelling subscription:', error);
+        res.status(500).json({ success: false, message: 'Failed to cancel subscription.' });
     }
 });
 
