@@ -632,7 +632,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://api.choosepure.in';
+        const API_BASE = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
         let currentUser = null;
         let isSubscribed = false;
         let allReports = [];

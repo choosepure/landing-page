@@ -341,7 +341,7 @@ app.post('/api/user/register', async (req, res) => {
 
         res.json({ 
             success: true, 
-            user: { name, email } 
+            user: { name, email, subscriptionStatus: 'free' } 
         });
     } catch (error) {
         console.error('❌ Registration error:', error);
@@ -427,7 +427,8 @@ app.post('/api/user/login', async (req, res) => {
             user: { 
                 name: user.name, 
                 email: user.email, 
-                phone: user.phone 
+                phone: user.phone,
+                subscriptionStatus: user.subscriptionStatus || 'free'
             } 
         });
     } catch (error) {
