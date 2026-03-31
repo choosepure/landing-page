@@ -517,7 +517,11 @@
                             <textarea id="report-expert-commentary" rows="3" placeholder="Dr. Aman Mann's expert commentary on the test results..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;"></textarea>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary">Create Test Report</button>
+                        <input type="hidden" id="report-edit-id" value="" />
+                        <div style="display:flex;gap:8px;">
+                            <button type="submit" class="btn btn-primary" id="report-submit-btn">Create Test Report</button>
+                            <button type="button" class="btn btn-secondary" id="report-cancel-edit" style="display:none;" onclick="cancelEditReport()">Cancel Edit</button>
+                        </div>
                     </form>
                 </div>
                 
@@ -1360,6 +1364,67 @@
         });
 
 
+
+        async function editReport(id) {
+            const msgEl = document.getElementById('report-message');
+            try {
+                const base = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
+                const res = await fetch(base + '/api/admin/reports', { credentials: 'include' });
+                const data = await res.json();
+                if (!data.success) return;
+                const r = data.reports.find(function(rep) { return rep._id === id; });
+                if (!r) { alert('Report not found'); return; }
+
+                document.getElementById('report-edit-id').value = id;
+                document.getElementById('report-product-name').value = r.productName || '';
+                document.getElementById('report-brand-name').value = r.brandName || '';
+                document.getElementById('report-category').value = r.category || '';
+                document.getElementById('report-image-url').value = r.imageUrl || '';
+                document.getElementById('report-purity-score').value = r.purityScore || '';
+                document.getElementById('report-batch-code').value = r.batchCode || '';
+                document.getElementById('report-shelf-life').value = r.shelfLife || '';
+                document.getElementById('report-status-badges').value = (r.statusBadges || []).join(', ');
+                document.getElementById('report-methodology').value = r.methodology || '';
+                document.getElementById('report-expert-commentary').value = r.expertCommentary || '';
+
+                var container = document.getElementById('test-parameters-container');
+                container.innerHTML = '';
+                if (r.testParameters && r.testParameters.length > 0) {
+                    r.testParameters.forEach(function(section) {
+                        (section.parameters || []).forEach(function(param) {
+                            addTestParameterRow();
+                            var rows = container.querySelectorAll('.test-param-row');
+                            var lastRow = rows[rows.length - 1];
+                            lastRow.querySelector('.param-section').value = section.section || '';
+                            lastRow.querySelector('.param-name').value = param.name || '';
+                            lastRow.querySelector('.param-value').value = param.measuredValue || '';
+                            lastRow.querySelector('.param-range').value = param.acceptableRange || '';
+                            lastRow.querySelector('.param-status').value = param.status || 'pass';
+                        });
+                    });
+                }
+
+                document.getElementById('report-submit-btn').textContent = 'Update Report';
+                document.getElementById('report-cancel-edit').style.display = '';
+                document.querySelector('.test-param-row') || addTestParameterRow();
+                window.scrollTo({ top: document.getElementById('add-report-form').offsetTop - 100, behavior: 'smooth' });
+                msgEl.className = 'message success'; msgEl.textContent = 'Editing: ' + (r.productName || id); msgEl.style.display = 'block';
+            } catch (e) {
+                alert('Error loading report for editing');
+            }
+        }
+
+        function cancelEditReport() {
+            document.getElementById('report-edit-id').value = '';
+            document.getElementById('add-report-form').reset();
+            document.getElementById('test-parameters-container').innerHTML = '';
+            addTestParameterRow();
+            document.getElementById('report-submit-btn').textContent = 'Create Test Report';
+            document.getElementById('report-cancel-edit').style.display = 'none';
+            var msgEl = document.getElementById('report-message');
+            msgEl.className = 'message'; msgEl.style.display = 'none';
+        }
+
         async function importReport(filename) {
             const msgEl = document.getElementById('report-message');
             msgEl.className = 'message'; msgEl.style.display = 'none';
@@ -1432,17 +1497,19 @@
                     const publishedBadge = r.published !== false
                         ? '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:4px;font-size:12px;">Yes</span>'
                         : '<span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:4px;font-size:12px;">No</span>';
-                    const scoreColor = r.purityScore >= 7 ? '#1F6B4E' : r.purityScore >= 4 ? '#FFB703' : '#D62828';
+                    const score = r.purityScore || 0;
+                    const scoreColor = score >= 70 ? '#1F6B4E' : score >= 40 ? '#FFB703' : '#D62828';
                     return `<tr>
-                        <td>${r.productName}</td>
-                        <td>${r.brandName}</td>
-                        <td>${r.category}</td>
-                        <td><strong style="color:${scoreColor}">${r.purityScore.toFixed(1)}/10</strong></td>
+                        <td>${r.productName || '-'}</td>
+                        <td>${r.brandName || '-'}</td>
+                        <td>${r.category || '-'}</td>
+                        <td><strong style="color:${scoreColor}">${Math.round(score)}/100</strong></td>
                         <td>${badges || '-'}</td>
                         <td>${publishedBadge}</td>
                         <td>${date}</td>
                         <td style="white-space:nowrap;">
-                            <button class="btn btn-danger btn-small" onclick="deleteReport('${r._id}', '${r.productName.replace(/'/g, "\\'")}')">Delete</button>
+                            <button class="btn btn-primary btn-small" onclick="editReport('${r._id}')" style="margin-right:4px;">Edit</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteReport('${r._id}', '${(r.productName || '').replace(/'/g, "\\'")}')">Delete</button>
                         </td>
                     </tr>`;
                 }).join('');
