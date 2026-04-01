@@ -1022,7 +1022,8 @@
                 if (unlocked && report.purityScore != null) {
                     html += '<div class="score-bar" style="background:' + scoreColor + ';"></div>';
                     if (isSubscribed) {
-                        html += '<button class="card-cta download" onclick="window.location.href=\'/deep-dive?id=' + report._id + '\'">⤓ DOWNLOAD PDF REPORT</button>';
+                        var rLink = report.reportUrl || '/deep-dive?id=' + report._id;
+                        html += '<button class="card-cta download" onclick="window.location.href=\'' + rLink + '\'">⤓ VIEW REPORT</button>';
                     } else {
                         html += '<button class="card-cta download" onclick="openSubModal()">⤓ VIEW REPORT</button>';
                     }
