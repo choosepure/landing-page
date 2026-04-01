@@ -1680,7 +1680,7 @@
             updateAuthHeader(null);
         }
 
-        async function checkSession() {
+        async function checkSession() { // returns promise
             try {
                 const res = await fetch(API_BASE + '/api/user/me', { credentials: 'include' });
                 if (!res.ok) return;
@@ -1689,7 +1689,11 @@
             } catch(e) {}
         }
 
-        checkSession();
+        checkSession().then(function() {
+            if (currentUser) {
+                window.location.href = '/purity-wall';
+            }
+        });
 
         // Testimonial Slider
         let currentSlide = 0;

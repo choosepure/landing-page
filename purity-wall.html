@@ -1004,9 +1004,7 @@
                 // Image
                 html += '<div class="card-image-wrap' + (unlocked ? '' : ' dimmed') + '">';
                 html += '<img src="' + escapeHtml(report.imageUrl || '') + '" alt="' + escapeHtml(report.productName || '') + '" loading="lazy" />';
-                if (badge && unlocked) {
-                    html += '<span class="status-badge ' + getBadgeClass(badge) + '">' + escapeHtml(badge) + '</span>';
-                }
+                // Status badges removed
                 // Score circle
                 if (unlocked && report.purityScore != null) {
                     html += '<div class="score-circle" style="background:' + scoreColor + ';"><span class="score-num">' + formatScore(report.purityScore) + '</span><span class="score-sub">PURITY INDEX</span></div>';
