@@ -2287,7 +2287,7 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
             });
         }
 
-        const { productName, brandName, category, imageUrl, purityScore, testParameters,
+        const { productName, brandName, category, imageUrl, reportUrl, purityScore, testParameters,
                 expertCommentary, statusBadges, batchCode, shelfLife, testDate, methodology } = req.body;
 
         // Validate required fields
@@ -2328,6 +2328,7 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
             shelfLife: shelfLife || '',
             testDate: testDate ? new Date(testDate) : null,
             methodology: methodology || '',
+            reportUrl: reportUrl || '',
             published: true,
             createdAt: now,
             updatedAt: now
@@ -2412,7 +2413,7 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
 
         // Build update object from provided fields
         const updateFields = {};
-        const allowedFields = ['productName', 'brandName', 'category', 'imageUrl', 'purityScore',
+        const allowedFields = ['productName', 'brandName', 'category', 'imageUrl', 'reportUrl', 'purityScore',
             'testParameters', 'expertCommentary', 'statusBadges', 'batchCode', 'shelfLife',
             'testDate', 'methodology', 'published'];
 
@@ -2529,7 +2530,8 @@ app.get('/api/reports', async (req, res) => {
                 brandName: report.brandName,
                 category: report.category,
                 imageUrl: report.imageUrl,
-                statusBadges: report.statusBadges || []
+                statusBadges: report.statusBadges || [],
+                reportUrl: report.reportUrl || ''
             };
 
             // Subscribed users get purityScore on all reports

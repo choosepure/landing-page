@@ -452,6 +452,10 @@
                                 <input type="url" id="report-image-url" required placeholder="https://example.com/image.jpg">
                             </div>
                             <div class="form-group">
+                                <label>Report Page URL</label>
+                                <input type="text" id="report-url" placeholder="e.g., /akshayakalpa-report.html">
+                            </div>
+                            <div class="form-group">
                                 <label>Purity Score (0-100) *</label>
                                 <input type="number" id="report-purity-score" required min="0" max="100" step="1" placeholder="e.g., 92">
                             </div>
@@ -1323,6 +1327,7 @@
                 category: document.getElementById('report-category').value.trim(),
                 imageUrl: document.getElementById('report-image-url').value.trim(),
                 purityScore: parseFloat(document.getElementById('report-purity-score').value),
+                    reportUrl: document.getElementById('report-url').value.trim() || '',
                 testParameters: collectTestParameters(),
                 expertCommentary: document.getElementById('report-expert-commentary').value.trim(),
                 statusBadges: statusBadges,
@@ -1343,6 +1348,7 @@
                     messageDiv.className = 'message success';
                     messageDiv.textContent = 'Test report created successfully!';
                     document.getElementById('add-report-form').reset();
+            document.getElementById('report-url').value = '';
                     // Reset test parameters to single empty row
                     const container = document.getElementById('test-parameters-container');
                     const rows = container.querySelectorAll('.test-param-row');
@@ -1380,6 +1386,7 @@
                 document.getElementById('report-brand-name').value = r.brandName || '';
                 document.getElementById('report-category').value = r.category || '';
                 document.getElementById('report-image-url').value = r.imageUrl || '';
+                document.getElementById('report-url').value = r.reportUrl || '';
                 document.getElementById('report-purity-score').value = r.purityScore || '';
                 document.getElementById('report-batch-code').value = r.batchCode || '';
                 document.getElementById('report-shelf-life').value = r.shelfLife || '';
@@ -1417,6 +1424,7 @@
         function cancelEditReport() {
             document.getElementById('report-edit-id').value = '';
             document.getElementById('add-report-form').reset();
+            document.getElementById('report-url').value = '';
             document.getElementById('test-parameters-container').innerHTML = '';
             addTestParameterRow();
             document.getElementById('report-submit-btn').textContent = 'Create Test Report';
@@ -1442,6 +1450,7 @@
                 document.getElementById('report-category').value = d.category || '';
                 document.getElementById('report-purity-score').value = d.purityScore || '';
                 document.getElementById('report-batch-code').value = d.batchCode || '';
+                document.getElementById('report-url').value = '';
                 document.getElementById('report-shelf-life').value = '';
                 document.getElementById('report-status-badges').value = (d.statusBadges || []).join(', ');
                 document.getElementById('report-methodology').value = d.methodology || '';

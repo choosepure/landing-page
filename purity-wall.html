@@ -247,6 +247,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            padding: 12px 12px 0 12px;
         }
         .card-image-wrap.dimmed img {
             opacity: 0.6;
@@ -1023,7 +1024,7 @@
                     if (isSubscribed) {
                         html += '<button class="card-cta download" onclick="window.location.href=\'/deep-dive?id=' + report._id + '\'">⤓ DOWNLOAD PDF REPORT</button>';
                     } else {
-                        html += '<button class="card-cta download" onclick="openSubModal()">View Full Lab Analysis</button>';
+                        html += '<button class="card-cta download" onclick="openSubModal()">⤓ VIEW REPORT</button>';
                     }
                 } else {
                     // Locked
