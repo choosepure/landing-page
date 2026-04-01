@@ -593,68 +593,30 @@
     </div>
 
     <script>
-        const PASSWORD = '12345';
+        // Auth check - no password needed for logged-in users
+        const API_BASE = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
         const passwordScreen = document.getElementById('password-screen');
         const reportContent = document.getElementById('report-content');
-        const passwordForm = document.getElementById('password-form');
-        const passwordInput = document.getElementById('password-input');
-        const errorMessage = document.getElementById('error-message');
 
-        // Check if already authenticated
-        if (sessionStorage.getItem('heritage_report_authenticated') === 'true') {
-            showReport();
+        // Check if user is logged in via cookie
+        async function checkAuth() {
+            try {
+                const res = await fetch(API_BASE + '/api/user/me', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.user) {
+                        showReport();
+                        return;
+                    }
+                }
+            } catch(e) {}
+            // Not logged in - show login prompt instead of password
+            showLoginPrompt();
         }
 
-        passwordForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const enteredPassword = passwordInput.value;
-            
-            if (enteredPassword === PASSWORD) {
-                sessionStorage.setItem('heritage_report_authenticated', 'true');
-                
-                // Track successful password unlock
-                if (typeof gtag !== 'undefined') {
-                    gtag('event', 'report_unlock', {
-                        event_category: 'engagement',
-                        event_label: 'heritage_report'
-                    });
-                }
-                if (typeof fbq !== 'undefined') {
-                    fbq('track', 'ViewContent', {
-                        content_name: 'Heritage Report',
-                        content_category: 'Test Report'
-                    });
-                }
-                if (typeof mixpanel !== 'undefined') {
-                    mixpanel.track('report_unlock', {
-                        report_name: 'Heritage Report',
-                        category: 'engagement'
-                    });
-                }
-                
-                showReport();
-            } else {
-                // Track failed password attempt
-                if (typeof gtag !== 'undefined') {
-                    gtag('event', 'report_unlock_failed', {
-                        event_category: 'engagement',
-                        event_label: 'heritage_report'
-                    });
-                }
-                if (typeof mixpanel !== 'undefined') {
-                    mixpanel.track('report_unlock_failed', {
-                        report_name: 'Heritage Report',
-                        category: 'engagement'
-                    });
-                }
-                
-                errorMessage.classList.add('show');
-                passwordInput.value = '';
-                passwordInput.focus();
-                passwordForm.style.animation = 'shake 0.5s';
-                setTimeout(() => { passwordForm.style.animation = ''; }, 500);
-            }
-        });
+        function showLoginPrompt() {
+            passwordScreen.innerHTML = '<div class="password-container"><div class="lock-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9.243 2 7 4.243 7 7v3H6c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zm3 8V7c0-1.654-1.346-3-3-3S9 5.346 9 7v3h6z" fill="currentColor"/></svg></div><h2>Sign in to view this report</h2><p>This report is available for registered Choosepure members.</p><a href="/" style="display:inline-block;padding:14px 32px;background:#1F6B4E;color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:16px;">Sign In / Register</a></div>';
+        }
 
         function showReport() {
             passwordScreen.style.display = 'none';
