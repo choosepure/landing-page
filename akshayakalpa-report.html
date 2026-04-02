@@ -112,13 +112,37 @@
         .compliance-card .country { font-weight: 600; color: var(--deep-leaf-green); margin-bottom: 4px; }
         .back-link { display: inline-block; margin-bottom: 24px; color: var(--deep-leaf-green); text-decoration: none; font-weight: 500; }
         .back-link:hover { text-decoration: underline; }
+        /* Responsive table wrapper */
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -20px;
+            padding: 0 20px;
+        }
+        .table-scroll .parameters-table {
+            min-width: 500px;
+        }
+
         @media (max-width: 768px) {
-            body { padding: 60px 16px 40px; }
+            body { padding: 20px 12px 40px; }
             .password-container { padding: 32px 24px; }
-            .report-header, .report-section { padding: 24px 20px; }
-            .report-title h1 { font-size: 24px; }
+            .report-header { padding: 20px 16px; }
+            .report-section { padding: 20px 16px; }
+            .report-title { flex-direction: column; align-items: center; text-align: center; }
+            .report-title h1 { font-size: 22px; }
+            .brand-name { font-size: 15px; }
+            .msi-score { margin-top: 16px; }
+            .score-circle { width: 90px; height: 90px; font-size: 32px; }
+            .report-meta { grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+            .meta-value { font-size: 14px; }
+            .section-title { font-size: 20px; }
+            .summary-box h3 { font-size: 17px; }
+            .summary-box p, .summary-box ul { font-size: 14px; }
             .parameters-table { font-size: 12px; }
-            .parameters-table th, .parameters-table td { padding: 8px 4px; }
+            .parameters-table th, .parameters-table td { padding: 8px 6px; white-space: nowrap; }
+            .parameters-table th:first-child, .parameters-table td:first-child { white-space: normal; min-width: 100px; }
+            .info-box, .warning-box { font-size: 13px; padding: 12px; }
+            .compliance-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -194,7 +218,7 @@
 
             <div class="report-section">
                 <h2 class="section-title">1️⃣ Microbiological Safety</h2>
-                <table class="parameters-table">
+                <div class="table-scroll"><table class="parameters-table">
                     <thead>
                         <tr>
                             <th>Parameter</th>
@@ -239,7 +263,7 @@
                             <td><span class="status-badge status-pass">✅ Pass</span></td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="info-box">
                     <strong>Interpretation:</strong> Microbiological parameters comply with FSSAI, EU, and US Grade A pasteurized milk expectations.
                 </div>
@@ -247,7 +271,7 @@
 
             <div class="report-section">
                 <h2 class="section-title">2️⃣ Mycotoxins</h2>
-                <table class="parameters-table">
+                <div class="table-scroll"><table class="parameters-table">
                     <thead>
                         <tr>
                             <th>Parameter</th>
@@ -268,7 +292,7 @@
                             <td><span class="status-badge status-warning">⚠ Above EU</span></td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="warning-box">
                     <strong>⚠ Important scientific note:</strong> The value is within widely accepted global trade limits (FSSAI & US FDA compliant) but would not meet the strictest EU standard (0.05 µg/kg).
                 </div>
@@ -297,7 +321,7 @@
 
             <div class="report-section">
                 <h2 class="section-title">4️⃣ Heavy Metals</h2>
-                <table class="parameters-table">
+                <div class="table-scroll"><table class="parameters-table">
                     <thead>
                         <tr>
                             <th>Metal</th>
@@ -342,7 +366,7 @@
                             <td><span class="status-badge status-pass">✅ Pass</span></td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="info-box">
                     All tested metals are below quantification limits.
                 </div>
@@ -371,7 +395,7 @@
 
             <div class="report-section">
                 <h2 class="section-title">6️⃣ Melamine</h2>
-                <table class="parameters-table">
+                <div class="table-scroll"><table class="parameters-table">
                     <thead>
                         <tr>
                             <th>Parameter</th>
@@ -386,7 +410,7 @@
                             <td><span class="status-badge status-pass">✅ Prohibited globally</span></td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="info-box">
                     No detectable melamine.
                 </div>
