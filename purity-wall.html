@@ -715,6 +715,9 @@
                 isSubscribed = user.subscriptionStatus === 'subscribed';
                 signinLink.style.display = 'none';
                 userName.textContent = user.name;
+                if (user.subscriptionStatus === 'subscribed') {
+                    document.getElementById('auth-signout-link').insertAdjacentHTML('beforebegin', '<a id="manage-sub-link" class="auth-signout-link" onclick="showManageSub()" style="margin-right:8px;">Manage</a>');
+                }
                 userInfo.style.display = 'flex';
             } else {
                 currentUser = null;
@@ -1129,6 +1132,33 @@
                 const data = await res.json();
                 if (data.success && data.user) updateAuthHeader(data.user);
             } catch(e) {}
+        }
+
+
+        // Manage subscription
+        function showManageSub() {
+            if (confirm('Do you want to cancel your subscription? You will have access until the end of your billing cycle.')) {
+                cancelSubscription();
+            }
+        }
+
+        async function cancelSubscription() {
+            try {
+                const res = await fetch(API_BASE + '/api/subscription/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert(data.message || 'Subscription cancelled.');
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to cancel subscription.');
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
+            }
         }
 
         // ── Init ──

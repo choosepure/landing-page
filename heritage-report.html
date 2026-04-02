@@ -115,14 +115,36 @@
         .score-card h4 { font-size: 14px; color: var(--grain-brown); margin-bottom: 12px; }
         .score-value { font-size: 32px; font-weight: 700; color: var(--deep-leaf-green); font-family: var(--font-data); }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        /* Responsive table wrapper */
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-scroll .parameters-table {
+            min-width: 500px;
+        }
+
         @media (max-width: 768px) {
-            body { padding: 40px 16px; }
-            .report-header { padding: 24px; }
-            .report-title { flex-direction: column; }
-            .report-title h1 { font-size: 24px; }
+            body { padding: 20px 12px 40px; }
+            .report-header { padding: 20px 16px; }
+            .report-section { padding: 20px 16px; }
+            .report-title { flex-direction: column; align-items: center; text-align: center; }
+            .report-title h1 { font-size: 22px; }
+            .brand-name { font-size: 15px; }
+            .msi-score { margin-top: 16px; }
+            .score-circle { width: 90px; height: 90px; font-size: 32px; }
+            .report-meta { grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+            .meta-value { font-size: 14px; }
             .section-title { font-size: 20px; }
-            .parameters-table { font-size: 13px; }
-            .parameters-table th, .parameters-table td { padding: 8px; }
+            .summary-box h3 { font-size: 17px; }
+            .summary-box p, .summary-box ul { font-size: 14px; }
+            .parameters-table { font-size: 12px; }
+            .parameters-table th, .parameters-table td { padding: 8px 6px; white-space: nowrap; }
+            .parameters-table th:first-child, .parameters-table td:first-child { white-space: normal; min-width: 80px; }
+            .info-box, .warning-box { font-size: 13px; padding: 12px; }
+            .compliance-grid { grid-template-columns: 1fr 1fr; }
+            .score-breakdown { grid-template-columns: 1fr 1fr; }
+            .score-value { font-size: 24px; }
         }
     </style>
 </head>
@@ -251,7 +273,7 @@
                             <td><span class="status-badge status-pass">✅ Pass</span></td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="info-box" style="margin-top: 16px;">
                     <strong>Interpretation:</strong> Microbiological counts are well below safety limits, indicating proper pasteurization and hygienic handling.
                 </div>
@@ -341,7 +363,7 @@
                             <td><span class="status-badge status-pass">✅ Pass</span></td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="info-box" style="margin-top: 16px;">
                     <strong>All heavy metals were below measurable detection limits.</strong>
                 </div>
@@ -403,7 +425,7 @@
                             <td>≤0.5</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="warning-box" style="margin-top: 16px;">
                     <strong>Interpretation:</strong>
                     <ul style="margin-top: 8px; line-height: 1.8;">
@@ -469,7 +491,7 @@
                             <td>120 mg/100g</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="info-box" style="margin-top: 16px;">
                     <strong>These values fall within expected ranges for toned milk.</strong>
                 </div>
@@ -504,7 +526,7 @@
                             <td>15</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 
                 <h3 style="font-size: 18px; color: var(--deep-leaf-green); margin: 24px 0 12px;">Category Scores:</h3>
                 <div class="score-breakdown">
