@@ -128,7 +128,7 @@
         .auth-header-section { display: flex; align-items: center; gap: 12px; margin-left: 8px; padding-left: 16px; border-left: 1px solid #E5E5E5; }
         .auth-signin-link { color: var(--deep-leaf-green); text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer; }
         .auth-signin-link:hover { opacity: 0.8; }
-        .auth-user-info { display: flex; align-items: center; gap: 10px; }
+        .auth-user-info { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
         .auth-user-name { font-size: 14px; font-weight: 500; color: var(--deep-leaf-green); }
         .auth-signout-link { color: var(--lab-grey); text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; }
         .auth-signout-link:hover { color: var(--fail-red); }
@@ -504,6 +504,10 @@
             .header-nav > a:not(.nav-cta) { display: none; }
             .nav-cta { padding: 6px 14px !important; font-size: 12px !important; }
             .auth-header-section { border-left: none; padding-left: 0; margin-left: 0; }
+            .auth-user-info { font-size: 12px; gap: 4px; }
+            .auth-user-name { font-size: 12px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+            .auth-signout-link { font-size: 11px; }
+            .auth-signin-link { font-size: 12px; }
             .container { padding: 24px 16px 60px; }
             .page-header h1 { font-size: 24px; }
             .card-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -524,7 +528,7 @@
                 <a href="/">Dashboard</a>
                 <a href="/purity-wall">Lab Reports</a>
                 <a href="/polling">Vote</a>
-                <a href="#" class="nav-cta" onclick="trackEvent('cta_click','get_report_nav')">Get Report</a>
+                
                 <div id="auth-header-section" class="auth-header-section">
                     <a id="auth-signin-link" class="auth-signin-link" onclick="openAuthModal()">Sign In</a>
                     <div id="auth-user-info" class="auth-user-info" style="display:none;">
