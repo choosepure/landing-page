@@ -2805,7 +2805,11 @@ app.post('/api/subscription/cancel', authenticateUser, async (req, res) => {
     }
 });
 
-// Serve purity wall page
+// Serve purity wall / dashboard page
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'purity-wall.html'));
+});
+
 app.get('/purity-wall', (req, res) => {
     res.sendFile(path.join(__dirname, 'purity-wall.html'));
 });

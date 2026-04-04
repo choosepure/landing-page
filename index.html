@@ -1626,6 +1626,7 @@
                 updateAuthHeader(data.user);
                 try { gtag('event', 'login', { method: 'email' }); mixpanel.track('User Signed In', { method: 'email' }); } catch(e) {}
                 closeAuthModal();
+                window.location.href = '/dashboard';
             } catch (err) { showAuthError(errorEl, 'Network error. Please try again.'); btn.disabled = false; btn.textContent = 'Sign In'; }
         });
 
@@ -1652,6 +1653,7 @@
                 updateAuthHeader(data.user);
                 try { gtag('event', 'sign_up', { method: 'email' }); mixpanel.track('User Registered', { method: 'email' }); } catch(e) {}
                 closeAuthModal();
+                window.location.href = '/dashboard';
             } catch (err) { showAuthError(errorEl, 'Network error. Please try again.'); btn.disabled = false; btn.textContent = 'Register'; }
         });
 
@@ -1696,7 +1698,7 @@
 
         checkSession().then(function() {
             if (currentUser) {
-                window.location.href = '/purity-wall';
+                window.location.href = '/dashboard';
             }
         });
 
