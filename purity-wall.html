@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChoosePure – Product Purity Wall</title>
+    <title>ChoosePure – Purity Dashboard</title>
 
     <!-- Meta Pixel Code -->
     <script>
@@ -54,7 +54,7 @@
     <link rel="apple-touch-icon" href="/public/favicon.png" />
 
     <!-- Meta tags for sharing -->
-    <meta property="og:title" content="ChoosePure – Product Purity Wall" />
+    <meta property="og:title" content="ChoosePure – Purity Dashboard" />
     <meta property="og:description" content="See lab-tested purity scores for everyday products. Independent testing, no brand influence." />
     <meta property="og:image" content="https://choosepure.in/public/logo.png" />
     <meta property="og:url" content="https://choosepure.in/purity-wall" />
@@ -69,413 +69,553 @@
         :root {
             --pure-ivory: #FAFAF7;
             --deep-leaf-green: #1F6B4E;
+            --deep-leaf-green-light: #267A59;
             --grain-brown: #8A6E4B;
             --lab-grey: #6B6B6B;
-            --mint: #95db93;
+            --mint: #95DB93;
             --warning-amber: #FFB703;
             --fail-red: #D62828;
             --font-primary: 'Inter', sans-serif;
             --font-data: 'Roboto Mono', monospace;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: var(--font-primary);
             background: var(--pure-ivory);
             color: var(--lab-grey);
             line-height: 1.6;
+            min-height: 100vh;
         }
 
-        /* Header */
+        /* ── Header ── */
         .header {
-            background: white;
-            border-bottom: 1px solid #E5E5E5;
-            padding: 16px 24px;
+            background: #fff;
+            border-bottom: 1px solid #E8E8E5;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
         .header-inner {
-            max-width: 1100px;
+            max-width: 1140px;
             margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            height: 68px;
+            padding: 0 24px;
         }
-        .header-logo { height: 72px; }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+        .header-logo {
+            height: 72px;
+            display: block;
+            flex-shrink: 0;
+        }
         .header-nav {
             display: flex;
             align-items: center;
-            gap: 24px;
+            gap: 28px;
         }
         .header-nav a {
+            color: var(--lab-grey);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 6px 0;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .header-nav a:hover { color: var(--deep-leaf-green); }
+        .header-nav a.active {
+            color: var(--deep-leaf-green);
+            font-weight: 600;
+            border-bottom-color: var(--deep-leaf-green);
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--deep-leaf-green);
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            flex-shrink: 0;
+        }
+        .user-avatar.visible { display: flex; }
+        .header-signout {
+            color: var(--lab-grey);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: none;
+            transition: color 0.2s;
+        }
+        .header-signout:hover { color: var(--fail-red); }
+        .header-signout.visible { display: inline; }
+        .header-signin {
+            color: #fff;
+            background: var(--deep-leaf-green);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .header-signin:hover { background: #185A3F; }
+        .manage-sub-link {
+            color: var(--lab-grey);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: none;
+            transition: color 0.2s;
+        }
+        .manage-sub-link:hover { color: var(--deep-leaf-green); }
+        .manage-sub-link.visible { display: inline; }
+
+        /* ── Welcome Banner ── */
+        .welcome-banner {
+            background: linear-gradient(135deg, #1A5C42 0%, #1F6B4E 40%, #267A59 100%);
+            padding: 52px 24px 56px;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-banner::after {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(149,219,147,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .welcome-banner-inner {
+            max-width: 1140px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .welcome-banner h1 {
+            font-size: 34px;
+            font-weight: 400;
+            font-style: italic;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+            margin-bottom: 6px;
+            opacity: 0.95;
+        }
+        .welcome-banner .subtitle {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+        .welcome-banner .desc {
+            font-size: 15px;
+            opacity: 0.75;
+            max-width: 520px;
+            line-height: 1.5;
+        }
+
+        /* ── Section shared ── */
+        .section {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 44px 24px 0;
+        }
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0F2419;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-header .view-all {
             color: var(--deep-leaf-green);
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
+            white-space: nowrap;
+            transition: opacity 0.2s;
         }
-        .header-nav a:hover { opacity: 0.8; }
-        .header-nav .nav-cta {
-            background: var(--deep-leaf-green);
-            color: white !important;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        .header-nav .nav-cta:hover { background: #185A3F; }
-
-        /* Auth header */
-        .auth-header-section { display: flex; align-items: center; gap: 12px; margin-left: 8px; padding-left: 16px; border-left: 1px solid #E5E5E5; }
-        .auth-signin-link { color: var(--deep-leaf-green); text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .auth-signin-link:hover { opacity: 0.8; }
-        .auth-user-info { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-        .auth-user-name { font-size: 14px; font-weight: 500; color: var(--deep-leaf-green); }
-        .auth-signout-link { color: var(--lab-grey); text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; }
-        .auth-signout-link:hover { color: var(--fail-red); }
-
-        /* Auth modal */
-        .auth-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .auth-modal-overlay.active { display: flex; }
-        .auth-modal-content { background: white; border-radius: 12px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-        .auth-modal-header { padding: 20px 24px 0; display: flex; justify-content: flex-end; }
-        .auth-modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--lab-grey); padding: 4px; line-height: 1; }
-        .auth-modal-close:hover { color: #0F2419; }
-        .auth-modal-tabs { display: flex; margin: 0 24px; border-bottom: 2px solid #E5E5E5; }
-        .auth-modal-tab { flex: 1; padding: 12px 0; text-align: center; font-size: 15px; font-weight: 600; color: var(--lab-grey); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; font-family: var(--font-primary); transition: color 0.2s; }
-        .auth-modal-tab:hover { color: var(--deep-leaf-green); }
-        .auth-modal-tab.active { color: var(--deep-leaf-green); border-bottom-color: var(--deep-leaf-green); }
-        .auth-modal-form { display: none; padding: 24px; }
-        .auth-modal-form.active { display: block; }
-        .auth-modal-form .form-group { margin-bottom: 16px; }
-        .auth-modal-form .form-group label { display: block; font-size: 14px; font-weight: 500; color: #0F2419; margin-bottom: 6px; }
-        .auth-modal-form .form-group input { width: 100%; padding: 12px 16px; border: 1px solid #D1D1D1; border-radius: 8px; font-size: 14px; font-family: var(--font-primary); background: white; transition: border-color 0.2s; }
-        .auth-modal-form .form-group input:focus { outline: none; border-color: var(--deep-leaf-green); box-shadow: 0 0 0 3px rgba(31,107,78,0.1); }
-        .auth-modal-forgot-link, .auth-modal-back-link { display: inline-block; font-size: 13px; color: var(--deep-leaf-green); text-decoration: none; cursor: pointer; margin-bottom: 16px; font-weight: 500; }
-        .auth-modal-forgot-link:hover, .auth-modal-back-link:hover { text-decoration: underline; }
-        .auth-modal-submit { width: 100%; padding: 12px 24px; background: var(--deep-leaf-green); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font-primary); transition: background 0.2s; }
-        .auth-modal-submit:hover { background: #185A3F; }
-        .auth-modal-submit:disabled { background: #8FA39A; cursor: not-allowed; }
-        .auth-error-message { display: none; padding: 12px 16px; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
-        .auth-error-message.visible { display: block; }
-
-        /* Page content */
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 40px 24px 80px;
-        }
-        .page-header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .page-header h1 {
-            font-size: 32px;
-            font-weight: 600;
-            color: var(--deep-leaf-green);
-            letter-spacing: -0.02em;
-            line-height: 1.2;
-            margin-bottom: 8px;
-        }
-        .page-header p {
-            font-size: 16px;
-            color: var(--lab-grey);
-        }
-
-        /* Filters bar */
-        .filters-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-        }
-        .filters-bar input,
-        .filters-bar select {
-            padding: 12px 16px;
-            border: 1px solid #D1D1D1;
-            border-radius: 8px;
+        .section-header .view-all:hover { text-decoration: underline; }
+        .section-subtitle {
             font-size: 14px;
-            font-family: var(--font-primary);
-            background: white;
-            transition: border-color 0.2s;
-        }
-        .filters-bar input { flex: 1; min-width: 200px; }
-        .filters-bar select { min-width: 180px; }
-        .filters-bar input:focus,
-        .filters-bar select:focus {
-            outline: none;
-            border-color: var(--deep-leaf-green);
-            box-shadow: 0 0 0 3px rgba(31,107,78,0.1);
-        }
-        .filters-bar.disabled input,
-        .filters-bar.disabled select {
-            background: #F0F0F0;
-            color: #AAA;
-            cursor: not-allowed;
-            pointer-events: none;
+            color: var(--lab-grey);
+            margin-bottom: 20px;
         }
 
-        /* Card grid */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
+        /* ── Horizontal scroll row ── */
+        .scroll-row {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: #D1D1D1 transparent;
         }
+        .scroll-row::-webkit-scrollbar { height: 6px; }
+        .scroll-row::-webkit-scrollbar-track { background: transparent; }
+        .scroll-row::-webkit-scrollbar-thumb { background: #D1D1D1; border-radius: 3px; }
 
-        /* Product card */
-        .product-card {
-            background: white;
-            border: 1px solid #E5E5E5;
+        /* ── Report Card ── */
+        .report-card {
+            flex: 0 0 calc(33.333% - 14px);
+            min-width: 280px;
+            background: #fff;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
             overflow: hidden;
-            cursor: pointer;
+            scroll-snap-align: start;
             transition: transform 0.2s, box-shadow 0.2s;
-            position: relative;
+            cursor: default;
         }
-        .product-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        .report-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
         }
-        .card-image-wrap {
+        .report-card-image {
             position: relative;
             width: 100%;
             aspect-ratio: 4/3;
             overflow: hidden;
-            background: #e8e8e8;
+            background: #F0F0ED;
         }
-        .card-image-wrap img {
+        .report-card-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            padding: 12px 12px 0 12px;
         }
-        .card-image-wrap.dimmed img {
-            opacity: 0.6;
-        }
-        .status-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-        .badge-green { background: #E8F5E9; color: var(--deep-leaf-green); }
-        .badge-amber { background: #FFF8E1; color: #E65100; }
-        .badge-red { background: #FFEBEE; color: var(--fail-red); }
-
-        /* Score circle */
-        .score-circle {
+        .report-card-image.dimmed img { opacity: 0.45; filter: grayscale(0.3); }
+        .score-badge {
             position: absolute;
             bottom: 12px;
             right: 12px;
-            width: 72px;
-            height: 72px;
-            border-radius: 16px;
+            min-width: 52px;
+            height: 32px;
+            padding: 0 10px;
+            border-radius: 8px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             font-family: var(--font-data);
-            color: white;
-            border: 3px solid rgba(255,255,255,0.8);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-            z-index: 2;
-            backdrop-filter: blur(4px);
-        }
-        .score-circle .score-num {
-            font-size: 22px;
+            font-size: 14px;
             font-weight: 600;
-            line-height: 1;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            z-index: 2;
+            letter-spacing: 0.02em;
         }
-        .score-circle .score-sub {
-            font-size: 8px;
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            opacity: 0.9;
-            margin-top: 2px;
+        .score-badge.locked {
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(4px);
+            font-size: 16px;
+            min-width: 40px;
         }
-        .score-circle.blurred {
-            background: #CCC !important;
-        }
-        .score-circle.blurred .score-num {
-            font-size: 24px;
-        }
-
-        /* Card body */
-        .card-body {
+        .report-card-body {
             padding: 16px;
         }
-        .card-body h3 {
-            font-size: 16px;
+        .report-card-body h3 {
+            font-size: 15px;
             font-weight: 600;
             color: #0F2419;
-            margin-bottom: 4px;
-            line-height: 1.3;
-        }
-        .card-body .card-desc {
-            font-size: 13px;
-            color: var(--lab-grey);
-            margin-bottom: 12px;
+            margin-bottom: 6px;
+            line-height: 1.35;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        .score-bar {
-            height: 4px;
-            border-radius: 2px;
-            margin-bottom: 12px;
+        .report-card-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 14px;
         }
-        .card-cta {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
+        .report-card-date,
+        .report-batch {
+            font-size: 12px;
+            color: var(--lab-grey);
+        }
+        .report-batch {
+            font-family: var(--font-data);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 11px;
+        }
+        .report-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-top: 12px;
+            border-top: 1px solid #F0F0ED;
+        }
+        .report-link {
+            color: var(--deep-leaf-green);
+            text-decoration: none;
             font-size: 13px;
             font-weight: 600;
-            font-family: var(--font-primary);
-            cursor: pointer;
-            text-align: center;
-            transition: background 0.2s;
+            transition: opacity 0.2s;
         }
-        .card-cta.download {
-            background: white;
-            color: #0F2419;
-            border: 1px solid #D1D1D1;
-            font-family: var(--font-data);
-            font-size: 11px;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            width: auto;
-            padding: 8px 16px;
-        }
-        .card-cta.download:hover { background: #f5f5f5; border-color: var(--deep-leaf-green); }
-
-        /* Locked overlay */
-        .locked-overlay {
-            padding: 16px;
+        .report-link:hover { opacity: 0.8; }
+        .report-card .locked-overlay {
+            padding: 4px 0 0;
             text-align: center;
         }
-        .locked-overlay .lock-text {
+        .report-card .locked-overlay .lock-text {
             font-size: 13px;
             color: var(--lab-grey);
-            margin-bottom: 8px;
-            line-height: 1.5;
+            margin-bottom: 6px;
         }
-        .locked-overlay .unlock-link {
+        .report-card .locked-overlay .unlock-link {
             font-size: 13px;
             font-weight: 600;
             color: var(--deep-leaf-green);
             cursor: pointer;
             text-decoration: underline;
         }
-        .locked-overlay .unlock-link:hover { color: #185A3F; }
+        .report-card .locked-overlay .unlock-link:hover { color: #185A3F; }
 
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 80px 24px;
-            color: var(--lab-grey);
-        }
-        .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
-        .empty-state h2 { font-size: 20px; color: #0F2419; margin-bottom: 8px; }
-        .empty-state p { font-size: 15px; }
-
-        /* Loading spinner */
-        .loading-spinner {
-            text-align: center;
-            padding: 80px 24px;
-        }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #E5E5E5;
-            border-top-color: var(--deep-leaf-green);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 16px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Subscription modal */
-        .sub-modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1500;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .sub-modal-overlay.active { display: flex; }
-        .sub-modal {
-            background: white;
+        /* ── Voting Queue Section ── */
+        .voting-item {
+            flex: 0 0 200px;
+            background: #fff;
             border-radius: 12px;
-            width: 100%;
-            max-width: 440px;
-            padding: 40px 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            padding: 20px 16px;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .sub-modal .warning-icon { font-size: 48px; margin-bottom: 16px; }
-        .sub-modal h2 {
-            font-size: 22px;
-            font-weight: 700;
+        .voting-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .voting-item-img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #F0F0ED;
+            border: 2px solid #E8E8E5;
+        }
+        .voting-item-name {
+            font-size: 13px;
+            font-weight: 600;
             color: #0F2419;
-            margin-bottom: 12px;
             line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
-        .sub-modal p {
-            font-size: 15px;
+        .voting-item-votes {
+            font-family: var(--font-data);
+            font-size: 12px;
             color: var(--lab-grey);
-            line-height: 1.6;
-            margin-bottom: 24px;
         }
-        .sub-modal .sub-cta {
-            width: 100%;
-            padding: 14px 24px;
+        .vote-btn {
             background: var(--deep-leaf-green);
-            color: white;
+            color: #fff;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font-primary);
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: auto;
+        }
+        .vote-btn:hover { background: #185A3F; }
+
+        /* ── Suggest Section ── */
+        .suggest-section {
+            background: #0F2419;
+            margin-top: 52px;
+            padding: 56px 24px;
+        }
+        .suggest-inner {
+            max-width: 1140px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 52px;
+            align-items: start;
+        }
+        .suggest-left h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 14px;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+        .suggest-left p {
+            font-size: 15px;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .criteria-box {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            padding: 18px 22px;
+        }
+        .criteria-box h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--mint);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 10px;
+        }
+        .criteria-box ul { list-style: none; }
+        .criteria-box ul li {
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            padding: 4px 0 4px 20px;
+            position: relative;
+        }
+        .criteria-box ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--mint);
+            font-weight: 600;
+        }
+        .suggest-form {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px;
+        }
+        .suggest-form h3 {
+            font-size: 17px;
+            font-weight: 600;
+            color: #0F2419;
+            margin-bottom: 20px;
+        }
+        .suggest-form .form-group { margin-bottom: 16px; }
+        .suggest-form .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #0F2419;
+            margin-bottom: 6px;
+        }
+        .suggest-form .form-group input,
+        .suggest-form .form-group select,
+        .suggest-form .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #D1D1D1;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: var(--font-primary);
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .suggest-form .form-group textarea { resize: vertical; min-height: 80px; }
+        .suggest-form .form-group input:focus,
+        .suggest-form .form-group select:focus,
+        .suggest-form .form-group textarea:focus {
+            outline: none;
+            border-color: var(--deep-leaf-green);
+            box-shadow: 0 0 0 3px rgba(31,107,78,0.1);
+        }
+        .suggest-submit {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--deep-leaf-green);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             font-family: var(--font-primary);
             transition: background 0.2s;
-            margin-bottom: 12px;
         }
-        .sub-modal .sub-cta:hover { background: #185A3F; }
-        .sub-modal .sub-cta:disabled { background: #8FA39A; cursor: not-allowed; }
-        .sub-modal .sub-note {
-            font-size: 12px;
-            color: var(--lab-grey);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 500;
+        .suggest-submit:hover { background: #185A3F; }
+        .suggest-submit:disabled { background: #8FA39A; cursor: not-allowed; }
+        .suggest-msg {
+            display: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
         }
-        .sub-modal .sub-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--lab-grey);
-        }
-        .sub-modal-inner { position: relative; }
+        .suggest-msg.success { display: block; background: #E8F5E9; color: #2E7D32; border: 1px solid #81C784; }
+        .suggest-msg.error { display: block; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; }
 
-        /* Cancel message */
+        /* ── Footer ── */
+        .footer {
+            font-size: 13px;
+            color: #7A9188;
+            line-height: 1.7;
+            text-align: center;
+            padding: 36px 24px 44px;
+            max-width: 1140px;
+            margin: 0 auto;
+        }
+        .footer a { color: var(--deep-leaf-green); text-decoration: none; margin: 0 8px; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* ── Loading / Empty ── */
+        .loading-spinner { text-align: center; padding: 48px 24px; }
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #E8E8E5;
+            border-top-color: var(--deep-leaf-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state { text-align: center; padding: 48px 24px; color: var(--lab-grey); }
+        .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+        .empty-state h3 { font-size: 18px; color: #0F2419; margin-bottom: 6px; }
+
+        /* ── Cancel message ── */
         .cancel-msg {
             display: none;
             padding: 12px 16px;
@@ -484,41 +624,70 @@
             border: 1px solid #FFE082;
             border-radius: 8px;
             font-size: 14px;
-            margin-bottom: 24px;
             text-align: center;
+            max-width: 1140px;
+            margin: 16px auto 0;
         }
         .cancel-msg.visible { display: block; }
 
-        /* Footer */
-        .footer {
-            font-size: 13px;
-            color: #7A9188;
-            margin-top: 48px;
-            line-height: 1.6;
-            text-align: center;
-            padding: 0 24px 40px;
-        }
-        .footer a { color: var(--deep-leaf-green); text-decoration: none; margin: 0 8px; }
+        /* ── Auth Modal ── */
+        .auth-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .auth-modal-overlay.active { display: flex; }
+        .auth-modal-content { background: #fff; border-radius: 12px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .auth-modal-header { padding: 20px 24px 0; display: flex; justify-content: flex-end; }
+        .auth-modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--lab-grey); padding: 4px; line-height: 1; }
+        .auth-modal-close:hover { color: #0F2419; }
+        .auth-modal-tabs { display: flex; margin: 0 24px; border-bottom: 2px solid #E8E8E5; }
+        .auth-modal-tab { flex: 1; padding: 12px 0; text-align: center; font-size: 15px; font-weight: 600; color: var(--lab-grey); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; font-family: var(--font-primary); transition: color 0.2s; }
+        .auth-modal-tab:hover { color: var(--deep-leaf-green); }
+        .auth-modal-tab.active { color: var(--deep-leaf-green); border-bottom-color: var(--deep-leaf-green); }
+        .auth-modal-form { display: none; padding: 24px; }
+        .auth-modal-form.active { display: block; }
+        .auth-modal-form .form-group { margin-bottom: 16px; }
+        .auth-modal-form .form-group label { display: block; font-size: 14px; font-weight: 500; color: #0F2419; margin-bottom: 6px; }
+        .auth-modal-form .form-group input { width: 100%; padding: 12px 16px; border: 1px solid #D1D1D1; border-radius: 8px; font-size: 14px; font-family: var(--font-primary); background: #fff; transition: border-color 0.2s; }
+        .auth-modal-form .form-group input:focus { outline: none; border-color: var(--deep-leaf-green); box-shadow: 0 0 0 3px rgba(31,107,78,0.1); }
+        .auth-modal-forgot-link, .auth-modal-back-link { display: inline-block; font-size: 13px; color: var(--deep-leaf-green); text-decoration: none; cursor: pointer; margin-bottom: 16px; font-weight: 500; }
+        .auth-modal-forgot-link:hover, .auth-modal-back-link:hover { text-decoration: underline; }
+        .auth-modal-submit { width: 100%; padding: 12px 24px; background: var(--deep-leaf-green); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font-primary); transition: background 0.2s; }
+        .auth-modal-submit:hover { background: #185A3F; }
+        .auth-modal-submit:disabled { background: #8FA39A; cursor: not-allowed; }
+        .auth-error-message { display: none; padding: 12px 16px; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+        .auth-error-message.visible { display: block; }
 
+        /* ── Subscription Modal ── */
+        .sub-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1500; align-items: center; justify-content: center; padding: 20px; }
+        .sub-modal-overlay.active { display: flex; }
+        .sub-modal { background: #fff; border-radius: 12px; width: 100%; max-width: 440px; padding: 40px 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; }
+        .sub-modal .warning-icon { font-size: 48px; margin-bottom: 16px; }
+        .sub-modal h2 { font-size: 22px; font-weight: 700; color: #0F2419; margin-bottom: 12px; line-height: 1.3; }
+        .sub-modal p { font-size: 15px; color: var(--lab-grey); line-height: 1.6; margin-bottom: 24px; }
+        .sub-modal .sub-cta { width: 100%; padding: 14px 24px; background: var(--deep-leaf-green); color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: var(--font-primary); transition: background 0.2s; margin-bottom: 12px; }
+        .sub-modal .sub-cta:hover { background: #185A3F; }
+        .sub-modal .sub-cta:disabled { background: #8FA39A; cursor: not-allowed; }
+        .sub-modal .sub-note { font-size: 12px; color: var(--lab-grey); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+        .sub-modal .sub-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--lab-grey); }
+
+        /* ── Responsive ── */
         @media (max-width: 768px) {
-            .header-nav > a:not(.nav-cta) { display: none; }
-            .nav-cta { padding: 6px 14px !important; font-size: 12px !important; }
-            .header-inner { flex-wrap: wrap; gap: 8px; }
-            .header-logo { height: 40px; }
-            .header-nav { gap: 12px; }
-            .auth-header-section { border-left: none; padding-left: 0; margin-left: 0; }
-            .auth-user-info { font-size: 13px; gap: 6px; }
-            .auth-user-name { display: none; }
-            .auth-signout-link { font-size: 12px; }
-            .auth-signin-link { font-size: 13px; }
-            .container { padding: 24px 16px 60px; }
-            .page-header h1 { font-size: 24px; }
-            .card-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-            .filters-bar { flex-direction: column; }
-            .filters-bar input, .filters-bar select { min-width: 100%; }
+            .header-inner { height: 56px; }
+            .header-nav { display: none; }
+            .header-logo { height: 44px; }
+            .welcome-banner { padding: 36px 16px 40px; }
+            .welcome-banner h1 { font-size: 24px; }
+            .welcome-banner .subtitle { font-size: 17px; }
+            .section { padding: 32px 16px 0; }
+            .section-header h2 { font-size: 18px; }
+            .report-card { flex: 0 0 78%; min-width: 240px; }
+            .voting-item { flex: 0 0 160px; }
+            .suggest-inner { grid-template-columns: 1fr; gap: 28px; }
+            .suggest-section { padding: 40px 16px; }
+            .suggest-form { padding: 20px; }
+            .footer { padding: 28px 16px 36px; }
         }
         @media (max-width: 480px) {
-            .card-grid { grid-template-columns: 1fr; }
+            .report-card { flex: 0 0 88%; min-width: 220px; }
+            .welcome-banner h1 { font-size: 22px; }
         }
     </style>
 </head>
@@ -526,68 +695,130 @@
     <!-- Header -->
     <header class="header">
         <div class="header-inner">
-            <a href="/"><img src="/public/choosepure-logo.png" alt="ChoosePure" class="header-logo" /></a>
-            <nav class="header-nav">
-                <a href="/">Dashboard</a>
-                <a href="/purity-wall">Lab Reports</a>
-                <a href="/polling">Vote</a>
-                
-                <div id="auth-header-section" class="auth-header-section">
-                    <a id="auth-signin-link" class="auth-signin-link" onclick="openAuthModal()">Sign In</a>
-                    <div id="auth-user-info" class="auth-user-info" style="display:none;">
-                        <span>Hi, <span id="auth-user-name"></span></span>
-                        <a id="auth-signout-link" class="auth-signout-link" onclick="handleSignOut()">Sign Out</a>
-                    </div>
-                </div>
-            </nav>
+            <div class="header-left">
+                <a href="/"><img src="/public/choosepure-logo.png" alt="Choosepure" class="header-logo" /></a>
+                <nav class="header-nav">
+                    <a href="/purity-wall" class="active">Dashboard</a>
+                    <a href="/polling">Voting</a>
+                    <a href="#suggest-section">Subscription</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div id="user-avatar" class="user-avatar"></div>
+                <a id="manage-sub-link" class="manage-sub-link" onclick="showManageSub()">Manage</a>
+                <a id="header-signout" class="header-signout" onclick="handleSignOut()">Sign Out</a>
+                <a id="header-signin" class="header-signin" onclick="openAuthModal()">Sign In</a>
+            </div>
         </div>
     </header>
 
-    <div class="container">
-        <!-- Cancel message -->
-        <div id="cancel-msg" class="cancel-msg"></div>
+    <!-- Cancel message -->
+    <div id="cancel-msg" class="cancel-msg" style="padding-left:24px;padding-right:24px;"></div>
 
-        <!-- Page header -->
-        <div class="page-header">
-            <h1 id="page-title">See how your milk compares</h1>
-            <p>Independent lab-tested purity scores for everyday products</p>
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <div class="welcome-banner-inner">
+            <h1 id="welcome-heading">Welcome back</h1>
+            <div class="subtitle">Your Purity Dashboard</div>
+            <div class="desc">Independent lab-tested purity scores for everyday products</div>
         </div>
+    </div>
 
-        <!-- Filters -->
-        <div id="filters-bar" class="filters-bar disabled">
-            <input type="text" id="search-input" placeholder="Search by brand or category..." />
-            <select id="category-filter">
-                <option value="">All Categories</option>
-            </select>
+    <!-- Latest Test Reports -->
+    <div class="section" id="reports-section">
+        <div class="section-header">
+            <h2>Latest Test Reports</h2>
+            <a href="#" class="view-all" id="view-all-reports">View All Reports</a>
         </div>
+        <p class="section-subtitle">Verified analysis from the last 24 hours</p>
 
-        <!-- Loading -->
-        <div id="loading" class="loading-spinner">
+        <div id="reports-loading" class="loading-spinner">
             <div class="spinner"></div>
             <p>Loading reports...</p>
         </div>
-
-        <!-- Empty state -->
-        <div id="empty-state" class="empty-state" style="display:none;">
+        <div id="reports-empty" class="empty-state" style="display:none;">
             <div class="empty-icon">🧪</div>
-            <h2>No lab reports available yet</h2>
+            <h3>No lab reports available yet</h3>
             <p>Check back soon. We're testing products and publishing results.</p>
         </div>
+        <div id="reports-row" class="scroll-row" style="display:none;"></div>
+    </div>
 
-        <!-- Card grid -->
-        <div id="card-grid" class="card-grid" style="display:none;"></div>
+    <!-- Top Products in the Queue -->
+    <div class="section" id="voting-section">
+        <div class="section-header">
+            <h2>🗳️ Top Products in the Queue</h2>
+        </div>
+        <p class="section-subtitle">Vote on what we should test next</p>
 
-        <!-- Footer -->
-        <div class="footer">
-            Testing conducted in accredited labs. Reports are shared for consumer awareness.<br/>
-            <div style="margin-top: 12px;">
-                <a href="/vision.html">Our Vision</a> |
-                <a href="https://blog.choosepure.in" target="_blank">Blog</a> |
-                <a href="/polling">Product Polling</a> |
-                <a href="/privacy-policy.html">Privacy Policy</a> |
-                <a href="/terms-conditions.html">Terms & Conditions</a> |
-                <a href="/refund-policy.html">Refund Policy</a>
+        <div id="voting-loading" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading products...</p>
+        </div>
+        <div id="voting-empty" class="empty-state" style="display:none;">
+            <div class="empty-icon">📋</div>
+            <h3>No products in the queue</h3>
+            <p>Suggest a product below to get it added.</p>
+        </div>
+        <div id="voting-row" class="scroll-row" style="display:none;"></div>
+    </div>
+
+    <!-- Don't See Your Brand? -->
+    <div class="suggest-section" id="suggest-section">
+        <div class="suggest-inner">
+            <div class="suggest-left">
+                <h2>Don't see your brand?</h2>
+                <p>We're always expanding our testing coverage. If there's a product you want independently tested, let us know and we'll consider adding it to our queue.</p>
+                <div class="criteria-box">
+                    <h4>Our Selection Criteria</h4>
+                    <ul>
+                        <li>Widely available in Indian retail</li>
+                        <li>Consumed daily by families</li>
+                        <li>Category with known adulteration risks</li>
+                        <li>Community demand (votes + suggestions)</li>
+                    </ul>
+                </div>
             </div>
+            <div class="suggest-form" id="suggest-form">
+                <h3>Suggest a Product</h3>
+                <div id="suggest-msg" class="suggest-msg"></div>
+                <div class="form-group">
+                    <label for="sg-brand">Brand Name</label>
+                    <input type="text" id="sg-brand" placeholder="e.g. Amul, Mother Dairy" />
+                </div>
+                <div class="form-group">
+                    <label for="sg-category">Product Category</label>
+                    <select id="sg-category">
+                        <option value="">Select category</option>
+                        <option value="Milk">Milk</option>
+                        <option value="Ghee">Ghee</option>
+                        <option value="Honey">Honey</option>
+                        <option value="Spices">Spices</option>
+                        <option value="Oil">Oil</option>
+                        <option value="Atta">Atta</option>
+                        <option value="Paneer">Paneer</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sg-reason">Why should we test this?</label>
+                    <textarea id="sg-reason" placeholder="Tell us why this product matters to you..."></textarea>
+                </div>
+                <button class="suggest-submit" id="btn-suggest" onclick="submitSuggestion()">Submit Suggestion</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        Testing conducted in accredited labs. Reports are shared for consumer awareness.<br/>
+        <div style="margin-top: 12px;">
+            <a href="/vision.html">Our Vision</a> |
+            <a href="https://blog.choosepure.in" target="_blank">Blog</a> |
+            <a href="/polling">Product Polling</a> |
+            <a href="/privacy-policy.html">Privacy Policy</a> |
+            <a href="/terms-conditions.html">Terms &amp; Conditions</a> |
+            <a href="/refund-policy.html">Refund Policy</a>
         </div>
     </div>
 
@@ -653,14 +884,12 @@
     <!-- Subscription Modal -->
     <div id="sub-modal" class="sub-modal-overlay">
         <div class="sub-modal">
-            <div class="sub-modal-inner">
-                <button class="sub-close" onclick="closeSubModal()" aria-label="Close">&times;</button>
-                <div class="warning-icon">⚠️</div>
-                <h2>Don't feed your family in the dark.</h2>
-                <p id="sub-modal-text">Unlock detailed lab reports covering toxins, shelf-life, and nutritional accuracy.</p>
-                <button class="sub-cta" id="sub-cta-btn" onclick="handleSubscribe()">Subscribe for ₹299</button>
-                <div class="sub-note">MONTHLY ACCESS • CANCEL ANYTIME</div>
-            </div>
+            <button class="sub-close" onclick="closeSubModal()" aria-label="Close">&times;</button>
+            <div class="warning-icon">⚠️</div>
+            <h2>Don't feed your family in the dark.</h2>
+            <p id="sub-modal-text">Unlock detailed lab reports covering toxins, shelf-life, and nutritional accuracy.</p>
+            <button class="sub-cta" id="sub-cta-btn" onclick="handleSubscribe()">Subscribe for ₹299</button>
+            <div class="sub-note">MONTHLY ACCESS • CANCEL ANYTIME</div>
         </div>
     </div>
 
@@ -696,6 +925,7 @@
             return '#D62828';
         }
         function formatScore(score) {
+            if (score == null) return '—';
             return Math.round(score);
         }
         function getBadgeClass(badge) {
@@ -704,31 +934,58 @@
             if (lower.includes('warning')) return 'badge-amber';
             return 'badge-green';
         }
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(/\s+/);
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return parts[0][0].toUpperCase();
+        }
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return '';
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
 
-        // ── Auth modal ──
+        // ── Auth header ──
         function updateAuthHeader(user) {
-            const signinLink = document.getElementById('auth-signin-link');
-            const userInfo = document.getElementById('auth-user-info');
-            const userName = document.getElementById('auth-user-name');
+            const avatar = document.getElementById('user-avatar');
+            const signout = document.getElementById('header-signout');
+            const signin = document.getElementById('header-signin');
+            const manageSub = document.getElementById('manage-sub-link');
+            const heading = document.getElementById('welcome-heading');
+
             if (user) {
                 currentUser = user;
                 isSubscribed = user.subscriptionStatus === 'subscribed';
-                signinLink.style.display = 'none';
-                userName.textContent = user.name;
-                if (user.subscriptionStatus === 'subscribed') {
-                    document.getElementById('auth-signout-link').insertAdjacentHTML('beforebegin', '<a id="manage-sub-link" class="auth-signout-link" onclick="showManageSub()" style="margin-right:8px;">Manage</a>');
+                avatar.textContent = getInitials(user.name);
+                avatar.classList.add('visible');
+                signout.classList.add('visible');
+                signin.style.display = 'none';
+                heading.textContent = 'Welcome back, ' + escapeHtml(user.name);
+                if (isSubscribed) {
+                    manageSub.classList.add('visible');
+                } else {
+                    manageSub.classList.remove('visible');
                 }
-                userInfo.style.display = 'flex';
             } else {
                 currentUser = null;
                 isSubscribed = false;
-                signinLink.style.display = '';
-                userInfo.style.display = 'none';
-                userName.textContent = '';
+                avatar.classList.remove('visible');
+                signout.classList.remove('visible');
+                manageSub.classList.remove('visible');
+                signin.style.display = '';
+                heading.textContent = 'Welcome back';
             }
             updatePageForSubscription();
         }
 
+        // ── Auth modal ──
         function openAuthModal(tab) {
             showAuthTab(tab || 'signin');
             document.querySelectorAll('.auth-modal-form input').forEach(i => i.value = '');
@@ -960,182 +1217,7 @@
             }
         }
 
-        // ── Page state ──
-        function updatePageForSubscription() {
-            const title = document.getElementById('page-title');
-            const filtersBar = document.getElementById('filters-bar');
-            title.textContent = isSubscribed ? 'Your Purity Dashboard' : 'See how your milk compares';
-            if (isSubscribed) {
-                filtersBar.classList.remove('disabled');
-            } else {
-                filtersBar.classList.add('disabled');
-            }
-            renderCards();
-        }
-
-        // ── Card rendering ──
-        function renderCards() {
-            const grid = document.getElementById('card-grid');
-            const loading = document.getElementById('loading');
-            const emptyState = document.getElementById('empty-state');
-            const filtered = getFilteredReports();
-
-            loading.style.display = 'none';
-
-            if (allReports.length === 0) {
-                grid.style.display = 'none';
-                emptyState.style.display = '';
-                return;
-            }
-
-            if (filtered.length === 0) {
-                grid.style.display = 'none';
-                emptyState.style.display = '';
-                emptyState.querySelector('h2').textContent = 'No matching reports';
-                emptyState.querySelector('p').textContent = 'Try a different search or category.';
-                return;
-            }
-
-            emptyState.style.display = 'none';
-            grid.style.display = '';
-            grid.innerHTML = '';
-
-            filtered.forEach((report, index) => {
-                const isFirst = index === 0;
-                const unlocked = isSubscribed || isFirst;
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.setAttribute('role', 'article');
-                card.setAttribute('aria-label', report.productName || report.brandName);
-
-                const scoreColor = report.purityScore != null ? getScoreColor(report.purityScore) : '#CCC';
-                const badge = (report.statusBadges && report.statusBadges.length > 0) ? report.statusBadges[0] : null;
-
-                let html = '';
-                // Image
-                html += '<div class="card-image-wrap' + (unlocked ? '' : ' dimmed') + '">';
-                html += '<img src="' + escapeHtml(report.imageUrl || '') + '" alt="' + escapeHtml(report.productName || '') + '" loading="lazy" />';
-                // Status badges removed
-                // Score circle
-                if (unlocked && report.purityScore != null) {
-                    html += '<div class="score-circle" style="background:' + scoreColor + ';"><span class="score-num">' + formatScore(report.purityScore) + '</span><span class="score-sub">PURITY INDEX</span></div>';
-                } else {
-                    html += '<div class="score-circle blurred">🔒</div>';
-                }
-                html += '</div>';
-
-                // Body
-                html += '<div class="card-body">';
-                html += '<h3>' + escapeHtml(report.productName || report.brandName || '') + '</h3>';
-                html += '<p class="card-desc">' + escapeHtml(report.category || '') + '</p>';
-
-                if (unlocked && report.purityScore != null) {
-                    html += '<div class="score-bar" style="background:' + scoreColor + ';"></div>';
-                    if (isSubscribed) {
-                        var rLink = report.reportUrl || '/deep-dive?id=' + report._id;
-                        html += '<button class="card-cta download" onclick="window.location.href=\'' + rLink + '\'">⤓ VIEW REPORT</button>';
-                    } else {
-                        html += '<button class="card-cta download" onclick="openSubModal()">⤓ VIEW REPORT</button>';
-                    }
-                } else {
-                    // Locked
-                    html += '<div class="locked-overlay">';
-                    html += '<p class="lock-text">Subscribe to see if this passed the Pesticide Test.</p>';
-                    html += '<span class="unlock-link" onclick="onLockedCardClick()">Unlock Report</span>';
-                    html += '</div>';
-                }
-                html += '</div>';
-
-                card.innerHTML = html;
-
-                if (!unlocked) {
-                    card.addEventListener('click', function(e) {
-                        if (!e.target.classList.contains('unlock-link')) {
-                            onLockedCardClick();
-                        }
-                    });
-                }
-
-                grid.appendChild(card);
-            });
-        }
-
-        function onLockedCardClick() {
-            trackEvent('locked_card_click', 'engagement', 'purity_wall');
-            openSubModal();
-        }
-
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        // ── Search & Filter ──
-        function getFilteredReports() {
-            if (!isSubscribed) return allReports;
-            const searchVal = document.getElementById('search-input').value.trim().toLowerCase();
-            const catVal = document.getElementById('category-filter').value;
-            return allReports.filter(r => {
-                const matchSearch = !searchVal ||
-                    (r.brandName || '').toLowerCase().includes(searchVal) ||
-                    (r.category || '').toLowerCase().includes(searchVal);
-                const matchCat = !catVal || r.category === catVal;
-                return matchSearch && matchCat;
-            });
-        }
-
-        document.getElementById('search-input').addEventListener('input', renderCards);
-        document.getElementById('category-filter').addEventListener('change', renderCards);
-
-        function populateCategories(reports) {
-            const select = document.getElementById('category-filter');
-            const cats = [...new Set(reports.map(r => r.category).filter(Boolean))].sort();
-            select.innerHTML = '<option value="">All Categories</option>';
-            cats.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c;
-                opt.textContent = c;
-                select.appendChild(opt);
-            });
-        }
-
-        // ── Data loading ──
-        async function loadReports() {
-            const loading = document.getElementById('loading');
-            const grid = document.getElementById('card-grid');
-            const emptyState = document.getElementById('empty-state');
-            loading.style.display = '';
-            grid.style.display = 'none';
-            emptyState.style.display = 'none';
-
-            try {
-                const res = await fetch(API_BASE + '/api/reports', { credentials: 'include' });
-                const data = await res.json();
-                if (res.ok && data.success) {
-                    allReports = data.reports || [];
-                    populateCategories(allReports);
-                    renderCards();
-                } else {
-                    loading.style.display = 'none';
-                    emptyState.style.display = '';
-                }
-            } catch (err) {
-                loading.innerHTML = '<p style="color:#C62828;">Unable to connect. Please check your internet connection and try again.</p><button onclick="loadReports()" style="margin-top:12px;padding:10px 20px;background:var(--deep-leaf-green);color:white;border:none;border-radius:8px;cursor:pointer;font-family:var(--font-primary);">Retry</button>';
-            }
-        }
-
-        async function checkSession() {
-            try {
-                const res = await fetch(API_BASE + '/api/user/me', { credentials: 'include' });
-                if (!res.ok) return;
-                const data = await res.json();
-                if (data.success && data.user) updateAuthHeader(data.user);
-            } catch(e) {}
-        }
-
-
-        // Manage subscription
+        // ── Manage subscription ──
         function showManageSub() {
             if (confirm('Do you want to cancel your subscription? You will have access until the end of your billing cycle.')) {
                 cancelSubscription();
@@ -1161,10 +1243,229 @@
             }
         }
 
+        // ── Page state ──
+        function updatePageForSubscription() {
+            renderReportCards();
+            if (!isSubscribed && currentUser) {
+                openSubModal();
+            }
+        }
+
+        // ── Report card rendering ──
+        function renderReportCards() {
+            const row = document.getElementById('reports-row');
+            const loading = document.getElementById('reports-loading');
+            const emptyState = document.getElementById('reports-empty');
+
+            loading.style.display = 'none';
+
+            if (allReports.length === 0) {
+                row.style.display = 'none';
+                emptyState.style.display = '';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            row.style.display = '';
+            row.innerHTML = '';
+
+            allReports.forEach((report, index) => {
+                const isFirst = index === 0;
+                const unlocked = isSubscribed || isFirst;
+                const card = document.createElement('div');
+                card.className = 'report-card';
+                card.setAttribute('role', 'article');
+                card.setAttribute('aria-label', report.productName || report.brandName);
+
+                const scoreColor = report.purityScore != null ? getScoreColor(report.purityScore) : '#CCC';
+                let html = '';
+
+                // Image container
+                html += '<div class="report-card-image' + (unlocked ? '' : ' dimmed') + '">';
+                html += '<img src="' + escapeHtml(report.imageUrl) + '" alt="' + escapeHtml(report.productName) + '" loading="lazy" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22><rect fill=%22%23F0F0F0%22 width=%22400%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%236B6B6B%22 font-size=%2214%22>No Image</text></svg>\'" />';
+                // Score badge
+                if (unlocked && report.purityScore != null) {
+                    html += '<div class="score-badge" style="background:' + scoreColor + ';">' + formatScore(report.purityScore) + '%</div>';
+                } else {
+                    html += '<div class="score-badge locked">🔒</div>';
+                }
+                html += '</div>';
+
+                // Body
+                html += '<div class="report-card-body">';
+                html += '<h3>' + escapeHtml(report.productName || report.brandName || '') + '</h3>';
+                html += '<div class="report-card-meta">';
+                html += '<span class="report-card-date">Test Date: ' + formatDate(report.createdAt) + '</span>';
+                html += '<span class="report-batch">BATCH #' + (report._id ? report._id.toString().slice(-5).toUpperCase() : 'N/A') + '</span>';
+                html += '</div>';
+
+                if (unlocked && report.purityScore != null) {
+                    html += '<div class="report-card-footer">';
+                    const rLink = report.reportUrl || '/deep-dive?id=' + report._id;
+                    if (isSubscribed) {
+                        html += '<a href="' + rLink + '" class="report-link">Full Analysis →</a>';
+                    } else {
+                        html += '<a href="#" class="report-link" onclick="event.preventDefault();openSubModal()">Full Analysis →</a>';
+                    }
+                    html += '</div>';
+                } else {
+                    html += '<div class="locked-overlay">';
+                    html += '<p class="lock-text">Subscribe to unlock this report.</p>';
+                    html += '<span class="unlock-link" onclick="onLockedCardClick()">Unlock Report</span>';
+                    html += '</div>';
+                }
+                html += '</div>';
+
+                card.innerHTML = html;
+
+                if (!unlocked) {
+                    card.addEventListener('click', function(e) {
+                        if (!e.target.classList.contains('unlock-link') && !e.target.classList.contains('report-link')) {
+                            onLockedCardClick();
+                        }
+                    });
+                }
+
+                row.appendChild(card);
+            });
+        }
+
+        function onLockedCardClick() {
+            trackEvent('locked_card_click', 'engagement', 'purity_wall');
+            openSubModal();
+        }
+
+        // ── Data loading: Reports ──
+        async function loadReports() {
+            const loading = document.getElementById('reports-loading');
+            const row = document.getElementById('reports-row');
+            const emptyState = document.getElementById('reports-empty');
+            loading.style.display = '';
+            row.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            try {
+                const res = await fetch(API_BASE + '/api/reports', { credentials: 'include' });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    allReports = data.reports || [];
+                    renderReportCards();
+                } else {
+                    loading.style.display = 'none';
+                    emptyState.style.display = '';
+                }
+            } catch (err) {
+                loading.innerHTML = '<p style="color:#C62828;">Unable to connect. Please check your internet connection.</p><button onclick="loadReports()" style="margin-top:12px;padding:10px 20px;background:var(--deep-leaf-green);color:white;border:none;border-radius:8px;cursor:pointer;font-family:var(--font-primary);">Retry</button>';
+            }
+        }
+
+        // ── Data loading: Voting products ──
+        async function loadVotingProducts() {
+            const loading = document.getElementById('voting-loading');
+            const row = document.getElementById('voting-row');
+            const emptyState = document.getElementById('voting-empty');
+            loading.style.display = '';
+            row.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            try {
+                const res = await fetch(API_BASE + '/api/polls/products');
+                if (!res.ok) throw new Error('Failed');
+                const data = await res.json();
+                const products = data.products || data || [];
+                loading.style.display = 'none';
+
+                if (!products.length) {
+                    emptyState.style.display = '';
+                    return;
+                }
+
+                row.style.display = '';
+                row.innerHTML = '';
+                products.forEach(product => {
+                    const item = document.createElement('div');
+                    item.className = 'voting-item';
+                    const votes = product.totalVotes || 0;
+                    item.innerHTML = `
+                        <img class="voting-item-img" src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2256%22 height=%2256%22><rect fill=%22%23F0F0F0%22 width=%2256%22 height=%2256%22 rx=%2228%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%236B6B6B%22 font-size=%2210%22>?</text></svg>'" />
+                        <div class="voting-item-name">${escapeHtml(product.name)}</div>
+                        <div class="voting-item-votes">${votes} vote${votes !== 1 ? 's' : ''}</div>
+                        <button class="vote-btn" onclick="window.location.href='/polling'">Vote for Test</button>
+                    `;
+                    row.appendChild(item);
+                });
+            } catch (err) {
+                loading.style.display = 'none';
+                emptyState.style.display = '';
+            }
+        }
+
+        // ── Suggestion form ──
+        async function submitSuggestion() {
+            const msgEl = document.getElementById('suggest-msg');
+            msgEl.className = 'suggest-msg';
+            msgEl.style.display = 'none';
+
+            const productName = document.getElementById('sg-brand').value.trim();
+            const category = document.getElementById('sg-category').value;
+            const reason = document.getElementById('sg-reason').value.trim();
+
+            if (!productName) { msgEl.className = 'suggest-msg error'; msgEl.textContent = 'Please enter a brand name.'; msgEl.style.display = 'block'; return; }
+            if (!category) { msgEl.className = 'suggest-msg error'; msgEl.textContent = 'Please select a category.'; msgEl.style.display = 'block'; return; }
+
+            const btn = document.getElementById('btn-suggest');
+            btn.disabled = true; btn.textContent = 'Submitting...';
+
+            const payload = { productName, category, reason };
+            if (currentUser) {
+                payload.userName = currentUser.name || '';
+                payload.userEmail = currentUser.email || '';
+            }
+
+            try {
+                const res = await fetch(API_BASE + '/api/suggestions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    msgEl.className = 'suggest-msg success';
+                    msgEl.textContent = 'Suggestion submitted! We\'ll review it soon.';
+                    msgEl.style.display = 'block';
+                    document.getElementById('sg-brand').value = '';
+                    document.getElementById('sg-category').value = '';
+                    document.getElementById('sg-reason').value = '';
+                    try { mixpanel.track('Product Suggested', { product_name: productName, category }); } catch(e) {}
+                } else {
+                    msgEl.className = 'suggest-msg error';
+                    msgEl.textContent = data.message || 'Failed to submit. Try again.';
+                    msgEl.style.display = 'block';
+                }
+            } catch(e) {
+                msgEl.className = 'suggest-msg error';
+                msgEl.textContent = 'Unable to submit. Please check your connection.';
+                msgEl.style.display = 'block';
+            }
+            btn.disabled = false; btn.textContent = 'Submit Suggestion';
+        }
+
+        // ── Session check ──
+        async function checkSession() {
+            try {
+                const res = await fetch(API_BASE + '/api/user/me', { credentials: 'include' });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success && data.user) updateAuthHeader(data.user);
+            } catch(e) {}
+        }
+
         // ── Init ──
         (async function init() {
             await checkSession();
             loadReports();
+            loadVotingProducts();
         })();
 
         // Wake up server
