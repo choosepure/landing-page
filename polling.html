@@ -70,95 +70,225 @@
         :root {
             --pure-ivory: #FAFAF7;
             --deep-leaf-green: #1F6B4E;
+            --deep-leaf-green-light: #267A59;
             --grain-brown: #8A6E4B;
             --lab-grey: #6B6B6B;
-            --mint: #95db93;
+            --mint: #95DB93;
             --warning-amber: #FFB703;
             --fail-red: #D62828;
             --font-primary: 'Inter', sans-serif;
             --font-data: 'Roboto Mono', monospace;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: var(--font-primary);
             background: var(--pure-ivory);
             color: var(--lab-grey);
             line-height: 1.6;
+            min-height: 100vh;
         }
 
-        /* Header */
+        /* ── Header (matches dashboard) ── */
         .header {
-            background: white;
-            border-bottom: 1px solid #E8F0ED;
-            padding: 16px 24px;
+            background: #fff;
+            border-bottom: 1px solid #E8E8E5;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
         .header-inner {
-            max-width: 1100px;
+            max-width: 1140px;
             margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            height: 68px;
+            padding: 0 24px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
         }
         .header-logo {
-            height: 40px;
+            height: 72px;
+            display: block;
+            flex-shrink: 0;
         }
         .header-nav {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 28px;
         }
         .header-nav a {
-            color: var(--deep-leaf-green);
+            color: var(--lab-grey);
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
-            transition: opacity 0.2s;
+            padding: 6px 0;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
         }
-        .header-nav a:hover { opacity: 0.8; }
-        .btn-waitlist {
-            background: var(--deep-leaf-green);
-            color: white !important;
-            padding: 10px 20px;
-            border-radius: 8px;
+        .header-nav a:hover { color: var(--deep-leaf-green); }
+        .header-nav a.active {
+            color: var(--deep-leaf-green);
             font-weight: 600;
-            transition: background 0.2s, transform 0.2s;
+            border-bottom-color: var(--deep-leaf-green);
         }
-        .btn-waitlist:hover {
-            background: #185A3F;
-            transform: translateY(-1px);
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--deep-leaf-green);
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            flex-shrink: 0;
+        }
+        .user-avatar.visible { display: flex; }
+        .header-signout {
+            color: var(--lab-grey);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: none;
+            transition: color 0.2s;
+        }
+        .header-signout:hover { color: var(--fail-red); }
+        .header-signout.visible { display: inline; }
+        .header-signin {
+            color: #fff;
+            background: var(--deep-leaf-green);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            font-family: var(--font-primary);
+            transition: background 0.2s;
+        }
+        .header-signin:hover { background: #185A3F; }
 
-        /* Container */
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 40px 24px 80px;
-        }
-
-        /* Hero */
+        /* ── Hero Section ── */
         .hero {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 56px 24px 40px;
             text-align: center;
-            margin-bottom: 48px;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: #E8F5E9;
+            color: var(--deep-leaf-green);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 20px;
+            margin-bottom: 20px;
         }
         .hero h1 {
-            font-size: 40px;
+            font-size: 42px;
             font-weight: 700;
-            color: var(--deep-leaf-green);
-            margin-bottom: 12px;
+            color: #0F2419;
+            line-height: 1.15;
             letter-spacing: -0.02em;
+            margin-bottom: 16px;
         }
-        .hero p {
-            font-size: 18px;
-            color: var(--grain-brown);
-            max-width: 600px;
+        .hero h1 em {
+            color: var(--deep-leaf-green);
+            font-style: italic;
+        }
+        .hero .subtitle {
+            font-size: 16px;
+            color: var(--lab-grey);
+            max-width: 580px;
+            margin: 0 auto 28px;
+            line-height: 1.6;
+        }
+        .search-bar {
+            max-width: 520px;
             margin: 0 auto;
+            position: relative;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            border: 1px solid #D1D1D1;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: var(--font-primary);
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--deep-leaf-green);
+            box-shadow: 0 0 0 3px rgba(31,107,78,0.1);
+        }
+        .search-bar .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--lab-grey);
+            pointer-events: none;
         }
 
-        /* Loading */
+        /* ── Trending Section ── */
+        .trending-section {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 24px 48px;
+        }
+        .trending-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .trending-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0F2419;
+            letter-spacing: -0.02em;
+        }
+        .trending-subtitle {
+            font-family: var(--font-data);
+            font-size: 12px;
+            color: var(--lab-grey);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 20px;
+        }
+        .sort-indicator {
+            font-size: 13px;
+            color: var(--lab-grey);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sort-indicator::before {
+            content: '↓';
+            font-weight: 700;
+        }
+
+        /* ── Loading / Error / Empty ── */
         .loading-container {
             display: flex;
             flex-direction: column;
@@ -180,8 +310,6 @@
             color: var(--lab-grey);
             font-size: 15px;
         }
-
-        /* Error */
         .error-container {
             text-align: center;
             padding: 80px 20px;
@@ -205,116 +333,130 @@
             transition: background 0.2s;
         }
         .btn-retry:hover { background: #185A3F; }
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state p {
+            font-size: 16px;
+            color: var(--lab-grey);
+        }
 
-        /* Product Grid */
+        /* ── Product Grid ── */
         .product-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 24px;
         }
         .product-card {
-            background: white;
-            border-radius: 16px;
+            background: #fff;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            border: 1px solid #E8F0ED;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
             transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
             flex-direction: column;
         }
         .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
         }
-        .product-image {
+        .product-image-wrap {
+            position: relative;
             width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background: #f0f0f0;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            background: #F0F0ED;
         }
-        .product-info {
-            padding: 20px;
+        .product-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .category-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(15,36,25,0.75);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .product-body {
+            padding: 16px;
             flex: 1;
             display: flex;
             flex-direction: column;
         }
         .product-name {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #0F2419;
             margin-bottom: 8px;
+            line-height: 1.3;
         }
-        .product-description {
+        .product-votes-count {
             font-size: 14px;
             color: var(--lab-grey);
-            margin-bottom: 16px;
-            flex: 1;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .product-meta {
+            margin-bottom: 12px;
             display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .product-footer {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
+            margin-top: auto;
             padding-top: 12px;
-            border-top: 1px solid #E8F0ED;
+            border-top: 1px solid #E8E8E5;
         }
-        .product-amount {
-            font-family: var(--font-data);
-            font-size: 16px;
+        .product-status {
+            font-size: 12px;
+            color: var(--lab-grey);
+            line-height: 1.4;
+        }
+        .product-status strong {
+            color: #0F2419;
             font-weight: 600;
-            color: var(--deep-leaf-green);
-        }
-        .product-votes {
-            font-size: 13px;
-            color: var(--grain-brown);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .product-votes svg {
-            width: 16px;
-            height: 16px;
         }
         .btn-vote {
-            width: 100%;
-            padding: 14px;
+            padding: 8px 20px;
             background: var(--deep-leaf-green);
-            color: white;
+            color: #fff;
             border: none;
-            border-radius: 10px;
-            font-size: 15px;
+            border-radius: 8px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             font-family: var(--font-primary);
-            transition: background 0.2s, transform 0.2s;
+            transition: background 0.2s;
+            white-space: nowrap;
         }
-        .btn-vote:hover {
-            background: #185A3F;
-            transform: translateY(-1px);
-        }
+        .btn-vote:hover { background: #185A3F; }
 
         /* Share Buttons */
         .share-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             margin-top: 10px;
         }
         .share-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--lab-grey);
             font-weight: 500;
         }
         .share-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: 1px solid #E8F0ED;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid #E8E8E5;
             background: #F8FAF9;
             cursor: pointer;
             display: flex;
@@ -323,97 +465,145 @@
             transition: all 0.2s;
             padding: 0;
         }
-        .share-btn:hover {
-            background: #E8F0ED;
-            transform: translateY(-1px);
-        }
-        .share-btn svg {
-            width: 16px;
-            height: 16px;
-        }
+        .share-btn:hover { background: #E8F0ED; transform: translateY(-1px); }
+        .share-btn svg { width: 14px; height: 14px; }
         .share-btn.whatsapp:hover { background: #dcf8c6; border-color: #25D366; }
         .share-btn.twitter:hover { background: #e8f5fd; border-color: #1DA1F2; }
         .share-btn.copy-link:hover { background: #E8F0ED; border-color: var(--deep-leaf-green); }
-        .share-btn.copied {
-            background: var(--deep-leaf-green);
-            border-color: var(--deep-leaf-green);
-        }
+        .share-btn.copied { background: var(--deep-leaf-green); border-color: var(--deep-leaf-green); }
         .share-btn.copied svg { stroke: white; }
 
-        /* Progress Bar */
-        .progress-section {
-            margin-bottom: 12px;
+        /* ── Suggest Section (dark green, matches dashboard) ── */
+        .suggest-section {
+            background: #0F2419;
+            margin-top: 0;
+            padding: 56px 24px;
         }
-        .progress-bar-bg {
-            width: 100%;
-            height: 10px;
-            background: #E8F0ED;
-            border-radius: 5px;
-            overflow: hidden;
+        .suggest-inner {
+            max-width: 1140px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 52px;
+            align-items: start;
+        }
+        .suggest-left h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 14px;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+        .suggest-left p {
+            font-size: 15px;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .criteria-box {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            padding: 18px 22px;
+        }
+        .criteria-box h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--mint);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 10px;
+        }
+        .criteria-box ul { list-style: none; }
+        .criteria-box ul li {
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            padding: 4px 0 4px 20px;
+            position: relative;
+        }
+        .criteria-box ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--mint);
+            font-weight: 600;
+        }
+        .suggest-form {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px;
+        }
+        .suggest-form h3 {
+            font-size: 17px;
+            font-weight: 600;
+            color: #0F2419;
+            margin-bottom: 20px;
+        }
+        .suggest-form .form-row { margin-bottom: 16px; }
+        .suggest-form label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #0F2419;
             margin-bottom: 6px;
         }
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--deep-leaf-green), var(--mint));
-            border-radius: 5px;
-            transition: width 0.6s ease;
-        }
-        .progress-text {
-            font-family: var(--font-data);
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--deep-leaf-green);
-        }
-
-        /* FOMO & Reward Lines */
-        .fomo-line {
-            font-size: 13px;
-            color: var(--grain-brown);
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-        .reward-line {
-            font-size: 13px;
-            color: var(--deep-leaf-green);
-            font-weight: 500;
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-
-        /* Why It Matters */
-        .why-it-matters {
-            max-width: 700px;
-            margin: 0 auto 40px;
-            text-align: center;
-            background: white;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            border: 1px solid #E8F0ED;
-        }
-        .why-it-matters h2 {
-            font-size: 22px;
-            color: var(--deep-leaf-green);
-            margin-bottom: 16px;
-        }
-        .why-it-matters ul {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 12px;
-        }
-        .why-it-matters li {
-            background: #F0F8F5;
-            padding: 10px 18px;
-            border-radius: 10px;
+        .suggest-form input,
+        .suggest-form select,
+        .suggest-form textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #D1D1D1;
+            border-radius: 8px;
             font-size: 14px;
-            color: #0F2419;
-            font-weight: 500;
+            font-family: var(--font-primary);
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
+        .suggest-form textarea { resize: vertical; min-height: 80px; }
+        .suggest-form input:focus,
+        .suggest-form select:focus,
+        .suggest-form textarea:focus {
+            outline: none;
+            border-color: var(--deep-leaf-green);
+            box-shadow: 0 0 0 3px rgba(31,107,78,0.1);
+        }
+        .suggest-form .field-err {
+            color: #D62828;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        .suggest-submit {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--deep-leaf-green);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        .suggest-submit:hover { background: #185A3F; }
+        .suggest-submit:disabled { background: #8FA39A; cursor: not-allowed; }
+        .suggest-msg {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .suggest-msg.success { display: block; background: #E8F5E9; color: #2E7D32; border: 1px solid #81C784; }
+        .suggest-msg.error { display: block; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; }
 
-        /* Modal Overlay */
+        /* Hidden elements for suggestion upvote compatibility */
+        .suggestions-section { display: none; }
+
+        /* ── Vote Modal ── */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -458,9 +648,7 @@
         .modal-body { padding: 24px; }
 
         /* Quantity Selector */
-        .quantity-section {
-            margin-bottom: 24px;
-        }
+        .quantity-section { margin-bottom: 24px; }
         .quantity-section label {
             display: block;
             font-size: 14px;
@@ -471,7 +659,6 @@
         .quantity-selector {
             display: flex;
             align-items: center;
-            gap: 0;
             border: 2px solid #E0EBE6;
             border-radius: 10px;
             overflow: hidden;
@@ -521,10 +708,7 @@
             justify-content: space-between;
             align-items: center;
         }
-        .total-label {
-            font-size: 14px;
-            color: var(--lab-grey);
-        }
+        .total-label { font-size: 14px; color: var(--lab-grey); }
         .total-amount {
             font-family: var(--font-data);
             font-size: 22px;
@@ -533,9 +717,7 @@
         }
 
         /* Form Fields */
-        .form-group {
-            margin-bottom: 16px;
-        }
+        .form-group { margin-bottom: 16px; }
         .form-group label {
             display: block;
             font-size: 14px;
@@ -559,9 +741,7 @@
             box-shadow: 0 0 0 3px rgba(31,107,78,0.1);
             background: white;
         }
-        .form-group input.input-error {
-            border-color: var(--fail-red);
-        }
+        .form-group input.input-error { border-color: var(--fail-red); }
         .field-error {
             font-size: 12px;
             color: var(--fail-red);
@@ -586,10 +766,7 @@
             margin-top: 8px;
         }
         .btn-submit:hover { background: #185A3F; }
-        .btn-submit:disabled {
-            background: #8FA39A;
-            cursor: not-allowed;
-        }
+        .btn-submit:disabled { background: #8FA39A; cursor: not-allowed; }
 
         /* Status Messages */
         .status-message {
@@ -600,216 +777,11 @@
             text-align: center;
             margin-bottom: 16px;
         }
-        .status-message.success {
-            display: block;
-            background: #E8F5E9;
-            color: #2E7D32;
-            border: 1px solid #81C784;
-        }
-        .status-message.error {
-            display: block;
-            background: #FFEBEE;
-            color: #C62828;
-            border: 1px solid #EF5350;
-        }
-        .status-message.cancelled {
-            display: block;
-            background: #FFF8E1;
-            color: #F57F17;
-            border: 1px solid #FFD54F;
-        }
+        .status-message.success { display: block; background: #E8F5E9; color: #2E7D32; border: 1px solid #81C784; }
+        .status-message.error { display: block; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; }
+        .status-message.cancelled { display: block; background: #FFF8E1; color: #F57F17; border: 1px solid #FFD54F; }
 
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-        }
-        .empty-state p {
-            font-size: 16px;
-            color: var(--lab-grey);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 40px 24px;
-            font-size: 13px;
-            color: #7A9188;
-        }
-        .footer a {
-            color: var(--deep-leaf-green);
-            text-decoration: none;
-        }
-        .footer a:hover { text-decoration: underline; }
-
-        /* Suggestion Form */
-        .suggest-section {
-            max-width: 600px;
-            margin: 48px auto;
-            background: white;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            border: 1px solid #E8F0ED;
-        }
-        .suggest-section h2 {
-            font-size: 24px;
-            color: var(--deep-leaf-green);
-            margin: 0 0 8px;
-        }
-        .suggest-section .section-desc {
-            color: var(--lab-grey);
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-        .suggest-section .form-row {
-            margin-bottom: 16px;
-        }
-        .suggest-section label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        .suggest-section input, .suggest-section textarea, .suggest-section select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 2px solid #E0EBE6;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: var(--font-primary);
-            background: #FAFBFA;
-            transition: border-color 0.2s;
-        }
-        .suggest-section input:focus, .suggest-section textarea:focus, .suggest-section select:focus {
-            outline: none;
-            border-color: var(--deep-leaf-green);
-            background: white;
-        }
-        .suggest-section textarea { resize: vertical; min-height: 60px; }
-        .suggest-section .field-err {
-            color: #D62828;
-            font-size: 12px;
-            margin-top: 4px;
-            display: none;
-        }
-        .suggest-section .btn-suggest {
-            width: 100%;
-            padding: 12px;
-            background: var(--deep-leaf-green);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: var(--font-primary);
-            margin-top: 8px;
-            transition: background 0.2s;
-        }
-        .suggest-section .btn-suggest:hover { background: #185A3F; }
-        .suggest-section .btn-suggest:disabled { background: #8FA39A; cursor: not-allowed; }
-        .suggest-msg {
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 16px;
-            display: none;
-        }
-        .suggest-msg.success { display: block; background: #E8F5E9; color: #2E7D32; border: 1px solid #81C784; }
-        .suggest-msg.error { display: block; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; }
-
-        /* Community Suggestions */
-        .suggestions-section {
-            max-width: 800px;
-            margin: 0 auto 48px;
-        }
-        .suggestions-section h2 {
-            font-size: 24px;
-            color: var(--deep-leaf-green);
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        .suggestion-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border: 1px solid #E8F0ED;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .upvote-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            background: #F0F8F5;
-            border: 2px solid #D4E8DF;
-            border-radius: 10px;
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            min-width: 56px;
-            font-family: var(--font-primary);
-        }
-        .upvote-btn:hover { background: #D4E8DF; border-color: var(--deep-leaf-green); }
-        .upvote-btn.upvoted { background: var(--deep-leaf-green); border-color: var(--deep-leaf-green); color: white; }
-        .upvote-btn .arrow { font-size: 16px; line-height: 1; }
-        .upvote-btn .count { font-size: 14px; font-weight: 700; }
-        .suggestion-info { flex: 1; }
-        .suggestion-info .sg-name { font-size: 16px; font-weight: 600; color: #0F2419; margin: 0 0 4px; }
-        .suggestion-info .sg-cat { display: inline-block; background: #F0F8F5; color: var(--deep-leaf-green); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 6px; }
-        .suggestion-info .sg-reason { font-size: 13px; color: var(--lab-grey); margin: 0 0 6px; }
-        .suggestion-info .sg-meta { font-size: 12px; color: #999; }
-        .suggestions-empty { text-align: center; color: var(--lab-grey); padding: 32px; font-size: 14px; }
-        .suggestions-loading { text-align: center; padding: 32px; color: var(--lab-grey); }
-
-        /* Auth Header */
-        .auth-header-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-left: 8px;
-            padding-left: 16px;
-            border-left: 1px solid #E8F0ED;
-        }
-        .auth-signin-link {
-            color: var(--deep-leaf-green);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            font-family: var(--font-primary);
-        }
-        .auth-signin-link:hover { opacity: 0.8; }
-        .auth-user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: var(--font-primary);
-        }
-        .auth-user-name {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--deep-leaf-green);
-        }
-        .auth-signout-link {
-            color: var(--lab-grey);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: color 0.2s;
-            font-family: var(--font-primary);
-        }
-        .auth-signout-link:hover { color: var(--fail-red); }
-
-        /* Auth Modal */
+        /* ── Auth Modal ── */
         .auth-modal-overlay {
             display: none;
             position: fixed;
@@ -932,10 +904,7 @@
             transition: background 0.2s;
         }
         .auth-modal-submit:hover { background: #185A3F; }
-        .auth-modal-submit:disabled {
-            background: #8FA39A;
-            cursor: not-allowed;
-        }
+        .auth-modal-submit:disabled { background: #8FA39A; cursor: not-allowed; }
         .auth-error-message {
             display: none;
             padding: 12px 16px;
@@ -949,229 +918,81 @@
         .auth-error-message.visible { display: block; }
 
         /* Read-only auto-filled inputs */
-        input[readonly] {
-            background: #f0f0f0 !important;
-            cursor: not-allowed;
-        }
+        input[readonly] { background: #f0f0f0 !important; cursor: not-allowed; }
 
-        /* Testing Cost Info */
-        .testing-info-section {
-            margin-bottom: 40px;
-        }
-        .testing-info-card {
-            background: white;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            border: 1px solid #E8F0ED;
-        }
-        .testing-info-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        .testing-info-icon {
-            font-size: 28px;
-        }
-        .testing-info-header h2 {
-            font-size: 22px;
-            color: var(--deep-leaf-green);
-            margin: 0;
-        }
-        .testing-info-desc {
-            font-size: 15px;
-            color: var(--lab-grey);
-            line-height: 1.7;
-            margin-bottom: 24px;
-        }
-        .highlight-amount {
-            font-family: var(--font-data);
-            font-weight: 700;
-            color: var(--deep-leaf-green);
-        }
-        .testing-info-panels {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-        .panel-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            background: #F0F8F5;
-            border-radius: 10px;
-            padding: 14px;
-        }
-        .panel-icon {
-            font-size: 20px;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        .panel-item strong {
-            display: block;
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 40px 24px;
             font-size: 13px;
-            color: #0F2419;
-            margin-bottom: 2px;
+            color: #7A9188;
         }
-        .panel-item span {
-            font-size: 12px;
-            color: var(--lab-grey);
-            line-height: 1.4;
-        }
-        .testing-info-footer {
-            border-top: 1px solid #E8F0ED;
-            padding-top: 16px;
-        }
-        .lab-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--grain-brown);
-        }
-        .lab-badge span:first-child {
-            font-size: 18px;
-        }
-        .quotation-link {
-            display: inline-block;
-            margin-top: 12px;
-            font-size: 14px;
-            font-weight: 600;
+        .footer a {
             color: var(--deep-leaf-green);
             text-decoration: none;
-            transition: opacity 0.2s;
         }
-        .quotation-link:hover {
-            opacity: 0.8;
-            text-decoration: underline;
-        }
+        .footer a:hover { text-decoration: underline; }
 
-        /* Responsive */
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .product-grid { grid-template-columns: repeat(2, 1fr); }
+        }
         @media (max-width: 768px) {
+            .header-nav { display: none; }
             .hero h1 { font-size: 28px; }
-            .hero p { font-size: 16px; }
-            .product-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-            .container { padding: 24px 16px 60px; }
-            .header-nav a:not(.btn-waitlist):not(.auth-signin-link) { display: none; }
-            .auth-header-section { border-left: none; padding-left: 0; margin-left: 0; }
+            .hero .subtitle { font-size: 14px; }
+            .product-grid { grid-template-columns: 1fr; gap: 16px; }
+            .suggest-inner { grid-template-columns: 1fr; gap: 28px; }
+            .suggest-section { padding: 40px 16px; }
+            .suggest-form { padding: 20px; }
             .modal { border-radius: 16px; }
             .auth-modal-content { border-radius: 16px; }
-            .testing-info-card { padding: 20px; }
-            .testing-info-panels { grid-template-columns: 1fr; }
-            .lab-badge { flex-wrap: wrap; }
+            .trending-header { flex-direction: column; gap: 4px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Header (matches dashboard) -->
     <header class="header">
         <div class="header-inner">
-            <a href="/"><img src="/public/logo.png" alt="ChoosePure" class="header-logo" /></a>
-            <nav class="header-nav">
-                <a href="/">← Back to Home</a>
-                <a href="/#waitlist-form" class="btn-waitlist">Join Waitlist</a>
-                <div id="auth-header-section" class="auth-header-section">
-                    <a id="auth-signin-link" class="auth-signin-link" onclick="openAuthModal()">Sign In</a>
-                    <div id="auth-user-info" class="auth-user-info" style="display:none;">
-                        <span>Hi, <span id="auth-user-name"></span></span>
-                        <a id="auth-signout-link" class="auth-signout-link" onclick="handleSignOut()">Sign Out</a>
-                    </div>
+            <div class="header-left">
+                <a href="/"><img src="/public/choosepure-logo.png" alt="ChoosePure" class="header-logo" /></a>
+                <nav class="header-nav">
+                    <a href="/purity-wall">Dashboard</a>
+                    <a href="/polling" class="active">Voting</a>
+                    <a href="#suggest-section">Subscription</a>
+                </nav>
+            </div>
+            <div class="header-right" id="auth-header-section">
+                <div id="auth-user-info" style="display:none; align-items:center; gap:14px;">
+                    <div class="user-avatar visible" id="user-avatar"></div>
+                    <a id="auth-signout-link" class="header-signout visible" onclick="handleSignOut()">Sign Out</a>
                 </div>
-            </nav>
+                <button id="auth-signin-link" class="header-signin" onclick="openAuthModal()">Sign In</button>
+            </div>
         </div>
     </header>
 
-    <div class="container">
-        <!-- Hero -->
-        <div class="hero">
-            <h1>Parents Decide What Gets Tested Next</h1>
-            <p>600 parents = 1 product tested in a certified lab. Your vote matters.</p>
+    <!-- Hero Section -->
+    <div class="hero">
+        <span class="hero-badge">COMMUNITY GOVERNANCE</span>
+        <h1>Vote for the <em>Next Test</em></h1>
+        <p class="subtitle">Your voice helps us decide which brands to analyze in our lab. We prioritize purity for the products you use every day.</p>
+        <div class="search-bar">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="search-input" placeholder="Search for a product or brand in the queue..." oninput="filterProducts()" />
         </div>
+    </div>
 
-        <!-- Testing Cost Info -->
-        <div class="testing-info-section">
-            <div class="testing-info-card">
-                <div class="testing-info-header">
-                    <span class="testing-info-icon">🔬</span>
-                    <h2>Why 600 Votes?</h2>
-                </div>
-                <p class="testing-info-desc">A comprehensive milk test costs <span class="highlight-amount">₹1,81,720</span> (including 18% GST). At ₹299 per vote, we need ~600 votes to fund independent lab testing for each product.</p>
-                
-                <div class="testing-info-panels">
-                    <div class="panel-item">
-                        <span class="panel-icon">🧪</span>
-                        <div>
-                            <strong>Nutritional Profile</strong>
-                            <span>Fat, protein, vitamins, minerals & more</span>
-                        </div>
-                    </div>
-                    <div class="panel-item">
-                        <span class="panel-icon">⚠️</span>
-                        <div>
-                            <strong>Chemical Contaminants</strong>
-                            <span>200+ pesticides, antibiotics, heavy metals, hormones, melamine</span>
-                        </div>
-                    </div>
-                    <div class="panel-item">
-                        <span class="panel-icon">🔍</span>
-                        <div>
-                            <strong>Adulteration & Quality</strong>
-                            <span>20+ adulterant tests for purity verification</span>
-                        </div>
-                    </div>
-                    <div class="panel-item">
-                        <span class="panel-icon">🦠</span>
-                        <div>
-                            <strong>Microbiological Safety</strong>
-                            <span>Bacteria, pathogens & contamination checks</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="testing-info-footer">
-                    <div class="lab-badge">
-                        <span>🏛️</span>
-                        <span>Tested by <strong>SGS India Pvt Ltd</strong> · NABL Accredited (ISO 17025) · 8 working days TAT</span>
-                    </div>
-                    <a href="/public/sgs-quotation.pdf" target="_blank" class="quotation-link">📄 View Full SGS Quotation (PDF)</a>
-                </div>
+    <!-- Trending for Testing -->
+    <div class="trending-section">
+        <div class="trending-header">
+            <div>
+                <h2>Trending for Testing</h2>
+                <div class="trending-subtitle">LIVE QUEUE RANKING</div>
             </div>
-        </div>
-
-        <!-- Why It Matters -->
-        <div class="why-it-matters">
-            <h2>Why Your Vote Matters</h2>
-            <ul>
-                <li>✅ You decide what gets tested</li>
-                <li>📊 You get the reports first</li>
-                <li>👨‍👩‍👧 Parents like you rely on this</li>
-            </ul>
-        </div>
-
-        <!-- How It Works -->
-        <div class="why-it-matters" style="margin-bottom: 40px;">
-            <h2>How It Works (Simple &amp; Fair)</h2>
-            <div style="text-align: left; max-width: 500px; margin: 0 auto;">
-                <p style="font-size: 15px; color: #0F2419; margin-bottom: 14px; line-height: 1.6;">&#x1F4CA; You get access to <strong>all test reports</strong> &#8212; even if you didn&#39;t vote for that product</p>
-                <p style="font-size: 15px; color: #0F2419; margin-bottom: 14px; line-height: 1.6;">&#x1F4B0; If your chosen product doesn&#39;t reach enough votes within 2 months, your amount is <strong>fully refunded</strong></p>
-            </div>
-            <p style="font-size: 16px; color: var(--deep-leaf-green); font-weight: 600; margin-top: 8px;">&#x1F449; No risk. Only clarity.</p>
-        </div>
-
-        <!-- Loading State -->
-        <div class="why-it-matters" style="margin-bottom: 40px;">
-            <h2>How It Works (Simple & Fair)</h2>
-            <div style="text-align: left; max-width: 500px; margin: 0 auto;">
-                <p style="font-size: 15px; color: #0F2419; margin-bottom: 14px; line-height: 1.6;">📊 You get access to <strong>all test reports</strong> — even if you didn't vote for that product</p>
-                <p style="font-size: 15px; color: #0F2419; margin-bottom: 14px; line-height: 1.6;">💰 If your chosen product doesn't reach enough votes within 2 months, your amount is <strong>fully refunded</strong></p>
-            </div>
-            <p style="font-size: 16px; color: var(--deep-leaf-green); font-weight: 600; margin-top: 8px;">👉 No risk. Only clarity.</p>
+            <span class="sort-indicator">Popularity</span>
         </div>
 
         <!-- Loading State -->
@@ -1195,7 +1016,72 @@
         <div id="product-grid" class="product-grid" style="display:none;"></div>
     </div>
 
-    <!-- Vote Modal -->
+    <!-- Don't See Your Brand? Section -->
+    <div class="suggest-section" id="suggest-section">
+        <div class="suggest-inner">
+            <div class="suggest-left">
+                <h2>Don't see your brand?</h2>
+                <p>We're always expanding our testing coverage. If there's a product you want independently tested, let us know and we'll consider adding it to our queue.</p>
+                <div class="criteria-box">
+                    <h4>Our Selection Criteria</h4>
+                    <ul>
+                        <li>Widely available in Indian retail</li>
+                        <li>Consumed daily by families</li>
+                        <li>Category with known adulteration risks</li>
+                        <li>Community demand (votes + suggestions)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="suggest-form">
+                <h3>Suggest a Product</h3>
+                <div id="suggest-msg" class="suggest-msg"></div>
+                <div class="form-row">
+                    <label for="sg-name">Brand Name *</label>
+                    <input type="text" id="sg-name" placeholder="e.g. Amul Taaza Milk" />
+                    <div class="field-err" id="sg-name-err">Product name is required</div>
+                </div>
+                <div class="form-row">
+                    <label for="sg-category">Product Category *</label>
+                    <select id="sg-category">
+                        <option value="">Select category</option>
+                        <option value="Milk">Milk</option>
+                        <option value="Ghee">Ghee</option>
+                        <option value="Honey">Honey</option>
+                        <option value="Baby Food">Baby Food</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Staples">Staples</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="field-err" id="sg-cat-err">Category is required</div>
+                </div>
+                <div class="form-row">
+                    <label for="sg-reason">Product Description</label>
+                    <textarea id="sg-reason" placeholder="Tell us why this product matters to you..."></textarea>
+                </div>
+                <div class="form-row">
+                    <label for="sg-uname">Your Name *</label>
+                    <input type="text" id="sg-uname" placeholder="Your name" />
+                    <div class="field-err" id="sg-uname-err">Name is required</div>
+                </div>
+                <div class="form-row">
+                    <label for="sg-email">Your Email *</label>
+                    <input type="email" id="sg-email" placeholder="you@example.com" />
+                    <div class="field-err" id="sg-email-err">Please enter a valid email</div>
+                </div>
+                <button class="suggest-submit" id="btn-suggest" onclick="submitSuggestion()">Submit Suggestion</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden: Community Suggestions (for JS compatibility) -->
+    <div class="suggestions-section">
+        <div id="suggestions-loading" class="suggestions-loading" style="display:none;">Loading suggestions...</div>
+        <div id="suggestions-empty" style="display:none;"></div>
+        <div id="suggestions-list"></div>
+    </div>
+
+    <!-- Vote Modal (preserved exactly) -->
     <div id="vote-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Vote for product">
         <div class="modal">
             <div class="modal-header">
@@ -1203,12 +1089,8 @@
                 <button class="modal-close" onclick="closeModal()" aria-label="Close modal">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Status Message -->
                 <div id="modal-status" class="status-message"></div>
-
-                <!-- Vote Form -->
                 <div id="vote-form-container">
-                    <!-- Quantity -->
                     <div class="quantity-section">
                         <label>Number of Votes</label>
                         <div class="quantity-selector">
@@ -1217,14 +1099,10 @@
                             <button type="button" class="qty-btn" id="qty-plus" onclick="changeQty(1)">+</button>
                         </div>
                     </div>
-
-                    <!-- Total -->
                     <div class="total-display">
                         <span class="total-label">Total Amount</span>
                         <span class="total-amount" id="total-amount">₹0</span>
                     </div>
-
-                    <!-- User Info -->
                     <div class="form-group">
                         <label for="user-name">Full Name</label>
                         <input type="text" id="user-name" placeholder="Your full name" />
@@ -1240,64 +1118,13 @@
                         <input type="tel" id="user-phone" placeholder="10-digit phone number" maxlength="10" />
                         <div class="field-error" id="phone-error">Please enter a valid 10-digit phone number</div>
                     </div>
-
                     <button class="btn-submit" id="btn-submit" onclick="submitVote()">Proceed to Payment</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Suggest a Product -->
-    <div class="suggest-section">
-        <h2>💡 Suggest a Product</h2>
-        <p class="section-desc">Want a product tested? Suggest it and the community can upvote it.</p>
-        <div id="suggest-msg" class="suggest-msg"></div>
-        <div class="form-row">
-            <label for="sg-name">Product Name *</label>
-            <input type="text" id="sg-name" placeholder="e.g. Amul Taaza Milk" />
-            <div class="field-err" id="sg-name-err">Product name is required</div>
-        </div>
-        <div class="form-row">
-            <label for="sg-category">Category *</label>
-            <select id="sg-category">
-                <option value="">Select category</option>
-                <option value="Milk">Milk</option>
-                <option value="Ghee">Ghee</option>
-                <option value="Honey">Honey</option>
-                <option value="Baby Food">Baby Food</option>
-                <option value="Snacks">Snacks</option>
-                <option value="Staples">Staples</option>
-                <option value="Beverages">Beverages</option>
-                <option value="Other">Other</option>
-            </select>
-            <div class="field-err" id="sg-cat-err">Category is required</div>
-        </div>
-        <div class="form-row">
-            <label for="sg-reason">Why should this be tested?</label>
-            <textarea id="sg-reason" placeholder="Optional — tell us why this product matters"></textarea>
-        </div>
-        <div class="form-row">
-            <label for="sg-uname">Your Name *</label>
-            <input type="text" id="sg-uname" placeholder="Your name" />
-            <div class="field-err" id="sg-uname-err">Name is required</div>
-        </div>
-        <div class="form-row">
-            <label for="sg-email">Your Email *</label>
-            <input type="email" id="sg-email" placeholder="you@example.com" />
-            <div class="field-err" id="sg-email-err">Please enter a valid email</div>
-        </div>
-        <button class="btn-suggest" id="btn-suggest" onclick="submitSuggestion()">Submit Suggestion</button>
-    </div>
-
-    <!-- Community Suggestions -->
-    <div class="suggestions-section">
-        <h2>🗳️ Community Suggestions</h2>
-        <div id="suggestions-loading" class="suggestions-loading">Loading suggestions...</div>
-        <div id="suggestions-empty" class="suggestions-empty" style="display:none;">No suggestions yet. Be the first to suggest a product!</div>
-        <div id="suggestions-list"></div>
-    </div>
-
-    <!-- Auth Modal -->
+    <!-- Auth Modal (preserved exactly) -->
     <div id="auth-modal" class="auth-modal-overlay" role="dialog" aria-modal="true" aria-label="Sign in or register">
         <div class="auth-modal-content">
             <div class="auth-modal-header">
@@ -1307,8 +1134,6 @@
                 <button class="auth-modal-tab active" id="auth-tab-signin" data-tab="signin">Sign In</button>
                 <button class="auth-modal-tab" id="auth-tab-register" data-tab="register">Register</button>
             </div>
-
-            <!-- Sign In Form -->
             <form id="auth-signin-form" class="auth-modal-form active" onsubmit="return false;">
                 <div id="auth-signin-error" class="auth-error-message"></div>
                 <div class="form-group">
@@ -1322,8 +1147,6 @@
                 <a class="auth-modal-forgot-link" id="auth-forgot-link">Forgot Password?</a>
                 <button type="submit" class="auth-modal-submit" id="auth-signin-submit">Sign In</button>
             </form>
-
-            <!-- Register Form -->
             <form id="auth-register-form" class="auth-modal-form" onsubmit="return false;">
                 <div id="auth-register-error" class="auth-error-message"></div>
                 <div class="form-group">
@@ -1344,8 +1167,6 @@
                 </div>
                 <button type="submit" class="auth-modal-submit" id="auth-register-submit">Register</button>
             </form>
-
-            <!-- Forgot Password Form -->
             <form id="auth-forgot-form" class="auth-modal-form" onsubmit="return false;">
                 <div id="auth-forgot-error" class="auth-error-message"></div>
                 <div class="form-group">
@@ -1364,7 +1185,7 @@
     </footer>
 
     <script>
-        const API_BASE = 'https://api.choosepure.in';
+        const API_BASE = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
         let products = [];
         let selectedProduct = null;
         let currentUser = null;
@@ -1373,12 +1194,18 @@
         function updateAuthHeader(user) {
             const signinLink = document.getElementById('auth-signin-link');
             const userInfo = document.getElementById('auth-user-info');
-            const userName = document.getElementById('auth-user-name');
+            const avatar = document.getElementById('user-avatar');
+            const signoutLink = document.getElementById('auth-signout-link');
 
             if (user) {
                 currentUser = user;
                 signinLink.style.display = 'none';
-                userName.textContent = user.name;
+                // Build initials for avatar
+                const parts = (user.name || '').split(' ');
+                const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : (parts[0] || '').substring(0,2).toUpperCase();
+                avatar.textContent = initials;
+                avatar.classList.add('visible');
+                signoutLink.classList.add('visible');
                 userInfo.style.display = 'flex';
 
                 // Auto-fill suggestion form fields
@@ -1389,8 +1216,9 @@
             } else {
                 currentUser = null;
                 signinLink.style.display = '';
+                avatar.classList.remove('visible');
+                signoutLink.classList.remove('visible');
                 userInfo.style.display = 'none';
-                userName.textContent = '';
 
                 // Clear suggestion form auto-fill and remove readOnly
                 document.getElementById('sg-uname').value = '';
@@ -1573,7 +1401,6 @@
         });
 
         function replayPendingAction() {
-            // Hook for task 7.2 — will replay the stored pending action after auth
             const action = pendingAction;
             pendingAction = null;
             if (!action) return;
@@ -1645,31 +1472,37 @@
 
         function renderCard(product) {
             const id = product._id || product.id;
-            const voteGoal = 600;
             const votes = product.totalVotes || 0;
-            const pct = Math.min(Math.round((votes / voteGoal) * 100), 100);
+            // Derive category from description or default
+            const desc = (product.description || '').toUpperCase();
+            let category = 'PRODUCT';
+            if (desc.includes('MILK') || desc.includes('DAIRY')) category = 'DAIRY';
+            else if (desc.includes('GHEE')) category = 'DAIRY';
+            else if (desc.includes('HONEY')) category = 'HONEY';
+            else if (desc.includes('JUICE') || desc.includes('BEVERAGE') || desc.includes('DRINK')) category = 'BEVERAGE';
+            else if (desc.includes('SNACK')) category = 'SNACKS';
+            else if (desc.includes('BABY') || desc.includes('INFANT')) category = 'BABY FOOD';
+            else if (desc.includes('SPICE') || desc.includes('MASALA')) category = 'SPICES';
+            else if (desc.includes('OIL')) category = 'OIL';
+
+            // Expected date (2 months from now as placeholder)
+            const expected = new Date();
+            expected.setMonth(expected.getMonth() + 2);
+            const expectedStr = expected.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+
             return `
-                <div class="product-card">
-                    <img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" class="product-image" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23E8F0ED%22 width=%22300%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%236B6B6B%22 font-size=%2214%22>No Image</text></svg>'" />
-                    <div class="product-info">
+                <div class="product-card" data-name="${escapeHtml(product.name)}" data-desc="${escapeHtml(product.description)}">
+                    <div class="product-image-wrap">
+                        <img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22><rect fill=%22%23E8F0ED%22 width=%22400%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%236B6B6B%22 font-size=%2214%22>No Image</text></svg>'" />
+                        <span class="category-badge">${category}</span>
+                    </div>
+                    <div class="product-body">
                         <div class="product-name">${escapeHtml(product.name)}</div>
-                        <div class="product-description">${escapeHtml(product.description)}</div>
-                        <div class="progress-section">
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: ${pct}%"></div>
-                            </div>
-                            <div class="progress-text">${votes} / ${voteGoal} votes</div>
+                        <div class="product-votes-count">🗳️ ${votes} Votes</div>
+                        <div class="product-footer">
+                            <div class="product-status"><strong>STATUS:</strong> Expected: ${expectedStr}</div>
+                            <button class="btn-vote" onclick='openModal(${JSON.stringify(id)})'>Vote</button>
                         </div>
-                        <div class="fomo-line">🔥 This product will be tested once it reaches ${voteGoal} votes</div>
-                        <div class="product-meta">
-                            <span class="product-amount">₹${product.minAmount} / vote</span>
-                            <span class="product-votes">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-6 0v4"/><path d="M18 8H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2z"/></svg>
-                                ${votes} votes
-                            </span>
-                        </div>
-                        <div class="reward-line">🎁 Vote now and get access to all previous test reports</div>
-                        <button class="btn-vote" onclick='openModal(${JSON.stringify(id)})'>Vote for This Product</button>
                         <div class="share-row">
                             <span class="share-label">Share:</span>
                             <button class="share-btn whatsapp" onclick="shareWhatsApp('${escapeHtml(product.name)}')" title="Share on WhatsApp">
@@ -1691,11 +1524,21 @@
             return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
+        // ── Search / Filter ──
+        function filterProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                const name = (card.getAttribute('data-name') || '').toLowerCase();
+                const desc = (card.getAttribute('data-desc') || '').toLowerCase();
+                card.style.display = (!query || name.includes(query) || desc.includes(query)) ? '' : 'none';
+            });
+        }
+
         // Share functions
         function shareWhatsApp(productName) {
             const text = `Hey! Vote for "${productName}" to get it independently tested by an NABL-accredited lab. Every vote counts towards food transparency 🧪\n\n${window.location.href}`;
             window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
-            // Track
             if (typeof gtag === 'function') gtag('event', 'share', { method: 'whatsapp', content_type: 'product', item_id: productName });
             if (typeof fbq === 'function') fbq('track', 'Share', { content_name: productName, method: 'whatsapp' });
             if (typeof mixpanel !== 'undefined') mixpanel.track('Product Shared', { product: productName, method: 'whatsapp' });
@@ -1745,7 +1588,6 @@
                 document.getElementById('user-phone').value = currentUser.phone || '';
                 document.getElementById('user-name').readOnly = true;
                 document.getElementById('user-email').readOnly = true;
-                // Phone remains editable
             }
 
             document.getElementById('modal-status').className = 'status-message';
@@ -1974,20 +1816,17 @@
         // ── Analytics Tracking ──
         function trackVoteInitiation(productName, voteCount, amount) {
             try {
-                // GA4
                 gtag('event', 'begin_checkout', {
                     currency: 'INR',
                     value: amount,
                     items: [{ item_name: productName, quantity: voteCount, price: amount / voteCount }]
                 });
-                // Meta Pixel
                 fbq('track', 'InitiateCheckout', {
                     content_name: productName,
                     num_items: voteCount,
                     value: amount,
                     currency: 'INR'
                 });
-                // Mixpanel
                 mixpanel.track('Vote Payment Initiated', {
                     product_name: productName,
                     vote_count: voteCount,
@@ -1998,18 +1837,15 @@
 
         function trackPurchase(amount) {
             try {
-                // GA4
                 gtag('event', 'purchase', {
                     currency: 'INR',
                     value: amount,
                     transaction_id: 'vote_' + Date.now()
                 });
-                // Meta Pixel
                 fbq('track', 'Purchase', {
                     value: amount,
                     currency: 'INR'
                 });
-                // Mixpanel
                 mixpanel.track('Vote Payment Completed', {
                     amount: amount
                 });
@@ -2113,7 +1949,7 @@
                 return;
             }
             // Clear errors
-            document.querySelectorAll('.suggest-section .field-err').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.suggest-form .field-err').forEach(el => el.style.display = 'none');
             const msgEl = document.getElementById('suggest-msg');
             msgEl.className = 'suggest-msg'; msgEl.style.display = 'none';
 
