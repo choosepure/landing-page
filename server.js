@@ -2819,6 +2819,11 @@ app.get('/deep-dive', (req, res) => {
     res.sendFile(path.join(__dirname, 'deep-dive.html'));
 });
 
+// Serve Namdhari report page
+app.get('/namdhari-report', (req, res) => {
+    res.sendFile(path.join(__dirname, 'namdhari-report.html'));
+});
+
 
 // Admin API: Parse existing report HTML to extract test parameters
 app.get('/api/admin/parse-report/:filename', authenticateAdmin, async (req, res) => {

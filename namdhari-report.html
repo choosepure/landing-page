@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namdhari Dairy Tales Toned Milk Test Report - ChoosePure</title>
+    
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '3534907673428830');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=3534907673428830&ev=PageView&noscript=1"/>
+    </noscript>
+    <!-- End Meta Pixel Code -->
+    
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MJ1Y3XWYQ4"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-MJ1Y3XWYQ4', {
+            'send_page_view': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+    </script>
+    
+    <!-- Mixpanel -->
+    <script type="text/javascript">
+        (function(e,c){if(!c.__SV){var l,h;window.mixpanel=c;c._i=[];c.init=function(q,r,f){function t(d,a){var g=a.split(".");2==g.length&&(d=d[g[0]],a=g[1]);d[a]=function(){d.push([a].concat(Array.prototype.slice.call(arguments,0)))}}var b=c;"undefined"!==typeof f?b=c[f]=[]:f="mixpanel";b.people=b.people||[];b.toString=function(d){var a="mixpanel";"mixpanel"!==f&&(a+="."+f);d||(a+=" (stub)");return a};b.people.toString=function(){return b.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders start_session_recording stop_session_recording people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)t(b,l[h]);var n="set set_once union unset remove delete".split(" ");b.get_group=function(){function d(p){a[p]=function(){b.push([g,[p].concat(Array.prototype.slice.call(arguments,0))])}}for(var a={},g=["get_group"].concat(Array.prototype.slice.call(arguments,0)),m=0;m<n.length;m++)d(n[m]);return a};c._i.push([q,r,f])};c.__SV=1.2;var k=e.createElement("script");k.type="text/javascript";k.async=!0;k.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";e=e.getElementsByTagName("script")[0];e.parentNode.insertBefore(k,e)}})(document,window.mixpanel||[]);
+        mixpanel.init('6921e08f65e4331fdd48e6a18a822ab4', {
+            autocapture: true,
+            record_sessions_percent: 100,
+        });
+    </script>
+    
+    <link rel="icon" type="image/png" href="/public/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pure-ivory: #FAFAF7;
+            --deep-leaf-green: #1F6B4E;
+            --grain-brown: #8A6E4B;
+            --lab-grey: #6B6B6B;
+            --mint: #95db93;
+            --warning-amber: #FFB703;
+            --fail-red: #D62828;
+            --font-primary: 'Inter', sans-serif;
+            --font-data: 'Roboto Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-primary); background: var(--pure-ivory); color: var(--lab-grey); line-height: 1.6; padding: 80px 20px 60px; }
+        .password-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .password-container { max-width: 450px; width: 100%; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 48px 40px; text-align: center; }
+        .lock-icon { width: 64px; height: 64px; margin: 0 auto 24px; background: var(--deep-leaf-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .lock-icon svg { width: 32px; height: 32px; color: white; }
+        .password-container h2 { font-size: 24px; color: var(--deep-leaf-green); margin-bottom: 12px; }
+        .password-container p { color: var(--lab-grey); margin-bottom: 32px; font-size: 15px; }
+        .password-form { display: flex; flex-direction: column; gap: 16px; }
+        .password-input { width: 100%; padding: 14px 16px; border: 2px solid #E0EBE6; border-radius: 10px; font-size: 16px; font-family: var(--font-primary); transition: all 0.2s ease; }
+        .password-input:focus { outline: none; border-color: var(--deep-leaf-green); box-shadow: 0 0 0 3px rgba(31, 107, 78, 0.1); }
+        .password-btn { width: 100%; padding: 14px; background: var(--deep-leaf-green); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+        .password-btn:hover { background: #185A3F; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(31, 107, 78, 0.3); }
+        .error-message { color: var(--fail-red); font-size: 14px; margin-top: 8px; display: none; }
+        .error-message.show { display: block; }
+        .report-content { display: none; }
+        .report-content.show { display: block; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .report-header { background: white; border-radius: 16px; padding: 40px; margin-bottom: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .report-title { display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px; flex-wrap: wrap; gap: 20px; }
+        .report-title h1 { font-size: 32px; color: var(--deep-leaf-green); margin-bottom: 8px; }
+        .brand-name { font-size: 18px; color: var(--grain-brown); font-weight: 500; }
+        .msi-score { text-align: center; min-width: 140px; }
+        .score-circle { width: 110px; height: 110px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; color: white; margin: 0 auto 8px; background: var(--deep-leaf-green); }
+        .score-label { font-size: 12px; color: var(--lab-grey); font-weight: 600; }
+        .score-subtitle { font-size: 11px; margin-top: 4px; color: var(--grain-brown); }
+        .report-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; padding: 20px; background: var(--pure-ivory); border-radius: 12px; }
+        .meta-item { display: flex; flex-direction: column; }
+        .meta-label { font-size: 13px; color: var(--grain-brown); font-weight: 600; margin-bottom: 4px; }
+        .meta-value { font-size: 16px; color: var(--lab-grey); font-family: var(--font-data); }
+        .report-section { background: white; border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .section-title { font-size: 24px; color: var(--deep-leaf-green); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--pure-ivory); }
+        .summary-box { background: linear-gradient(135deg, var(--deep-leaf-green) 0%, #16684B 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+        .summary-box h3 { font-size: 20px; margin-bottom: 12px; }
+        .summary-box p, .summary-box ul { line-height: 1.8; opacity: 0.95; }
+        .summary-box ul { margin-left: 20px; margin-top: 12px; }
+        .parameters-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        .parameters-table th { background: var(--pure-ivory); padding: 12px; text-align: left; font-weight: 600; color: var(--deep-leaf-green); border-bottom: 2px solid #E0EBE6; }
+        .parameters-table td { padding: 12px; border-bottom: 1px solid #E0EBE6; font-family: var(--font-data); font-size: 14px; }
+        .status-badge { padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; text-align: center; display: inline-block; }
+        .status-pass { background: #E8F5E9; color: #2E7D32; }
+        .status-warning { background: #FFF9E6; color: #F57C00; }
+        .status-fail { background: #FFEBEE; color: #C62828; }
+        .info-box { background: #E3F2FD; border-left: 4px solid #2196F3; padding: 16px; margin: 16px 0; border-radius: 4px; }
+        .warning-box { background: #FFF9E6; border-left: 4px solid var(--warning-amber); padding: 16px; margin: 16px 0; border-radius: 4px; }
+        .compliance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+        .compliance-card { background: var(--pure-ivory); padding: 16px; border-radius: 8px; text-align: center; }
+        .compliance-card h4 { font-size: 14px; color: var(--grain-brown); margin-bottom: 8px; }
+        .compliance-status { font-size: 18px; font-weight: 600; }
+        .score-breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+        .score-card { background: var(--pure-ivory); padding: 20px; border-radius: 12px; text-align: center; }
+        .score-card h4 { font-size: 14px; color: var(--grain-brown); margin-bottom: 12px; }
+        .score-value { font-size: 32px; font-weight: 700; color: var(--deep-leaf-green); font-family: var(--font-data); }
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-scroll .parameters-table { min-width: 500px; }
+
+        @media (max-width: 768px) {
+            body { padding: 20px 12px 40px; }
+            .report-header { padding: 20px 16px; }
+            .report-section { padding: 20px 16px; }
+            .report-title { flex-direction: column; align-items: center; text-align: center; }
+            .report-title h1 { font-size: 22px; }
+            .brand-name { font-size: 15px; }
+            .msi-score { margin-top: 16px; }
+            .score-circle { width: 90px; height: 90px; font-size: 32px; }
+            .report-meta { grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+            .meta-value { font-size: 14px; }
+            .section-title { font-size: 20px; }
+            .summary-box h3 { font-size: 17px; }
+            .summary-box p, .summary-box ul { font-size: 14px; }
+            .parameters-table { font-size: 12px; }
+            .parameters-table th, .parameters-table td { padding: 8px 6px; white-space: nowrap; }
+            .parameters-table th:first-child, .parameters-table td:first-child { white-space: normal; min-width: 80px; }
+            .info-box, .warning-box { font-size: 13px; padding: 12px; }
+            .compliance-grid { grid-template-columns: 1fr 1fr; }
+            .score-breakdown { grid-template-columns: 1fr 1fr; }
+            .score-value { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div class="password-screen" id="password-screen">
+        <div class="password-container">
+            <div class="lock-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2>Protected Report</h2>
+            <p>This test report is password protected. Enter the password to view the full report.</p>
+            <form class="password-form" id="password-form">
+                <input type="password" class="password-input" id="password-input" placeholder="Enter password" required autocomplete="off">
+                <button type="submit" class="password-btn">Unlock Report</button>
+                <div class="error-message" id="error-message">Incorrect password. Please try again.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Content -->
+    <div class="report-content" id="report-content">
+        <div class="container">
+            <!-- Report Header -->
+            <div class="report-header">
+                <div class="report-title">
+                    <div>
+                        <h1>🥛 ChoosePure Independent Safety Review</h1>
+                        <div class="brand-name">Namdhari Dairy Tales – Toned Milk</div>
+                    </div>
+                    <div class="msi-score">
+                        <div class="score-circle">97</div>
+                        <div class="score-label">SAFETY SCORE</div>
+                        <div class="score-subtitle">Excellent</div>
+                    </div>
+                </div>
+                <div class="report-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Laboratory</div>
+                        <div class="meta-value">Intertek India Pvt. Ltd. (NABL Accredited – TC-5160)</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Report Number</div>
+                        <div class="meta-value">IFSH-251217094</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Report Date</div>
+                        <div class="meta-value">26 Dec 2025</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Client</div>
+                        <div class="meta-value">Firstclub Technology Pvt Ltd</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Batch</div>
+                        <div class="meta-value">DT0125348</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Sample Size</div>
+                        <div class="meta-value">500 ml × 2 packs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="report-section">
+                <h2 class="section-title">1️⃣ Executive Summary</h2>
+                <div class="summary-box">
+                    <h3>The sample demonstrates:</h3>
+                    <ul>
+                        <li>✅ Very good microbiological quality</li>
+                        <li>✅ Extensive antibiotic residue testing (40+ drugs)</li>
+                        <li>✅ Screening for banned nitrofuran &amp; nitroimidazole residues</li>
+                        <li>✅ Heavy metal testing</li>
+                        <li>✅ Preservative detection</li>
+                        <li>✅ More than 250 pesticide residues tested</li>
+                    </ul>
+                </div>
+                <p>All tested contaminants were Below Limit of Quantification (BLQ) or Absent. Overall this sample demonstrates high transparency and strong contaminant screening.</p>
+                <div class="info-box">
+                    <strong>Testing Categories Include:</strong> Microbiological safety, Antibiotic residues, Nitrofuran metabolites, Nitroimidazole residues, Heavy metals, Mycotoxins, Preservatives, Adulteration indicators, Nutritional composition, and more than 250 pesticide residues. This is an extremely comprehensive contaminant screening panel.
+                </div>
+            </div>
+
+            <!-- Microbiological Safety -->
+            <div class="report-section">
+                <h2 class="section-title">2️⃣ Microbiological Safety</h2>
+                <div class="table-scroll"><table class="parameters-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Result</th>
+                            <th>FSSAI Limit</th>
+                            <th>EU Standard</th>
+                            <th>US Standard</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Aerobic Plate Count</td>
+                            <td>7,800 cfu/ml</td>
+                            <td>≤30,000</td>
+                            <td>Hygiene criteria</td>
+                            <td>≤20,000</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Coliform Count</td>
+                            <td>&lt;1 cfu/ml</td>
+                            <td>&lt;10</td>
+                            <td>&lt;10</td>
+                            <td>&lt;10</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Salmonella</td>
+                            <td>Absent</td>
+                            <td>Must be absent</td>
+                            <td>Must be absent</td>
+                            <td>Must be absent</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Listeria monocytogenes</td>
+                            <td>Absent</td>
+                            <td>Must be absent</td>
+                            <td>Zero tolerance</td>
+                            <td>Zero tolerance</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                    </tbody>
+                </table></div>
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>Interpretation:</strong> Microbial counts are very low and indicate good pasteurization and hygiene control.
+                </div>
+            </div>
+
+            <!-- Antibiotic Residue Screening -->
+            <div class="report-section">
+                <h2 class="section-title">3️⃣ Antibiotic Residue Screening</h2>
+                <p>The report screened <strong>more than 40 veterinary drugs</strong>, including:</p>
+                <ul style="margin: 16px 0; line-height: 2; columns: 2; column-gap: 40px;">
+                    <li>Ampicillin</li>
+                    <li>Amoxicillin</li>
+                    <li>Oxytetracycline</li>
+                    <li>Tetracycline</li>
+                    <li>Gentamicin</li>
+                    <li>Streptomycin</li>
+                    <li>Lincomycin</li>
+                    <li>Trimethoprim</li>
+                    <li>Penicillin G</li>
+                    <li>Sulfonamides</li>
+                    <li>Chloramphenicol (banned antibiotic)</li>
+                </ul>
+                <div class="info-box">
+                    <strong>All results were reported: BLQ – Below Limit of Quantification</strong><br>
+                    Meaning: the laboratory did not detect measurable antibiotic residues.
+                </div>
+                <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 18px; color: var(--deep-leaf-green);">Regulatory Compliance:</h3>
+                <div class="compliance-grid">
+                    <div class="compliance-card">
+                        <h4>🇮🇳 FSSAI</h4>
+                        <div class="compliance-status" style="color: #2E7D32;">✅ Pass</div>
+                    </div>
+                    <div class="compliance-card">
+                        <h4>🇪🇺 EU</h4>
+                        <div class="compliance-status" style="color: #2E7D32;">✅ Pass</div>
+                    </div>
+                    <div class="compliance-card">
+                        <h4>🇺🇸 US FDA</h4>
+                        <div class="compliance-status" style="color: #2E7D32;">✅ Pass</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nitrofuran & Nitroimidazole Screening -->
+            <div class="report-section">
+                <h2 class="section-title">4️⃣ Nitrofuran &amp; Nitroimidazole Screening</h2>
+                <p>These drugs are banned in many countries due to carcinogenic risk.</p>
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 18px; color: var(--deep-leaf-green);">Nitrofuran Metabolites Tested:</h3>
+                <ul style="margin: 8px 0 16px; line-height: 2;">
+                    <li>AOZ</li>
+                    <li>SEM</li>
+                    <li>AMOZ</li>
+                    <li>AHD</li>
+                </ul>
+                <h3 style="margin-top: 16px; margin-bottom: 12px; font-size: 18px; color: var(--deep-leaf-green);">Nitroimidazoles Tested:</h3>
+                <ul style="margin: 8px 0 16px; line-height: 2;">
+                    <li>Dimetridazole</li>
+                    <li>Ronidazole</li>
+                    <li>Ipronidazole</li>
+                </ul>
+                <div class="info-box">
+                    <strong>All reported BLQ.</strong> No banned antibiotic metabolites detected.
+                </div>
+            </div>
+
+            <!-- Heavy Metals -->
+            <div class="report-section">
+                <h2 class="section-title">5️⃣ Heavy Metals</h2>
+                <div class="table-scroll"><table class="parameters-table">
+                    <thead>
+                        <tr>
+                            <th>Metal</th>
+                            <th>Result</th>
+                            <th>FSSAI Limit</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Lead</td>
+                            <td>BLQ</td>
+                            <td>≤0.02 mg/kg</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Arsenic</td>
+                            <td>BLQ</td>
+                            <td>≤0.1 mg/kg</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Cadmium</td>
+                            <td>BLQ</td>
+                            <td>≤1.5 mg/kg</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Mercury</td>
+                            <td>BLQ</td>
+                            <td>≤1 mg/kg</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Copper</td>
+                            <td>BLQ</td>
+                            <td>≤30 mg/kg</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Tin</td>
+                            <td>BLQ</td>
+                            <td>≤250 mg/kg</td>
+                            <td><span class="status-badge status-pass">✅ Pass</span></td>
+                        </tr>
+                    </tbody>
+                </table></div>
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>Interpretation:</strong> No detectable heavy metal contamination.
+                </div>
+            </div>
+
+            <!-- Preservatives & Chemical Adulterants -->
+            <div class="report-section">
+                <h2 class="section-title">6️⃣ Preservatives &amp; Chemical Adulterants</h2>
+                <p>The milk was tested for chemical preservatives and adulterants:</p>
+                <div class="table-scroll"><table class="parameters-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Benzoic Acid</td><td>Absent</td></tr>
+                        <tr><td>Nitrate</td><td>Absent</td></tr>
+                        <tr><td>Anionic Detergent</td><td>Absent</td></tr>
+                        <tr><td>Formaldehyde</td><td>Absent</td></tr>
+                        <tr><td>Hydrogen Peroxide</td><td>Absent</td></tr>
+                        <tr><td>Boric Acid</td><td>Absent</td></tr>
+                        <tr><td>Salicylic Acid</td><td>Absent</td></tr>
+                        <tr><td>Maltodextrin</td><td>Absent</td></tr>
+                    </tbody>
+                </table></div>
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>No chemical preservatives or adulterants detected.</strong>
+                </div>
+            </div>
+
+            <!-- Nutritional Composition -->
+            <div class="report-section">
+                <h2 class="section-title">7️⃣ Nutritional Composition</h2>
+                <div class="table-scroll"><table class="parameters-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Energy</td><td>65.55 kcal / 100 g</td></tr>
+                        <tr><td>Carbohydrates</td><td>5.47 g / 100 g</td></tr>
+                        <tr><td>Fat</td><td>3.31 g / 100 g</td></tr>
+                        <tr><td>Protein</td><td>3.72 g / 100 g</td></tr>
+                        <tr><td>SNF</td><td>10 %</td></tr>
+                        <tr><td>Cholesterol</td><td>15.23 mg / 100 g</td></tr>
+                    </tbody>
+                </table></div>
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>These values fall within normal ranges for toned milk.</strong>
+                </div>
+            </div>
+
+            <!-- Pesticide Residue Screening -->
+            <div class="report-section">
+                <h2 class="section-title">8️⃣ Pesticide Residue Screening</h2>
+                <p>The laboratory screened <strong>more than 250 pesticide residues</strong>, including:</p>
+                <ul style="margin: 16px 0; line-height: 2; columns: 2; column-gap: 40px;">
+                    <li>Glyphosate</li>
+                    <li>Glufosinate</li>
+                    <li>Chlorpyrifos</li>
+                    <li>Cypermethrin</li>
+                    <li>Deltamethrin</li>
+                    <li>Carbofuran</li>
+                    <li>Imidacloprid</li>
+                    <li>Atrazine</li>
+                    <li>Paraquat</li>
+                    <li>Mancozeb</li>
+                    <li>Triazophos</li>
+                    <li>Thiamethoxam</li>
+                    <li>Lambda cyhalothrin</li>
+                    <li>Endosulfan</li>
+                    <li>DDT</li>
+                    <li>Aldrin</li>
+                    <li>Heptachlor</li>
+                </ul>
+                <div class="info-box">
+                    <strong>All pesticide residues were reported: BLQ (Below Limit of Quantification)</strong><br>
+                    Meaning no measurable pesticide contamination was detected.
+                </div>
+                <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 18px; color: var(--deep-leaf-green);">Compliance:</h3>
+                <div class="compliance-grid">
+                    <div class="compliance-card">
+                        <h4>🇮🇳 FSSAI</h4>
+                        <div class="compliance-status" style="color: #2E7D32;">✅ Pass</div>
+                    </div>
+                    <div class="compliance-card">
+                        <h4>🇪🇺 EU</h4>
+                        <div class="compliance-status" style="color: #2E7D32;">✅ Pass</div>
+                    </div>
+                    <div class="compliance-card">
+                        <h4>🇺🇸 US EPA</h4>
+                        <div class="compliance-status" style="color: #2E7D32;">✅ Pass</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mycotoxin -->
+            <div class="report-section">
+                <h2 class="section-title">9️⃣ Mycotoxin – Aflatoxin M1</h2>
+                <div class="table-scroll"><table class="parameters-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Result</th>
+                            <th>Limit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Aflatoxin M1</td>
+                            <td>BLQ</td>
+                            <td>≤0.5 µg/kg</td>
+                        </tr>
+                    </tbody>
+                </table></div>
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>Interpretation:</strong> No detectable aflatoxin contamination.
+                </div>
+            </div>
+
+            <!-- ChoosePure Milk Safety Score -->
+            <div class="report-section">
+                <h2 class="section-title">🧮 ChoosePure Milk Safety Score</h2>
+                <p style="margin-bottom: 16px;"><strong>(0–100 scale)</strong></p>
+                <h3 style="font-size: 18px; color: var(--deep-leaf-green); margin-bottom: 12px;">Scoring Weights:</h3>
+                <div class="table-scroll"><table class="parameters-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Contaminant screening depth</td><td>40</td></tr>
+                        <tr><td>Microbiological safety</td><td>25</td></tr>
+                        <tr><td>Adulteration testing</td><td>20</td></tr>
+                        <tr><td>Transparency</td><td>15</td></tr>
+                    </tbody>
+                </table></div>
+                
+                <h3 style="font-size: 18px; color: var(--deep-leaf-green); margin: 24px 0 12px;">Category Scores:</h3>
+                <div class="score-breakdown">
+                    <div class="score-card">
+                        <h4>Microbiology</h4>
+                        <div class="score-value">24 / 25</div>
+                    </div>
+                    <div class="score-card">
+                        <h4>Contaminants</h4>
+                        <div class="score-value">38 / 40</div>
+                    </div>
+                    <div class="score-card">
+                        <h4>Adulteration</h4>
+                        <div class="score-value">20 / 20</div>
+                    </div>
+                    <div class="score-card">
+                        <h4>Transparency</h4>
+                        <div class="score-value">15 / 15</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 32px; padding: 32px; background: linear-gradient(135deg, var(--deep-leaf-green) 0%, #16684B 100%); border-radius: 16px; color: white;">
+                    <div style="font-size: 48px; font-weight: 700; margin-bottom: 8px;">⭐ 97 / 100</div>
+                    <div style="font-size: 24px; font-weight: 600;">🟢 Excellent</div>
+                </div>
+            </div>
+
+            <!-- Scientific Conclusion -->
+            <div class="report-section">
+                <h2 class="section-title">🔬 Scientific Conclusion</h2>
+                <p style="line-height: 1.8;">The laboratory results indicate:</p>
+                <ul style="margin: 16px 0; line-height: 2;">
+                    <li>Very low microbial contamination</li>
+                    <li>No detectable antibiotic residues</li>
+                    <li>No banned drug metabolites</li>
+                    <li>No heavy metal contamination</li>
+                    <li>No pesticide residues detected</li>
+                    <li>No chemical adulteration detected</li>
+                </ul>
+                <div class="info-box">
+                    <strong>The test panel includes one of the most comprehensive contaminant screens typically conducted for milk in India.</strong>
+                </div>
+            </div>
+
+            <!-- Definitions -->
+            <div class="report-section">
+                <h2 class="section-title">📚 Definitions</h2>
+                <p style="line-height: 1.8; margin-bottom: 16px;">
+                    <strong>Maximum Residue Limit (MRL):</strong> The highest legally permitted concentration of pesticides or veterinary drugs allowed in food.
+                </p>
+                <p style="line-height: 1.8;">
+                    <strong>Below the Limit of Quantification (BLQ):</strong> Indicates a substance (like contaminants, pesticides, or toxins) is present at such a low level that it cannot be accurately measured by the laboratory equipment, generally signifying high food safety.
+                </p>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="report-section" style="background: #FFF9E6; border-left: 4px solid var(--warning-amber);">
+                <h2 class="section-title">⚠ Important Disclaimer</h2>
+                <p style="line-height: 1.8;">
+                    This report is based on a single sample tested at a specific point in time (Batch: DT0125348, Date: 26-12-2025). Results may vary across different batches, locations, and time periods.
+                </p>
+                <p style="line-height: 1.8; margin-top: 16px;">
+                    This report is for informational and educational purposes only and should not be considered as medical, nutritional, or legal advice. ChoosePure does not manufacture, sell, distribute, or endorse any products.
+                </p>
+                <p style="line-height: 1.8; margin-top: 16px;">
+                    For complete terms, please refer to our <a href="https://choosepure.in/terms-conditions.html" style="color: var(--deep-leaf-green); text-decoration: underline;">Terms &amp; Conditions</a>.
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align: center; padding: 32px; color: var(--lab-grey); font-size: 14px;">
+                <p>Testing conducted in NABL-accredited laboratory.</p>
+                <p>Reports are shared for consumer awareness.</p>
+                <p style="margin-top: 16px;">
+                    <a href="https://choosepure.in" style="color: var(--deep-leaf-green); text-decoration: none;">← Back to ChoosePure</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auth check - no password needed for logged-in users
+        const API_BASE = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
+        const passwordScreen = document.getElementById('password-screen');
+        const reportContent = document.getElementById('report-content');
+
+        // Check if user is logged in via cookie
+        async function checkAuth() {
+            try {
+                const res = await fetch(API_BASE + '/api/user/me', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.user) {
+                        showReport();
+                        return;
+                    }
+                }
+            } catch(e) {}
+            // Not logged in - show login prompt instead of password
+            showLoginPrompt();
+        }
+
+        function showLoginPrompt() {
+            passwordScreen.innerHTML = '<div class="password-container"><div class="lock-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9.243 2 7 4.243 7 7v3H6c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zm3 8V7c0-1.654-1.346-3-3-3S9 5.346 9 7v3h6z" fill="currentColor"/></svg></div><h2>Sign in to view this report</h2><p>This report is available for registered Choosepure members.</p><a href="/" style="display:inline-block;padding:14px 32px;background:#1F6B4E;color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:16px;">Sign In / Register</a></div>';
+        }
+
+        function showReport() {
+            passwordScreen.style.display = 'none';
+            reportContent.classList.add('show');
+            
+            // Track report view
+            console.log('📊 Report viewed: Namdhari Dairy Tales Toned Milk');
+        }
+        checkAuth();
+    </script>
+</body>
+</html>
