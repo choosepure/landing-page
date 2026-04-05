@@ -4,17 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms & Conditions - ChoosePure</title>
-    <link rel="icon" type="image/png" href="/public/favicon.png" />
+
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '3534907673428830');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=3534907673428830&ev=PageView&noscript=1"/>
+    </noscript>
+    <!-- End Meta Pixel Code -->
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MJ1Y3XWYQ4"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-MJ1Y3XWYQ4', {
+            'send_page_view': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+    </script>
+
+    <!-- Mixpanel -->
+    <script type="text/javascript">
+        (function(e,c){if(!c.__SV){var l,h;window.mixpanel=c;c._i=[];c.init=function(q,r,f){function t(d,a){var g=a.split(".");2==g.length&&(d=d[g[0]],a=g[1]);d[a]=function(){d.push([a].concat(Array.prototype.slice.call(arguments,0)))}}var b=c;"undefined"!==typeof f?b=c[f]=[]:f="mixpanel";b.people=b.people||[];b.toString=function(d){var a="mixpanel";"mixpanel"!==f&&(a+="."+f);d||(a+=" (stub)");return a};b.people.toString=function(){return b.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders start_session_recording stop_session_recording people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)t(b,l[h]);var n="set set_once union unset remove delete".split(" ");b.get_group=function(){function d(p){a[p]=function(){b.push([g,[p].concat(Array.prototype.slice.call(arguments,0))])}}for(var a={},g=["get_group"].concat(Array.prototype.slice.call(arguments,0)),m=0;m<n.length;m++)d(n[m]);return a};c._i.push([q,r,f])};c.__SV=1.2;var k=e.createElement("script");k.type="text/javascript";k.async=!0;k.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";e=e.getElementsByTagName("script")[0];e.parentNode.insertBefore(k,e)}})(document,window.mixpanel||[]);
+        mixpanel.init('6921e08f65e4331fdd48e6a18a822ab4', {
+            autocapture: true,
+            record_sessions_percent: 100,
+        });
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon.png" />
+    <link rel="shortcut icon" href="/public/favicon.png" />
+    <link rel="apple-touch-icon" href="/public/favicon.png" />
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background: #FAFAF7;
@@ -22,7 +70,7 @@
             line-height: 1.6;
             padding: 80px 20px 60px;
         }
-        
+
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -31,68 +79,129 @@
             box-shadow: 0 4px 24px rgba(0,0,0,0.08);
             padding: 48px;
         }
-        
+
         h1 {
             font-size: 36px;
             font-weight: 700;
             color: #1F6B4E;
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 12px;
         }
-        
+
         h2 {
             font-size: 24px;
             font-weight: 600;
             color: #1F6B4E;
-            margin-top: 32px;
+            margin-top: 36px;
             margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #E8F5F0;
         }
-        
+
         h3 {
             font-size: 18px;
             font-weight: 600;
             color: #8A6E4B;
-            margin-top: 16px;
+            margin-top: 20px;
             margin-bottom: 8px;
         }
-        
+
         p {
             margin-bottom: 16px;
             color: #6B6B6B;
         }
-        
-        ul {
+
+        ul, ol {
             margin-left: 24px;
             margin-bottom: 16px;
         }
-        
+
         li {
             margin-bottom: 8px;
             color: #6B6B6B;
         }
-        
+
+        li ul, li ol {
+            margin-top: 8px;
+        }
+
         a {
             color: #1F6B4E;
             text-decoration: underline;
         }
-        
+
         a:hover {
             color: #185A3F;
         }
-        
+
         .effective-date {
+            text-align: center;
             color: #8A6E4B;
             font-weight: 600;
+            margin-bottom: 32px;
+        }
+
+        .intro-text {
             margin-bottom: 24px;
         }
-        
+
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            background: #1F6B4E;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+
+        .badge-updated {
+            background: #8A6E4B;
+        }
+
+        .toc {
+            background: #FAFAF7;
+            border: 1px solid #E5E5E5;
+            border-radius: 8px;
+            padding: 24px 32px;
+            margin-bottom: 32px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            border-bottom: none;
+            font-size: 20px;
+        }
+
+        .toc ol {
+            margin-bottom: 0;
+        }
+
+        .toc li {
+            margin-bottom: 6px;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: #1F6B4E;
+            font-weight: 500;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
         .contact-box {
             background: #FAFAF7;
             padding: 24px;
             border-radius: 8px;
             margin-top: 24px;
         }
-        
+
         .info-box {
             background: #E8F5F0;
             border-left: 4px solid #1F6B4E;
@@ -100,7 +209,7 @@
             margin-top: 32px;
             border-radius: 4px;
         }
-        
+
         .warning-box {
             background: #FFF9E6;
             border-left: 4px solid #FFB703;
@@ -108,7 +217,7 @@
             margin: 16px 0;
             border-radius: 4px;
         }
-        
+
         .alert-box {
             background: #FFEBEE;
             border-left: 4px solid #D62828;
@@ -116,7 +225,7 @@
             margin: 16px 0;
             border-radius: 4px;
         }
-        
+
         .back-link {
             display: inline-block;
             margin-bottom: 24px;
@@ -124,31 +233,93 @@
             text-decoration: none;
             font-weight: 500;
         }
-        
+
         .back-link:hover {
             text-decoration: underline;
         }
-        
+
         strong {
             color: #1F6B4E;
             font-weight: 600;
         }
-        
+
+        /* Table styles for dispute procedure */
+        .dispute-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 24px;
+            font-size: 14px;
+        }
+
+        .dispute-table thead th {
+            background: #1F6B4E;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dispute-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #E5E5E5;
+            vertical-align: top;
+            color: #6B6B6B;
+        }
+
+        .dispute-table tbody tr:nth-child(even) {
+            background: #FAFAF7;
+        }
+
+        .dispute-table tbody tr:hover {
+            background: #E8F5F0;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid #E5E5E5;
+            font-size: 13px;
+            color: #8A6E4B;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 60px 16px 40px;
             }
-            
+
             .container {
                 padding: 32px 24px;
             }
-            
+
             h1 {
                 font-size: 28px;
             }
-            
+
             h2 {
                 font-size: 20px;
+            }
+
+            .toc {
+                padding: 20px 24px;
+            }
+
+            .dispute-table {
+                font-size: 13px;
+            }
+
+            .dispute-table thead th,
+            .dispute-table tbody td {
+                padding: 10px 12px;
+            }
+
+            /* Responsive table scroll */
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
         }
     </style>
@@ -156,129 +327,296 @@
 <body>
     <div class="container">
         <a href="/" class="back-link">← Back to Home</a>
-        
+
         <h1>Terms & Conditions – ChoosePure</h1>
-        
-        <p class="effective-date">Effective Date: 17/01/26</p>
-        
-        <p>Welcome to ChoosePure ("ChoosePure", "we", "our", "us"). By accessing our website, joining the ChoosePure community, contributing towards food testing, or using any of our services, you agree to comply with and be bound by these Terms & Conditions ("Terms").</p>
-        
-        <p><strong>If you do not agree to these Terms, please do not use ChoosePure.</strong></p>
-        
-        <h2>1. Nature of ChoosePure Services</h2>
+        <p class="effective-date">Effective Date: 1 April 2026 · Replaces version dated 17/01/26</p>
+
+        <p class="intro-text">Welcome to ChoosePure ("ChoosePure", "we", "our", "us"). By accessing our website, joining the ChoosePure community, contributing towards food testing, purchasing a subscription, or using any of our services, you agree to be bound by these Terms & Conditions ("Terms"). If you do not agree, please do not use ChoosePure.</p>
+
+        <p>These Terms should be read alongside our <a href="/privacy-policy.html">Privacy Policy</a> and <a href="/refund-policy.html">Refund Policy</a>.</p>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h2>Contents</h2>
+            <ol>
+                <li><a href="#section-1">Nature of ChoosePure Services</a></li>
+                <li><a href="#section-2">Laboratory Testing & Reports</a></li>
+                <li><a href="#section-3">Report Access, Sharing & Permitted Use</a> <span class="badge">NEW</span></li>
+                <li><a href="#section-4">Publication in Public Interest</a> <span class="badge">NEW</span></li>
+                <li><a href="#section-5">Product Scores & Ratings Disclaimer</a> <span class="badge badge-updated">UPDATED</span></li>
+                <li><a href="#section-6">Brand & Third-Party Dispute Procedure</a> <span class="badge">NEW</span></li>
+                <li><a href="#section-7">Subscriptions & Payments</a> <span class="badge badge-updated">UPDATED</span></li>
+                <li><a href="#section-8">User Responsibilities</a></li>
+                <li><a href="#section-9">Intellectual Property</a></li>
+                <li><a href="#section-10">Indemnification</a> <span class="badge">NEW</span></li>
+                <li><a href="#section-11">Limitation of Liability</a></li>
+                <li><a href="#section-12">Termination of Access</a></li>
+                <li><a href="#section-13">Dispute Resolution & Arbitration</a> <span class="badge">NEW</span></li>
+                <li><a href="#section-14">Governing Law & Jurisdiction</a></li>
+                <li><a href="#section-15">Changes to These Terms</a></li>
+                <li><a href="#section-16">Contact Information</a></li>
+            </ol>
+        </div>
+
+        <!-- Section 1 -->
+        <h2 id="section-1">1. Nature of ChoosePure Services</h2>
         <ul>
             <li>ChoosePure is a consumer awareness and community-driven platform focused on food quality, purity, nutrition, and processing transparency.</li>
-            <li>We facilitate food testing through FSSAI-accredited laboratories.</li>
+            <li>We facilitate food testing through FSSAI-accredited and NABL-accredited laboratories.</li>
             <li>We share lab reports and simplified insights to help consumers make informed choices.</li>
             <li><strong>ChoosePure does not manufacture, sell, distribute, or endorse any food product.</strong></li>
+            <li>ChoosePure acts solely as an intermediary between consumers and accredited testing laboratories.</li>
         </ul>
-        
-        <h2>2. Laboratory Testing & Reports (Important)</h2>
+
+        <!-- Section 2 -->
+        <h2 id="section-2">2. Laboratory Testing & Reports</h2>
         <p>By using ChoosePure, you expressly acknowledge and agree that:</p>
         <ul>
-            <li>All food testing is conducted in FSSAI-accredited laboratories, based on standard laboratory procedures and methodologies.</li>
+            <li>All food testing is conducted in FSSAI-accredited and/or NABL-accredited laboratories, based on standard laboratory procedures and methodologies.</li>
             <li>The reports shared by ChoosePure are exactly as provided by the laboratory, without any alteration of test results.</li>
             <li>ChoosePure does not guarantee or warrant that the lab results represent absolute or universal product quality, as:
                 <ul>
                     <li>Testing is sample-based</li>
                     <li>Results may vary across batches, locations, and time</li>
+                    <li>Different laboratories may produce marginally different results for the same sample</li>
                 </ul>
             </li>
             <li><strong>The reports are informational and educational only, and should not be treated as medical, nutritional, or legal advice.</strong></li>
+            <li>ChoosePure does not claim that any product is safe or unsafe based solely on a single test report.</li>
         </ul>
-        
-        <h2>3. Ownership & Confidentiality of Reports</h2>
+
+        <!-- Section 3 -->
+        <h2 id="section-3">3. Report Access, Sharing & Permitted Use <span class="badge">NEW</span></h2>
+
+        <h3>3.1 Personal Use</h3>
+        <p>Food testing reports shared by ChoosePure are provided for the personal, non-commercial use of the contributing or authorised user only.</p>
+
+        <h3>3.2 Restricted Actions</h3>
         <div class="warning-box">
-            <p><strong>Food testing reports shared by ChoosePure are strictly for the personal use of the contributing or authorized user only.</strong></p>
+            <p><strong>You are not permitted to:</strong></p>
         </div>
-        <p><strong>You are not permitted to copy, publish, redistribute, resell, forward, or share the reports (in full or in part) with any third party, including on social media, websites, or messaging platforms.</strong></p>
-        <p>Unauthorized sharing may result in:</p>
         <ul>
-            <li>Suspension or termination of access</li>
-            <li>Legal action, if required</li>
+            <li>Copy, reproduce, or duplicate reports (in full or in part) for commercial purposes</li>
+            <li>Publish reports on any website, blog, or media outlet without prior written consent from ChoosePure</li>
+            <li>Redistribute, resell, or forward reports to third parties</li>
+            <li>Use reports to defame, mislead, or misrepresent any brand or product</li>
+            <li>Present ChoosePure reports as official regulatory or government findings</li>
         </ul>
-        
-        <h2>4. Product Scores & Ratings Disclaimer</h2>
+
+        <h3>3.3 Permitted Sharing</h3>
+        <p>Users may share ChoosePure's published summaries, scores, or links to public report pages on social media or messaging platforms, provided:</p>
+        <ul>
+            <li>The content is not altered or taken out of context</li>
+            <li>Proper attribution to ChoosePure is given</li>
+            <li>No commercial gain is derived from such sharing</li>
+        </ul>
+
+        <h3>3.4 Consequences of Violation</h3>
+        <p>Unauthorised sharing or misuse of reports may result in:</p>
+        <ul>
+            <li>Immediate suspension or termination of your ChoosePure account</li>
+            <li>Revocation of access to all reports and community features</li>
+            <li>Legal action, including claims for damages, if warranted</li>
+        </ul>
+
+        <!-- Section 4 -->
+        <h2 id="section-4">4. Publication in Public Interest <span class="badge">NEW</span></h2>
+        <p>ChoosePure reserves the right to publish test results, summaries, and insights in the public interest, including but not limited to:</p>
+        <ul>
+            <li>Highlighting products that fail to meet FSSAI standards or declared label claims</li>
+            <li>Sharing aggregated or anonymised data trends for consumer education</li>
+            <li>Publishing comparative analyses across product categories</li>
+        </ul>
+        <div class="info-box">
+            <p><strong>Such publications are made in good faith, based on verified laboratory data, and are intended to promote transparency and consumer welfare.</strong></p>
+        </div>
+
+        <!-- Section 5 -->
+        <h2 id="section-5">5. Product Scores & Ratings Disclaimer <span class="badge badge-updated">UPDATED</span></h2>
         <p>ChoosePure may provide scores, ratings, or simplified summaries for tested products. By using these, you acknowledge that:</p>
         <ul>
-            <li><strong>Scores are provided for demonstration and consumer understanding purposes only.</strong></li>
+            <li><strong>Scores are provided for consumer understanding and educational purposes only.</strong></li>
             <li>The scores reflect an overall assessment based on:
                 <ul>
                     <li>Purity indicators</li>
                     <li>Nutritional parameters</li>
                     <li>Degree of processing</li>
+                    <li>Compliance with declared label claims</li>
                 </ul>
             </li>
-            <li>The scoring system is defined by ChoosePure, inspired by publicly known frameworks such as the EWG scale, but is not an official or standardized certification.</li>
+            <li>The scoring system is defined by ChoosePure, inspired by publicly known frameworks such as the EWG scale, but is <strong>not an official or standardised certification</strong>.</li>
             <li>ChoosePure does not claim that scores are correct, complete, or applicable in all cases.</li>
             <li><strong>Scores should not be interpreted as endorsements, rejections, or guarantees of any product.</strong></li>
+            <li>Scores may be updated as new data becomes available or methodology is refined.</li>
         </ul>
-        
-        <h2>5. User Responsibilities</h2>
+
+        <!-- Section 6 -->
+        <h2 id="section-6">6. Brand & Third-Party Dispute Procedure <span class="badge">NEW</span></h2>
+        <p>ChoosePure is committed to fairness and accuracy. If any brand, manufacturer, or third party believes that a report, score, or publication is inaccurate or unfair, the following procedure applies:</p>
+
+        <div class="table-wrapper">
+            <table class="dispute-table">
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Action</th>
+                        <th>Timeline</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1</strong></td>
+                        <td>Brand/third party submits a written dispute to <a href="mailto:disputes@choosepure.in">disputes@choosepure.in</a> with supporting evidence</td>
+                        <td>Any time after publication</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2</strong></td>
+                        <td>ChoosePure acknowledges receipt and begins internal review</td>
+                        <td>Within 7 business days</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3</strong></td>
+                        <td>ChoosePure may request additional documentation or arrange a re-test at a mutually agreed laboratory</td>
+                        <td>Within 14 business days</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4</strong></td>
+                        <td>If the dispute is upheld, ChoosePure will update or retract the relevant content and notify affected users</td>
+                        <td>Within 7 business days of resolution</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5</strong></td>
+                        <td>If the dispute is not upheld, ChoosePure will provide a written explanation of its findings</td>
+                        <td>Within 7 business days of resolution</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p><strong>Important:</strong> During the dispute process, ChoosePure may, at its sole discretion, temporarily remove or flag the disputed content pending resolution.</p>
+
+        <!-- Section 7 -->
+        <h2 id="section-7">7. Subscriptions & Payments <span class="badge badge-updated">UPDATED</span></h2>
+
+        <h3>7.1 Subscription Plans</h3>
+        <p>ChoosePure offers subscription-based access to premium features, including detailed reports, early access to test results, and community features. Subscription details, pricing, and benefits are listed on our website and may change from time to time.</p>
+
+        <h3>7.2 Payment Terms</h3>
+        <ul>
+            <li>All payments are processed through secure third-party payment gateways.</li>
+            <li>Prices are listed in Indian Rupees (INR) and are inclusive of applicable taxes unless stated otherwise.</li>
+            <li>Contributions made towards testing are voluntary and community-driven.</li>
+        </ul>
+
+        <h3>7.3 Auto-Renewal</h3>
+        <p>Subscriptions may auto-renew at the end of each billing cycle unless cancelled before the renewal date. You will be notified before any renewal charge is processed.</p>
+
+        <h3>7.4 Refunds</h3>
+        <p>Refunds, if any, are subject to ChoosePure's <a href="/refund-policy.html">Refund Policy</a>. Please review it before making a purchase.</p>
+
+        <!-- Section 8 -->
+        <h2 id="section-8">8. User Responsibilities</h2>
         <p>You agree that you will:</p>
         <ul>
             <li>Use ChoosePure for lawful and personal purposes only</li>
             <li>Provide accurate information while registering or contributing</li>
             <li>Not misuse reports, data, or community content</li>
             <li>Not misrepresent ChoosePure reports as official regulatory findings</li>
+            <li>Not attempt to reverse-engineer, scrape, or extract data from the platform through automated means</li>
+            <li>Not harass, abuse, or threaten other community members or ChoosePure staff</li>
+            <li>Comply with all applicable local, state, and national laws while using the platform</li>
         </ul>
-        
-        <h2>6. Payments & Contributions</h2>
+
+        <!-- Section 9 -->
+        <h2 id="section-9">9. Intellectual Property</h2>
         <ul>
-            <li>Contributions made towards testing are voluntary and community-driven.</li>
-            <li>Fees paid are used to cover testing, operations, and platform costs.</li>
-            <li>Refunds, if any, are subject to ChoosePure's <a href="/refund-policy.html">Refund Policy</a>.</li>
+            <li>All content, summaries, scoring frameworks, explanations, visual designs, and branding on ChoosePure are the intellectual property of ChoosePure.</li>
+            <li>The ChoosePure name, logo, and associated marks are trademarks of ChoosePure.</li>
+            <li><strong>Unauthorised use, reproduction, or distribution is strictly prohibited.</strong></li>
+            <li>Users retain ownership of any content they submit (e.g., product suggestions, community comments), but grant ChoosePure a non-exclusive, royalty-free licence to use, display, and distribute such content on the platform.</li>
         </ul>
-        
-        <h2>7. Intellectual Property</h2>
+
+        <!-- Section 10 -->
+        <h2 id="section-10">10. Indemnification <span class="badge">NEW</span></h2>
+        <p>You agree to indemnify, defend, and hold harmless ChoosePure, its founders, employees, partners, and affiliates from and against any claims, damages, losses, liabilities, costs, or expenses (including reasonable legal fees) arising from:</p>
         <ul>
-            <li>All content, summaries, scoring frameworks, explanations, and branding on ChoosePure are the intellectual property of ChoosePure.</li>
-            <li><strong>Unauthorized use, reproduction, or distribution is prohibited.</strong></li>
+            <li>Your use or misuse of the platform</li>
+            <li>Your violation of these Terms</li>
+            <li>Your violation of any third-party rights</li>
+            <li>Any content you submit or share through the platform</li>
+            <li>Any unauthorised sharing or redistribution of reports</li>
         </ul>
-        
-        <h2>8. Limitation of Liability</h2>
+
+        <!-- Section 11 -->
+        <h2 id="section-11">11. Limitation of Liability</h2>
         <div class="alert-box">
-            <p><strong>To the maximum extent permitted by law:</strong></p>
+            <p><strong>To the maximum extent permitted by applicable law:</strong></p>
         </div>
-        <p>ChoosePure shall not be liable for any direct or indirect damages arising from:</p>
+        <p>ChoosePure shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from:</p>
         <ul>
-            <li>Use or reliance on reports or scores</li>
-            <li>Product purchase decisions</li>
-            <li>Differences in future product quality or composition</li>
+            <li>Use of or reliance on reports, scores, or any content on the platform</li>
+            <li>Product purchase decisions made based on ChoosePure content</li>
+            <li>Differences in future product quality, composition, or formulation</li>
+            <li>Interruption, suspension, or termination of services</li>
+            <li>Unauthorised access to or alteration of your data</li>
         </ul>
-        <p><strong>Users assume full responsibility for decisions made based on ChoosePure content.</strong></p>
-        
-        <h2>9. Termination of Access</h2>
+        <p><strong>Users assume full responsibility for decisions made based on ChoosePure content. Our total liability, if any, shall not exceed the amount paid by you to ChoosePure in the 12 months preceding the claim.</strong></p>
+
+        <!-- Section 12 -->
+        <h2 id="section-12">12. Termination of Access</h2>
         <p>ChoosePure reserves the right to:</p>
         <ul>
-            <li>Suspend or terminate user access</li>
-            <li>Remove content</li>
-            <li>Restrict report access</li>
+            <li>Suspend or terminate user access without prior notice</li>
+            <li>Remove or restrict content</li>
+            <li>Revoke report access and community privileges</li>
         </ul>
-        <p>...if these Terms are violated.</p>
-        
-        <h2>10. Governing Law & Jurisdiction</h2>
-        <p>These Terms shall be governed by and interpreted in accordance with the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in India.</p>
-        
-        <h2>11. Changes to Terms</h2>
-        <p>ChoosePure may update these Terms from time to time. Continued use of the platform implies acceptance of the revised Terms.</p>
-        
-        <h2>12. Contact Information</h2>
-        <p>For any questions or concerns regarding these Terms, contact:</p>
-        
+        <p>...if these Terms are violated, or if ChoosePure determines, at its sole discretion, that continued access poses a risk to the platform, its users, or third parties.</p>
+        <p>Upon termination, your right to access the platform and its content ceases immediately. Provisions that by their nature should survive termination (including Sections 9, 10, 11, 13, and 14) shall remain in effect.</p>
+
+        <!-- Section 13 -->
+        <h2 id="section-13">13. Dispute Resolution & Arbitration <span class="badge">NEW</span></h2>
+        <p>In the event of any dispute, controversy, or claim arising out of or relating to these Terms or the use of ChoosePure:</p>
+        <ol>
+            <li><strong>Informal Resolution:</strong> The parties shall first attempt to resolve the dispute informally by contacting <a href="mailto:support@choosepure.in">support@choosepure.in</a>. Both parties agree to negotiate in good faith for a period of 30 days.</li>
+            <li><strong>Mediation:</strong> If informal resolution fails, the dispute shall be referred to mediation under the rules of a mutually agreed mediator in Bangalore, India.</li>
+            <li><strong>Arbitration:</strong> If mediation fails, the dispute shall be resolved by binding arbitration in accordance with the Arbitration and Conciliation Act, 1996 (India). The arbitration shall be conducted in Bangalore, India, in the English language, by a sole arbitrator mutually appointed by the parties.</li>
+        </ol>
+        <p><strong>Class Action Waiver:</strong> You agree that any dispute resolution proceedings will be conducted only on an individual basis and not in a class, consolidated, or representative action.</p>
+
+        <!-- Section 14 -->
+        <h2 id="section-14">14. Governing Law & Jurisdiction</h2>
+        <p>These Terms shall be governed by and interpreted in accordance with the laws of India. Subject to the arbitration clause above, any disputes shall be subject to the exclusive jurisdiction of the courts in Bangalore, Karnataka, India.</p>
+
+        <!-- Section 15 -->
+        <h2 id="section-15">15. Changes to These Terms</h2>
+        <p>ChoosePure may update these Terms from time to time. When we make changes:</p>
+        <ul>
+            <li>The updated Terms will be posted on this page with a revised effective date.</li>
+            <li>For material changes, we will notify users via email or an in-app notification.</li>
+            <li>Continued use of the platform after the effective date of any changes constitutes your acceptance of the revised Terms.</li>
+        </ul>
+        <p>We encourage you to review this page periodically to stay informed about our Terms.</p>
+
+        <!-- Section 16 -->
+        <h2 id="section-16">16. Contact Information</h2>
+        <p>For any questions, concerns, or requests regarding these Terms, contact us:</p>
+
         <div class="contact-box">
             <p><strong>ChoosePure</strong></p>
             <p>Email: <a href="mailto:support@choosepure.in">support@choosepure.in</a></p>
+            <p>Disputes: <a href="mailto:disputes@choosepure.in">disputes@choosepure.in</a></p>
             <p>Website: <a href="https://choosepure.in">choosepure.in</a></p>
         </div>
-        
+
         <div class="info-box">
             <p><strong>📋 By continuing to use ChoosePure, you acknowledge that you have read, understood, and agree to be bound by these Terms & Conditions.</strong></p>
         </div>
-        
+
         <div class="info-box" style="margin-top: 16px;">
             <p><strong>🔒 Also review our <a href="/privacy-policy.html">Privacy Policy</a> and <a href="/refund-policy.html">Refund Policy</a> for complete information.</strong></p>
         </div>
+
+        <p class="footer-note">© 2026 ChoosePure. All rights reserved. These Terms & Conditions were last updated on 1 April 2026.</p>
     </div>
 </body>
 </html>
