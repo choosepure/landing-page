@@ -1379,6 +1379,35 @@ app.get('/admin', (req, res) => {
     }
 });
 
+// Admin API: Get all registered users (protected)
+app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const users = await usersCollection
+            .find({ role: 'user' })
+            .sort({ createdAt: -1 })
+            .project({ password: 0, reset_token: 0, reset_token_expires: 0 })
+            .toArray();
+
+        const totalUsers = users.length;
+        const subscribedUsers = users.filter(u => u.subscriptionStatus === 'subscribed').length;
+        const cancelledUsers = users.filter(u => u.subscriptionStatus === 'cancelled').length;
+        const freeUsers = users.filter(u => !u.subscriptionStatus || u.subscriptionStatus === 'free').length;
+
+        res.json({
+            success: true,
+            users,
+            summary: { totalUsers, subscribedUsers, cancelledUsers, freeUsers }
+        });
+    } catch (error) {
+        console.error('❌ Error fetching users:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch users' });
+    }
+});
+
 // Admin API: Get all waitlist members (protected)
 app.get('/api/admin/waitlist', authenticateAdmin, async (req, res) => {
     try {

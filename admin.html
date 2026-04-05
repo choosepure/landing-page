@@ -263,6 +263,7 @@
         <!-- Tab Navigation -->
         <div class="admin-tabs">
             <button class="admin-tab active" onclick="switchTab('waitlist')">📋 Waitlist</button>
+            <button class="admin-tab" onclick="switchTab('users')">👥 Users</button>
             <button class="admin-tab" onclick="switchTab('polling')">🗳️ Polling</button>
             <button class="admin-tab" onclick="switchTab('reports')">🧪 Reports</button>
         </div>
@@ -337,6 +338,59 @@
         </div>
         </div>
         <!-- END WAITLIST TAB -->
+
+        <!-- USERS TAB -->
+        <div class="tab-page" id="tab-users">
+            <div class="stats" id="users-stats">
+                <div class="stat-card">
+                    <h3>Total Registered</h3>
+                    <div class="number" id="users-total">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Subscribed</h3>
+                    <div class="number" id="users-subscribed" style="color: #2E7D32;">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Cancelled</h3>
+                    <div class="number" id="users-cancelled" style="color: #FFB703;">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Free</h3>
+                    <div class="number" id="users-free" style="color: #6B6B6B;">-</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Registered Users</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="users-filter" onchange="filterUsers()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            <option value="all">All Users</option>
+                            <option value="subscribed">Subscribed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="free">Free</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="users-loading" class="loading">Loading users...</div>
+                <table id="users-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Pincode</th>
+                            <th>Status</th>
+                            <th>Registered</th>
+                            <th>Last Login</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-body"></tbody>
+                </table>
+                <div id="users-empty" style="display:none; text-align:center; color:#666; padding:20px;">No users found.</div>
+            </div>
+        </div>
+        <!-- END USERS TAB -->
         
         <!-- POLLING TAB -->
         <div class="tab-page" id="tab-polling">
@@ -674,6 +728,61 @@
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabName).classList.add('active');
             event.currentTarget.classList.add('active');
+            // Lazy load users on first visit
+            if (tabName === 'users' && !usersLoaded) { loadUsers(); }
+        }
+
+        let allUsers = [];
+        let usersLoaded = false;
+
+        async function loadUsers() {
+            const loading = document.getElementById('users-loading');
+            const table = document.getElementById('users-table');
+            const empty = document.getElementById('users-empty');
+            loading.style.display = ''; table.style.display = 'none'; empty.style.display = 'none';
+            try {
+                const res = await fetch('/api/admin/users', { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/admin/login'; return; }
+                const data = await res.json();
+                loading.style.display = 'none';
+                if (!data.success) { empty.style.display = 'block'; return; }
+                allUsers = data.users || [];
+                usersLoaded = true;
+                if (data.summary) {
+                    document.getElementById('users-total').textContent = data.summary.totalUsers || 0;
+                    document.getElementById('users-subscribed').textContent = data.summary.subscribedUsers || 0;
+                    document.getElementById('users-cancelled').textContent = data.summary.cancelledUsers || 0;
+                    document.getElementById('users-free').textContent = data.summary.freeUsers || 0;
+                }
+                filterUsers();
+            } catch (e) {
+                loading.textContent = 'Failed to load users.';
+            }
+        }
+
+        function filterUsers() {
+            const filter = document.getElementById('users-filter').value;
+            let filtered = allUsers;
+            if (filter === 'subscribed') filtered = allUsers.filter(u => u.subscriptionStatus === 'subscribed');
+            else if (filter === 'cancelled') filtered = allUsers.filter(u => u.subscriptionStatus === 'cancelled');
+            else if (filter === 'free') filtered = allUsers.filter(u => !u.subscriptionStatus || u.subscriptionStatus === 'free');
+
+            const table = document.getElementById('users-table');
+            const empty = document.getElementById('users-empty');
+            const tbody = document.getElementById('users-body');
+
+            if (filtered.length === 0) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+
+            tbody.innerHTML = filtered.map(u => {
+                const regDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+                const lastLogin = u.last_login ? new Date(u.last_login).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Never';
+                const status = u.subscriptionStatus || 'free';
+                const statusColors = { subscribed: '#2E7D32', cancelled: '#E65100', free: '#666' };
+                const statusBg = { subscribed: '#d4edda', cancelled: '#FFF8E1', free: '#f5f5f5' };
+                const badge = '<span style="background:' + (statusBg[status] || '#f5f5f5') + ';color:' + (statusColors[status] || '#666') + ';padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500;">' + status + '</span>';
+                return '<tr><td>' + (u.name || '-') + '</td><td>' + (u.email || '-') + '</td><td>' + (u.phone || '-') + '</td><td>' + (u.pincode || '-') + '</td><td>' + badge + '</td><td>' + regDate + '</td><td>' + lastLogin + '</td></tr>';
+            }).join('');
         }
 
         async function loadMembers() {
