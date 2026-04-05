@@ -1119,6 +1119,7 @@
                         <div class="field-error" id="phone-error">Please enter a valid 10-digit phone number</div>
                     </div>
                     <button class="btn-submit" id="btn-submit" onclick="submitVote()">Proceed to Payment</button>
+                    <button class="btn-submit" id="btn-free-vote" onclick="submitFreeVote()" style="display:none; background:#8A6E4B; margin-top:8px;">🎁 Use Free Vote (1 vote)</button>
                 </div>
             </div>
         </div>
@@ -1189,6 +1190,7 @@
         let products = [];
         let selectedProduct = null;
         let currentUser = null;
+        let freeVoteEligible = false;
 
         // ── Auth Header ──
         function updateAuthHeader(user) {
@@ -1320,6 +1322,7 @@
                 const data = await res.json();
                 if (!res.ok) { showAuthError(errorEl, data.message || 'Sign in failed.'); btn.disabled = false; btn.textContent = 'Sign In'; return; }
                 updateAuthHeader(data.user);
+                checkFreeVoteStatus();
                 try {
                     gtag('event', 'login', { method: 'email' });
                     fbq('track', 'Lead', { content_name: 'User Sign In' });
@@ -1356,6 +1359,7 @@
                 const data = await res.json();
                 if (!res.ok) { showAuthError(errorEl, data.message || 'Registration failed.'); btn.disabled = false; btn.textContent = 'Register'; return; }
                 updateAuthHeader(data.user);
+                checkFreeVoteStatus();
                 try {
                     gtag('event', 'sign_up', { method: 'email' });
                     fbq('track', 'CompleteRegistration', { content_name: 'User Registration' });
@@ -1595,6 +1599,7 @@
             document.getElementById('vote-form-container').style.display = 'block';
             document.getElementById('btn-submit').disabled = false;
             document.getElementById('btn-submit').textContent = 'Proceed to Payment';
+            document.getElementById('btn-free-vote').style.display = freeVoteEligible ? 'block' : 'none';
             document.getElementById('vote-modal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -1813,6 +1818,55 @@
             el.style.display = 'block';
         }
 
+        // ── Free Vote for Subscribers ──
+        async function submitFreeVote() {
+            if (!selectedProduct || !currentUser) return;
+
+            const btn = document.getElementById('btn-free-vote');
+            btn.disabled = true;
+            btn.textContent = 'Casting free vote...';
+
+            const statusEl = document.getElementById('modal-status');
+            statusEl.style.display = 'none';
+
+            const productId = selectedProduct._id || selectedProduct.id;
+
+            try {
+                const res = await fetch(API_BASE + '/api/polls/free-vote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ productId })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to cast free vote');
+
+                // Update local vote count
+                const updatedCount = data.updatedVoteCount || (selectedProduct.totalVotes + 1);
+                const product = products.find(p => (p._id || p.id) === productId);
+                if (product) product.totalVotes = updatedCount;
+
+                // Mark free vote as used
+                freeVoteEligible = false;
+
+                // Show success
+                document.getElementById('vote-form-container').style.display = 'none';
+                showStatus('success',
+                    `🎁 Free vote cast! Your vote for ${selectedProduct.name} has been recorded. Total votes: ${updatedCount}`
+                );
+
+                // Refresh grid
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = products.map(renderCard).join('');
+
+            } catch (err) {
+                showStatus('error', err.message || 'Failed to cast free vote. Please try again.');
+                btn.disabled = false;
+                btn.textContent = '🎁 Use Free Vote (1 vote)';
+            }
+        }
+
         // ── Analytics Tracking ──
         function trackVoteInitiation(productName, voteCount, amount) {
             try {
@@ -1862,9 +1916,20 @@
                 const data = await res.json();
                 if (data.success && data.user) {
                     updateAuthHeader(data.user);
+                    checkFreeVoteStatus();
                 }
             } catch (e) {
                 // Silently stay unauthenticated on network error
+            }
+        }
+
+        async function checkFreeVoteStatus() {
+            try {
+                const res = await fetch(API_BASE + '/api/polls/free-vote-status', { credentials: 'include' });
+                const data = await res.json();
+                freeVoteEligible = data.success && data.eligible;
+            } catch (e) {
+                freeVoteEligible = false;
             }
         }
 

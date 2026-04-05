@@ -2040,6 +2040,118 @@ app.post('/api/polls/verify-payment', authenticateUser, async (req, res) => {
 });
 
 // ==========================================
+// FREE VOTE FOR SUBSCRIBERS
+// ==========================================
+
+// Check if subscriber has a free vote available this month
+app.get('/api/polls/free-vote-status', authenticateUser, async (req, res) => {
+    try {
+        if (!voteTransactionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        if (req.user.subscriptionStatus !== 'subscribed' && req.user.subscriptionStatus !== 'cancelled') {
+            return res.json({ success: true, eligible: false, reason: 'not_subscribed' });
+        }
+
+        // Check if user already used free vote this month
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const freeVoteThisMonth = await voteTransactionsCollection.findOne({
+            userId: req.user.id,
+            isFreeVote: true,
+            createdAt: { $gte: monthStart }
+        });
+
+        res.json({ 
+            success: true, 
+            eligible: !freeVoteThisMonth,
+            reason: freeVoteThisMonth ? 'already_used' : 'available'
+        });
+    } catch (error) {
+        console.error('❌ Error checking free vote status:', error);
+        res.status(500).json({ success: false, message: 'Failed to check free vote status' });
+    }
+});
+
+// Cast a free vote (1 per month for subscribers)
+app.post('/api/polls/free-vote', authenticateUser, async (req, res) => {
+    try {
+        if (!productsCollection || !voteTransactionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        // Must be subscribed
+        if (req.user.subscriptionStatus !== 'subscribed' && req.user.subscriptionStatus !== 'cancelled') {
+            return res.status(403).json({ success: false, message: 'Subscription required for free votes' });
+        }
+
+        const { productId } = req.body;
+        if (!productId) {
+            return res.status(400).json({ success: false, message: 'Product ID is required' });
+        }
+
+        // Check if already used free vote this month
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const freeVoteThisMonth = await voteTransactionsCollection.findOne({
+            userId: req.user.id,
+            isFreeVote: true,
+            createdAt: { $gte: monthStart }
+        });
+
+        if (freeVoteThisMonth) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'You have already used your free vote this month' 
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const product = await productsCollection.findOne({ 
+            _id: new ObjectId(productId), 
+            status: 'active' 
+        });
+
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found or not active' });
+        }
+
+        // Record the free vote
+        await voteTransactionsCollection.insertOne({
+            productId: new ObjectId(productId),
+            productName: product.name,
+            userId: req.user.id,
+            userName: req.user.name,
+            userEmail: req.user.email,
+            userPhone: req.user.phone || '',
+            voteCount: 1,
+            amount: 0,
+            isFreeVote: true,
+            status: 'completed',
+            createdAt: new Date()
+        });
+
+        // Increment product totalVotes
+        const updateResult = await productsCollection.findOneAndUpdate(
+            { _id: new ObjectId(productId) },
+            { $inc: { totalVotes: 1 } },
+            { returnDocument: 'after' }
+        );
+
+        console.log(`✅ Free vote recorded for product ${product.name} by ${req.user.email}`);
+
+        res.json({ 
+            success: true, 
+            updatedVoteCount: updateResult.totalVotes 
+        });
+    } catch (error) {
+        console.error('❌ Error casting free vote:', error);
+        res.status(500).json({ success: false, message: 'Failed to cast free vote' });
+    }
+});
+
+// ==========================================
 // PRODUCT SUGGESTIONS API
 // ==========================================
 
