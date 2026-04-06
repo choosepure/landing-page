@@ -790,7 +790,7 @@
                     return;
                 }
                 const userData = await userRes.json();
-                if (!userData.success || !userData.user || userData.user.subscriptionStatus !== 'subscribed') {
+                if (!userData.success || !userData.user || (userData.user.subscriptionStatus !== 'subscribed' && userData.user.subscriptionStatus !== 'cancelled')) {
                     // Not subscribed
                     window.location.href = '/purity-wall';
                     return;
