@@ -518,21 +518,12 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && data.user) {
-                        if (data.user.subscriptionStatus === 'subscribed' || data.user.subscriptionStatus === 'cancelled') {
-                            showReport();
-                        } else {
-                            showSubscribePrompt();
-                        }
+                        showReport();
                         return;
                     }
                 }
             } catch(e) {}
-            // Not logged in - show login prompt instead of password
             showLoginPrompt();
-        }
-
-        function showSubscribePrompt() {
-            passwordScreen.innerHTML = '<div class="password-container"><div class="lock-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9.243 2 7 4.243 7 7v3H6c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zm3 8V7c0-1.654-1.346-3-3-3S9 5.346 9 7v3h6z" fill="currentColor"/></svg></div><h2>Subscription Required</h2><p>This detailed lab report is available exclusively for ChoosePure subscribers.</p><a href="/purity-wall" style="display:inline-block;padding:14px 32px;background:#1F6B4E;color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:16px;">Subscribe Now – ₹299/mo</a></div>';
         }
 
         function showLoginPrompt() {
