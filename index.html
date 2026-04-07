@@ -957,7 +957,7 @@
                     Join hundreds of Bangalore parents who are independently testing everyday packaged foods — and getting simple, reliable purity reports.
                 </p>
                 <div class="cta-buttons">
-                    <button class="btn-primary" onclick="trackEvent('cta_click', 'get_milk_report_hero'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">Get Milk Test Report</button>
+                    <button class="btn-primary" onclick="trackEvent('cta_click', 'get_milk_report_hero'); window.location.href='/purity-wall'">Get Milk Test Report</button>
                     <button class="btn-secondary" onclick="trackEvent('polling_click', 'engagement', 'hero'); window.location.href='/polling'">Vote for Products</button>
                 </div>
                 <p class="microcopy">No brand sponsorship. No confusing science. Only facts parents can trust.</p>
@@ -1160,26 +1160,6 @@
             </div>
         </div>
 
-        <!-- WAITLIST FORM -->
-        <div id="waitlist-form">
-            <form id="signup-form">
-                <h3>Join the Waitlist</h3>
-                <p style="font-size: 15px; color: #8A6E4B; margin: 0 0 16px; line-height: 1.5;">Join the community to get free access to our first independent milk test report.</p>
-                <div id="form-message" class="form-message"></div>
-                <input type="text" name="name" id="name" placeholder="Your name" required />
-                <input type="email" name="email" id="email" placeholder="Email address" required />
-                <input type="tel" name="phone" id="phone" placeholder="WhatsApp number" required />
-                <input type="text" name="pincode" id="pincode" placeholder="Pincode" pattern="[0-9]{6}" maxlength="6" required />
-                <p style="font-size: 13px; color: #6B6B6B; margin: 16px 0; line-height: 1.5;">
-                    By submitting this form, you agree to our 
-                    <a href="/terms-conditions.html" target="_blank" style="color: #1F6B4E; text-decoration: underline;">Terms & Conditions</a> 
-                    and 
-                    <a href="/privacy-policy.html" target="_blank" style="color: #1F6B4E; text-decoration: underline;">Privacy Policy</a>.
-                </p>
-                <button type="submit" id="submit-btn">Join the Waitlist</button>
-            </form>
-        </div>
-        
         <!-- FOOTER -->
         <div class="footer">
             <div class="social-links">
@@ -1271,7 +1251,7 @@
     <div class="sticky-cta" id="sticky-cta">
         <div class="sticky-content">
             <span>Ready to know what goes into your food?</span>
-            <button onclick="trackEvent('cta_click', 'get_report_sticky'); document.getElementById('waitlist-form').scrollIntoView({behavior: 'smooth'})">Get Milk Test Report</button>
+            <button onclick="trackEvent('cta_click', 'get_report_sticky'); window.location.href='/purity-wall'">Get Milk Test Report</button>
         </div>
     </div>
     
@@ -1425,110 +1405,6 @@
             }
         });
         
-        // Handle form submission
-        document.getElementById('signup-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('submit-btn');
-            const messageDiv = document.getElementById('form-message');
-            
-            // Get form data
-            const formData = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                pincode: document.getElementById('pincode').value
-            };
-            
-            console.log('Form submitted with data:', formData);
-            
-            // Disable button and show loading
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Joining...';
-            messageDiv.style.display = 'none';
-            messageDiv.className = 'form-message';
-            
-            // Show a note if this is taking long (server might be waking up)
-            const slowLoadTimeout = setTimeout(() => {
-                if (submitBtn.disabled) {
-                    submitBtn.textContent = 'Server waking up, please wait...';
-                }
-            }, 3000);
-            
-            try {
-                console.log('Sending request to API...');
-                const apiUrl = 'https://api.choosepure.in/api/waitlist';
-                
-                console.log('API URL:', apiUrl);
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                console.log('Response status:', response.status);
-                const result = await response.json();
-                console.log('Response data:', result);
-                
-                if (response.ok && result.success) {
-                    // Track successful form submission with Google Analytics
-                    trackEvent('form_submit_success', 'conversion', 'waitlist_signup');
-                    
-                    // Track conversion with Meta Pixel
-                    if (typeof fbq !== 'undefined') {
-                        fbq('track', 'Lead', {
-                            content_name: 'Waitlist Signup',
-                            content_category: 'Waitlist',
-                            value: 0,
-                            currency: 'INR'
-                        });
-                        console.log('📊 Meta Pixel: Lead event tracked');
-                    }
-                    
-                    // Track conversion with Mixpanel
-                    if (typeof mixpanel !== 'undefined') {
-                        mixpanel.track('Lead', {
-                            content_name: 'Waitlist Signup',
-                            content_category: 'Waitlist',
-                            source: 'landing_page'
-                        });
-                        console.log('📊 Mixpanel: Lead event tracked');
-                    }
-                    
-                    messageDiv.className = 'form-message success';
-                    messageDiv.innerHTML = '🎉 You\'re in! You\'ll receive our first independent milk test report within 24 hours in your inbox.<br><br>📲 <a href="https://chat.whatsapp.com/BH5yWU8VpS7C73iobfxBPn" target="_blank" style="color: #1F6B4E; font-weight: 600; text-decoration: underline;">Join our WhatsApp community</a> to get the latest updates on food testing and new reports.';
-                    messageDiv.style.display = 'block';
-                    document.getElementById('signup-form').reset();
-                    
-                    // Optional: Redirect to WhatsApp after 2 seconds
-                    if (result.whatsappLink && result.whatsappLink !== 'https://chat.whatsapp.com/your-group-invite-link') {
-                        setTimeout(() => {
-                            trackEvent('whatsapp_redirect', 'engagement', 'auto_redirect');
-                            window.open(result.whatsappLink, '_blank');
-                        }, 2000);
-                    }
-                } else {
-                    trackEvent('form_submit_error', 'error', result.message || 'unknown_error');
-                    messageDiv.className = 'form-message error';
-                    messageDiv.textContent = result.message || 'Something went wrong. Please try again.';
-                    messageDiv.style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                trackEvent('form_submit_error', 'error', 'network_error');
-                messageDiv.className = 'form-message error';
-                messageDiv.textContent = 'Network error. Please check your connection and try again.';
-                messageDiv.style.display = 'block';
-            } finally {
-                clearTimeout(slowLoadTimeout);
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Join the Waitlist';
-            }
-        });
-
-
         // ── Auth ──
         const API_BASE = 'https://api.choosepure.in';
         let currentUser = null;
