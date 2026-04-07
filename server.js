@@ -2651,7 +2651,7 @@ app.get('/api/reports', async (req, res) => {
                     _id: new ObjectId(decoded.id), 
                     role: 'user' 
                 });
-                if (user && user.subscriptionStatus === 'subscribed') {
+                if (user && (user.subscriptionStatus === 'subscribed' || user.subscriptionStatus === 'cancelled')) {
                     isSubscribed = true;
                 }
             } catch (e) {
@@ -2663,6 +2663,15 @@ app.get('/api/reports', async (req, res) => {
             .find({ published: true })
             .sort({ createdAt: -1 })
             .toArray();
+
+        // Sort so the free/sample report (Akshayakalpa) always appears first
+        reports.sort((a, b) => {
+            const aFree = (a.reportUrl || '').includes('akshayakalpa');
+            const bFree = (b.reportUrl || '').includes('akshayakalpa');
+            if (aFree && !bFree) return -1;
+            if (!aFree && bFree) return 1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
 
         const mapped = reports.map((report, index) => {
             const base = {
