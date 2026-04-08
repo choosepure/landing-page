@@ -266,6 +266,7 @@
             <button class="admin-tab" onclick="switchTab('users')">👥 Users</button>
             <button class="admin-tab" onclick="switchTab('polling')">🗳️ Polling</button>
             <button class="admin-tab" onclick="switchTab('reports')">🧪 Reports</button>
+            <button class="admin-tab" onclick="switchTab('referrals')">🎁 Referrals</button>
         </div>
 
         <!-- WAITLIST TAB -->
@@ -666,6 +667,43 @@
         </div>
         <!-- END REPORTS TAB -->
 
+        <!-- REFERRALS TAB -->
+        <div class="tab-page" id="tab-referrals">
+            <div class="stats" id="referral-stats">
+                <div class="stat-card">
+                    <h3>Total Referrals</h3>
+                    <div class="number" id="ref-admin-total">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Completed</h3>
+                    <div class="number" id="ref-admin-completed" style="color: #2E7D32;">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Free Months Granted</h3>
+                    <div class="number" id="ref-admin-months" style="color: #1565C0;">-</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h2 style="margin-bottom: 20px;">Referral Records</h2>
+                <div id="referrals-loading" class="loading">Loading referrals...</div>
+                <table id="referrals-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Referrer</th>
+                            <th>Referee</th>
+                            <th>Status</th>
+                            <th>Reward</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="referrals-body"></tbody>
+                </table>
+                <div id="referrals-empty" style="display:none; text-align:center; color:#666; padding:20px;">No referrals yet.</div>
+            </div>
+        </div>
+        <!-- END REFERRALS TAB -->
+
         <!-- Bulk Email Modal -->
         <div id="bulk-email-modal" class="modal">
             <div class="modal-content" style="max-width: 900px;">
@@ -730,6 +768,7 @@
             event.currentTarget.classList.add('active');
             // Lazy load users on first visit
             if (tabName === 'users' && !usersLoaded) { loadUsers(); }
+            if (tabName === 'referrals' && !referralsLoaded) { loadAdminReferrals(); }
         }
 
         let allUsers = [];
@@ -783,6 +822,48 @@
                 const badge = '<span style="background:' + (statusBg[status] || '#f5f5f5') + ';color:' + (statusColors[status] || '#666') + ';padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500;">' + status + '</span>';
                 return '<tr><td>' + (u.name || '-') + '</td><td>' + (u.email || '-') + '</td><td>' + (u.phone || '-') + '</td><td>' + (u.pincode || '-') + '</td><td>' + badge + '</td><td>' + regDate + '</td><td>' + lastLogin + '</td></tr>';
             }).join('');
+        }
+
+        let referralsLoaded = false;
+
+        async function loadAdminReferrals() {
+            const loading = document.getElementById('referrals-loading');
+            const table = document.getElementById('referrals-table');
+            const empty = document.getElementById('referrals-empty');
+            loading.style.display = ''; table.style.display = 'none'; empty.style.display = 'none';
+            try {
+                // Load overview stats
+                const overviewRes = await fetch('/api/admin/referral-overview', { credentials: 'include' });
+                if (overviewRes.ok) {
+                    const overview = await overviewRes.json();
+                    if (overview.success) {
+                        document.getElementById('ref-admin-total').textContent = overview.total_referrals || 0;
+                        document.getElementById('ref-admin-completed').textContent = overview.completed_referrals || 0;
+                        document.getElementById('ref-admin-months').textContent = overview.total_free_months_granted || 0;
+                    }
+                }
+                // Load referral records
+                const res = await fetch('/api/admin/referrals', { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/admin/login'; return; }
+                const data = await res.json();
+                loading.style.display = 'none';
+                referralsLoaded = true;
+                if (!data.success || !data.referrals || !data.referrals.length) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none'; table.style.display = 'table';
+                const tbody = document.getElementById('referrals-body');
+                tbody.innerHTML = data.referrals.map(r => {
+                    const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+                    const statusBadge = r.status === 'completed'
+                        ? '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:4px;font-size:12px;">Completed</span>'
+                        : '<span style="background:#FFF8E1;color:#E65100;padding:2px 8px;border-radius:4px;font-size:12px;">Pending</span>';
+                    const rewardBadge = r.reward_granted
+                        ? '<span style="color:#2E7D32;font-size:12px;">✅ Granted</span>'
+                        : '<span style="color:#666;font-size:12px;">—</span>';
+                    return '<tr><td>' + r.referrer_name + '</td><td>' + r.referee_name + '</td><td>' + statusBadge + '</td><td>' + rewardBadge + '</td><td>' + date + '</td></tr>';
+                }).join('');
+            } catch (e) {
+                loading.textContent = 'Failed to load referrals.';
+            }
         }
 
         async function loadMembers() {

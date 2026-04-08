@@ -44,6 +44,8 @@ let voteTransactionsCollection;
 let suggestionsCollection;
 let testReportsCollection;
 let subscriptionTransactionsCollection;
+let referralsCollection;
+let rewardsCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -115,6 +117,22 @@ async function connectToDatabase() {
         await usersCollection.createIndex({ role: 1 });
         console.log('✅ Users collection indexes created');
 
+        // Create unique sparse index on users.referral_code
+        await usersCollection.createIndex({ referral_code: 1 }, { unique: true, sparse: true });
+        console.log('✅ Users referral_code index created');
+
+        // Initialize referrals collection
+        referralsCollection = db.collection('referrals');
+        await referralsCollection.createIndex({ referrer_user_id: 1 });
+        await referralsCollection.createIndex({ referee_user_id: 1 });
+        await referralsCollection.createIndex({ referrer_user_id: 1, referee_user_id: 1 }, { unique: true });
+        console.log('✅ Referrals collection initialized');
+
+        // Initialize rewards collection
+        rewardsCollection = db.collection('rewards');
+        await rewardsCollection.createIndex({ user_id: 1 });
+        console.log('✅ Rewards collection initialized');
+
         // Check if admin user exists
         const adminCount = await usersCollection.countDocuments({ role: 'admin' });
         console.log('👤 Admin users found:', adminCount);
@@ -134,6 +152,53 @@ async function connectToDatabase() {
 }
 
 connectToDatabase();
+
+// Generate a unique referral code in the format CP-XXXXX
+async function generateReferralCode(usersCol) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const maxRetries = 5;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const bytes = crypto.randomBytes(5);
+        let code = 'CP-';
+        for (let i = 0; i < 5; i++) {
+            code += chars[bytes[i] % chars.length];
+        }
+
+        const existing = await usersCol.findOne({ referral_code: code });
+        if (!existing) {
+            return code;
+        }
+    }
+
+    throw new Error('Failed to generate unique referral code after ' + maxRetries + ' attempts');
+}
+
+// Extend a user's subscription expiry by 1 calendar month and increment freeMonthsEarned
+async function extendSubscriptionExpiry(usersCollection, userId) {
+    const user = await usersCollection.findOne({ _id: userId });
+    const now = new Date();
+    let baseDate;
+
+    if (user && user.subscriptionExpiry && new Date(user.subscriptionExpiry) > now) {
+        baseDate = new Date(user.subscriptionExpiry);
+    } else {
+        baseDate = now;
+    }
+
+    const newExpiry = new Date(baseDate);
+    newExpiry.setMonth(newExpiry.getMonth() + 1);
+
+    await usersCollection.updateOne(
+        { _id: userId },
+        {
+            $set: { subscriptionExpiry: newExpiry },
+            $inc: { freeMonthsEarned: 1 }
+        }
+    );
+
+    return newExpiry;
+}
 
 // Middleware
 app.use(cors({
@@ -214,7 +279,10 @@ async function authenticateUser(req, res, next) {
             email: user.email, 
             name: user.name, 
             phone: user.phone,
-            subscriptionStatus: user.subscriptionStatus || 'free'
+            subscriptionStatus: user.subscriptionStatus || 'free',
+            referral_code: user.referral_code || null,
+            freeMonthsEarned: user.freeMonthsEarned || 0,
+            subscriptionExpiry: user.subscriptionExpiry || null
         };
         next();
     } catch (error) {
@@ -251,7 +319,7 @@ app.post('/api/user/register', async (req, res) => {
             });
         }
 
-        const { name, email, phone, pincode, password } = req.body;
+        const { name, email, phone, pincode, password, referral_code } = req.body;
 
         // Validate required fields
         const missingFields = [];
@@ -303,6 +371,38 @@ app.post('/api/user/register', async (req, res) => {
             });
         }
 
+        // Check phone uniqueness
+        const existingPhone = await usersCollection.findOne({ phone: phone });
+        if (existingPhone) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This phone number is already registered' 
+            });
+        }
+
+        // Validate referral code if provided
+        let referrerUser = null;
+        if (referral_code) {
+            referrerUser = await usersCollection.findOne({ referral_code: referral_code });
+            if (!referrerUser) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Invalid referral code' 
+                });
+            }
+
+            // Check self-referral (same email or phone)
+            if (referrerUser.email === email || referrerUser.phone === phone) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Cannot use own referral code' 
+                });
+            }
+        }
+
+        // Generate unique referral code for the new user
+        const newUserReferralCode = await generateReferralCode(usersCollection);
+
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -315,8 +415,24 @@ app.post('/api/user/register', async (req, res) => {
             password: hashedPassword,
             role: 'user',
             subscriptionStatus: 'free',
+            referral_code: newUserReferralCode,
+            referred_by: referrerUser ? referrerUser._id : null,
+            freeMonthsEarned: 0,
+            subscriptionExpiry: null,
             createdAt: new Date()
         });
+
+        // Create referral record if a valid referral code was used
+        if (referrerUser) {
+            await referralsCollection.insertOne({
+                referrer_user_id: referrerUser._id,
+                referee_user_id: result.insertedId,
+                status: 'pending',
+                reward_granted: false,
+                created_at: new Date(),
+                completed_at: null
+            });
+        }
 
         // Generate JWT token
         const token = jwt.sign(
@@ -341,7 +457,7 @@ app.post('/api/user/register', async (req, res) => {
 
         res.json({ 
             success: true, 
-            user: { name, email, subscriptionStatus: 'free' } 
+            user: { name, email, subscriptionStatus: 'free', referral_code: newUserReferralCode } 
         });
     } catch (error) {
         console.error('❌ Registration error:', error);
@@ -395,6 +511,16 @@ app.post('/api/user/login', async (req, res) => {
             });
         }
 
+        // Backfill referral code for existing users who don't have one
+        let referralCode = user.referral_code;
+        if (!referralCode) {
+            referralCode = await generateReferralCode(usersCollection);
+            await usersCollection.updateOne(
+                { _id: user._id },
+                { $set: { referral_code: referralCode } }
+            );
+        }
+
         // Update last_login timestamp
         await usersCollection.updateOne(
             { _id: user._id },
@@ -428,7 +554,8 @@ app.post('/api/user/login', async (req, res) => {
                 name: user.name, 
                 email: user.email, 
                 phone: user.phone,
-                subscriptionStatus: user.subscriptionStatus || 'free'
+                subscriptionStatus: user.subscriptionStatus || 'free',
+                referral_code: referralCode
             } 
         });
     } catch (error) {
@@ -458,7 +585,10 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
             name: req.user.name, 
             email: req.user.email, 
             phone: req.user.phone,
-            subscriptionStatus: req.user.subscriptionStatus
+            subscriptionStatus: req.user.subscriptionStatus,
+            referral_code: req.user.referral_code,
+            freeMonthsEarned: req.user.freeMonthsEarned,
+            subscriptionExpiry: req.user.subscriptionExpiry
         } 
     });
 });
@@ -2069,6 +2199,109 @@ app.post('/api/polls/verify-payment', authenticateUser, async (req, res) => {
 });
 
 // ==========================================
+// REFERRAL PROGRAM API
+// ==========================================
+
+// Authenticated API: Get referral stats for current user
+app.get('/api/user/referral-stats', authenticateUser, async (req, res) => {
+    try {
+        if (!referralsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const userId = new ObjectId(req.user.id);
+
+        const referrals = await referralsCollection.find({ referrer_user_id: userId }).toArray();
+        const totalInvited = referrals.length;
+        const completed = referrals.filter(r => r.status === 'completed').length;
+        const pending = totalInvited - completed;
+
+        const referralCode = req.user.referral_code || '';
+        const referralLink = referralCode ? `https://choosepure.in/purity-wall?ref=${referralCode}` : '';
+
+        res.json({
+            success: true,
+            referral_code: referralCode,
+            referral_link: referralLink,
+            total_invited: totalInvited,
+            completed,
+            pending,
+            free_months_earned: req.user.freeMonthsEarned || 0
+        });
+    } catch (error) {
+        console.error('❌ Error fetching referral stats:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch referral stats' });
+    }
+});
+
+// Admin API: Referral program overview stats
+app.get('/api/admin/referral-overview', authenticateAdmin, async (req, res) => {
+    try {
+        if (!referralsCollection || !rewardsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const totalReferrals = await referralsCollection.countDocuments();
+        const completedReferrals = await referralsCollection.countDocuments({ status: 'completed' });
+
+        const rewardAgg = await rewardsCollection.aggregate([
+            { $group: { _id: null, totalMonths: { $sum: '$months' } } }
+        ]).toArray();
+        const totalFreeMonths = rewardAgg.length > 0 ? rewardAgg[0].totalMonths : 0;
+
+        res.json({
+            success: true,
+            total_referrals: totalReferrals,
+            completed_referrals: completedReferrals,
+            total_free_months_granted: totalFreeMonths
+        });
+    } catch (error) {
+        console.error('❌ Error fetching referral overview:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch referral overview' });
+    }
+});
+
+// Admin API: List all referral records
+app.get('/api/admin/referrals', authenticateAdmin, async (req, res) => {
+    try {
+        if (!referralsCollection || !usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const referrals = await referralsCollection.find().sort({ created_at: -1 }).toArray();
+
+        // Get all unique user IDs
+        const userIds = new Set();
+        referrals.forEach(r => {
+            userIds.add(r.referrer_user_id.toString());
+            userIds.add(r.referee_user_id.toString());
+        });
+
+        const { ObjectId } = require('mongodb');
+        const users = await usersCollection.find({
+            _id: { $in: Array.from(userIds).map(id => new ObjectId(id)) }
+        }).project({ name: 1, email: 1 }).toArray();
+
+        const userMap = {};
+        users.forEach(u => { userMap[u._id.toString()] = u.name || u.email; });
+
+        const mapped = referrals.map(r => ({
+            referrer_name: userMap[r.referrer_user_id.toString()] || 'Unknown',
+            referee_name: userMap[r.referee_user_id.toString()] || 'Unknown',
+            status: r.status,
+            reward_granted: r.reward_granted,
+            created_at: r.created_at
+        }));
+
+        res.json({ success: true, referrals: mapped });
+    } catch (error) {
+        console.error('❌ Error fetching referrals:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch referrals' });
+    }
+});
+
+// ==========================================
 // FREE VOTE FOR SUBSCRIBERS
 // ==========================================
 
@@ -2920,6 +3153,52 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
             createdAt: new Date()
         });
         console.log('Subscription activated for:', req.user.email);
+
+        // Referral reward logic: check if this user was referred
+        try {
+            if (referralsCollection && rewardsCollection) {
+                const pendingReferral = await referralsCollection.findOne({
+                    referee_user_id: new ObjectId(req.user.id),
+                    status: 'pending',
+                    reward_granted: false
+                });
+
+                if (pendingReferral) {
+                    // Update referral to completed
+                    await referralsCollection.updateOne(
+                        { _id: pendingReferral._id },
+                        { $set: { status: 'completed', reward_granted: true, completed_at: new Date() } }
+                    );
+
+                    // Create reward for referrer
+                    await rewardsCollection.insertOne({
+                        user_id: pendingReferral.referrer_user_id,
+                        reward_type: 'referral',
+                        months: 1,
+                        source: new ObjectId(req.user.id),
+                        created_at: new Date()
+                    });
+
+                    // Create reward for referee
+                    await rewardsCollection.insertOne({
+                        user_id: new ObjectId(req.user.id),
+                        reward_type: 'referral_signup',
+                        months: 1,
+                        source: pendingReferral.referrer_user_id,
+                        created_at: new Date()
+                    });
+
+                    // Extend subscription expiry for both
+                    await extendSubscriptionExpiry(usersCollection, pendingReferral.referrer_user_id);
+                    await extendSubscriptionExpiry(usersCollection, new ObjectId(req.user.id));
+
+                    console.log('🎁 Referral rewards granted for referrer:', pendingReferral.referrer_user_id, 'and referee:', req.user.email);
+                }
+            }
+        } catch (refError) {
+            console.error('⚠️ Referral reward error (non-blocking):', refError.message);
+        }
+
         res.json({ success: true, message: 'Subscription activated successfully' });
     } catch (error) {
         console.error('Error verifying subscription:', error);
