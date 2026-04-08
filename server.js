@@ -249,7 +249,15 @@ function authenticateAdmin(req, res, next) {
 
 // User authentication middleware
 async function authenticateUser(req, res, next) {
-    const token = req.cookies.user_token;
+    // Check Authorization header first (mobile), then fall back to cookie (web)
+    let token = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+    }
+    if (!token) {
+        token = req.cookies.user_token;
+    }
     
     if (!token) {
         return res.status(401).json({ 
@@ -457,6 +465,7 @@ app.post('/api/user/register', async (req, res) => {
 
         res.json({ 
             success: true, 
+            token,
             user: { name, email, subscriptionStatus: 'free', referral_code: newUserReferralCode } 
         });
     } catch (error) {
@@ -550,6 +559,7 @@ app.post('/api/user/login', async (req, res) => {
 
         res.json({ 
             success: true, 
+            token,
             user: { 
                 name: user.name, 
                 email: user.email, 
@@ -2875,7 +2885,14 @@ app.get('/api/reports', async (req, res) => {
 
         // Optional auth check — try to read JWT but don't fail if absent
         let isSubscribed = false;
-        const token = req.cookies.user_token;
+        let token = null;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+        }
+        if (!token) {
+            token = req.cookies.user_token;
+        }
         if (token) {
             try {
                 const decoded = jwt.verify(token, JWT_SECRET);

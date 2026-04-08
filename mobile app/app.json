@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "ChoosePure",
+    "slug": "choosepure",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "choosepure",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FAFAF7"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "in.choosepure.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FAFAF7"
+      },
+      "package": "in.choosepure.app"
+    },
+    "plugins": [
+      "expo-linking"
+    ]
+  }
+}
