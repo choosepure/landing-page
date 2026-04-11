@@ -267,6 +267,7 @@
             <button class="admin-tab" onclick="switchTab('polling')">🗳️ Polling</button>
             <button class="admin-tab" onclick="switchTab('reports')">🧪 Reports</button>
             <button class="admin-tab" onclick="switchTab('referrals')">🎁 Referrals</button>
+            <button class="admin-tab" onclick="switchTab('feedback')">💬 Feedback</button>
         </div>
 
         <!-- WAITLIST TAB -->
@@ -704,6 +705,40 @@
         </div>
         <!-- END REFERRALS TAB -->
 
+        <!-- FEEDBACK TAB -->
+        <div class="tab-page" id="tab-feedback">
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Messages</h3>
+                    <div class="number" id="fb-admin-total">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>New (Unread)</h3>
+                    <div class="number" id="fb-admin-new" style="color: #F57C00;">-</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h2 style="margin-bottom: 20px;">Customer Messages</h2>
+                <div id="feedback-loading" class="loading">Loading messages...</div>
+                <table id="feedback-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="feedback-body"></tbody>
+                </table>
+                <div id="feedback-empty" style="display:none; text-align:center; color:#666; padding:20px;">No messages yet.</div>
+            </div>
+        </div>
+        <!-- END FEEDBACK TAB -->
+
         <!-- Bulk Email Modal -->
         <div id="bulk-email-modal" class="modal">
             <div class="modal-content" style="max-width: 900px;">
@@ -769,6 +804,7 @@
             // Lazy load users on first visit
             if (tabName === 'users' && !usersLoaded) { loadUsers(); }
             if (tabName === 'referrals' && !referralsLoaded) { loadAdminReferrals(); }
+            if (tabName === 'feedback' && !feedbackLoaded) { loadAdminFeedback(); }
         }
 
         let allUsers = [];
@@ -864,6 +900,52 @@
             } catch (e) {
                 loading.textContent = 'Failed to load referrals.';
             }
+        }
+
+        let feedbackLoaded = false;
+
+        async function loadAdminFeedback() {
+            const loading = document.getElementById('feedback-loading');
+            const table = document.getElementById('feedback-table');
+            const empty = document.getElementById('feedback-empty');
+            loading.style.display = ''; table.style.display = 'none'; empty.style.display = 'none';
+            try {
+                const res = await fetch('/api/admin/feedback', { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/admin/login'; return; }
+                const data = await res.json();
+                loading.style.display = 'none';
+                feedbackLoaded = true;
+                const messages = data.messages || [];
+                document.getElementById('fb-admin-total').textContent = messages.length;
+                document.getElementById('fb-admin-new').textContent = messages.filter(m => m.status === 'new').length;
+                if (!messages.length) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none'; table.style.display = 'table';
+                const tbody = document.getElementById('feedback-body');
+                tbody.innerHTML = messages.map(m => {
+                    const date = m.createdAt ? new Date(m.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                    const msgPreview = (m.message || '').length > 80 ? m.message.substring(0, 80) + '...' : m.message;
+                    return '<tr>' +
+                        '<td>' + (m.name || '-') + '</td>' +
+                        '<td>' + (m.email || '-') + '</td>' +
+                        '<td>' + (m.phone || '-') + '</td>' +
+                        '<td style="max-width:250px;white-space:pre-wrap;font-size:13px;" title="' + (m.message || '').replace(/"/g, '&quot;') + '">' + msgPreview + '</td>' +
+                        '<td style="white-space:nowrap;font-size:12px;">' + date + '</td>' +
+                        '<td><button class="btn btn-danger btn-small" onclick="deleteAdminFeedback(\'' + m._id + '\')">Delete</button></td>' +
+                        '</tr>';
+                }).join('');
+            } catch (e) {
+                loading.textContent = 'Failed to load messages.';
+            }
+        }
+
+        async function deleteAdminFeedback(id) {
+            if (!confirm('Delete this message?')) return;
+            try {
+                const res = await fetch('/api/admin/feedback/' + id, { method: 'DELETE', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) loadAdminFeedback();
+                else alert('Failed to delete');
+            } catch (e) { alert('Error deleting message'); }
         }
 
         async function loadMembers() {

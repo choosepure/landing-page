@@ -46,6 +46,7 @@ let testReportsCollection;
 let subscriptionTransactionsCollection;
 let referralsCollection;
 let rewardsCollection;
+let feedbackCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -132,6 +133,11 @@ async function connectToDatabase() {
         rewardsCollection = db.collection('rewards');
         await rewardsCollection.createIndex({ user_id: 1 });
         console.log('✅ Rewards collection initialized');
+
+        // Initialize feedback collection
+        feedbackCollection = db.collection('feedback');
+        await feedbackCollection.createIndex({ createdAt: -1 });
+        console.log('✅ Feedback collection initialized');
 
         // Check if admin user exists
         const adminCount = await usersCollection.countDocuments({ role: 'admin' });
@@ -2205,6 +2211,75 @@ app.post('/api/polls/verify-payment', authenticateUser, async (req, res) => {
             success: false, 
             message: 'Payment verification failed' 
         });
+    }
+});
+
+// ==========================================
+// FEEDBACK / CUSTOMER CARE API
+// ==========================================
+
+// Public API: Submit feedback message
+app.post('/api/feedback', async (req, res) => {
+    try {
+        if (!feedbackCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { name, email, phone, message } = req.body;
+
+        if (!name || !email || !message) {
+            return res.status(400).json({ success: false, message: 'Name, email, and message are required' });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+        }
+
+        await feedbackCollection.insertOne({
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            phone: (phone || '').trim(),
+            message: message.trim(),
+            status: 'new',
+            createdAt: new Date()
+        });
+
+        console.log('📩 New feedback from:', name, email);
+        res.json({ success: true, message: 'Thank you for your feedback!' });
+    } catch (error) {
+        console.error('❌ Error submitting feedback:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit feedback' });
+    }
+});
+
+// Admin API: Get all feedback messages
+app.get('/api/admin/feedback', authenticateAdmin, async (req, res) => {
+    try {
+        if (!feedbackCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const messages = await feedbackCollection.find().sort({ createdAt: -1 }).toArray();
+        res.json({ success: true, messages });
+    } catch (error) {
+        console.error('❌ Error fetching feedback:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch feedback' });
+    }
+});
+
+// Admin API: Delete feedback message
+app.delete('/api/admin/feedback/:id', authenticateAdmin, async (req, res) => {
+    try {
+        if (!feedbackCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+        await feedbackCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ Error deleting feedback:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete feedback' });
     }
 });
 
