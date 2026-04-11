@@ -3345,6 +3345,11 @@ app.get('/namdhari-report', (req, res) => {
     res.sendFile(path.join(__dirname, 'namdhari-report.html'));
 });
 
+// Serve contact us page
+app.get('/contact', (req, res) => {
+    res.sendFile(path.join(__dirname, 'contact-us.html'));
+});
+
 
 // Admin API: Parse existing report HTML to extract test parameters
 app.get('/api/admin/parse-report/:filename', authenticateAdmin, async (req, res) => {

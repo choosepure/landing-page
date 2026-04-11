@@ -843,35 +843,6 @@
         </div>
     </div>
 
-    <!-- Feedback / Contact Us -->
-    <div class="section" id="feedback-section">
-        <div class="section-header">
-            <h2>💬 Contact Us</h2>
-        </div>
-        <p class="section-subtitle">Have a question, feedback, or need help? Drop us a message.</p>
-
-        <div style="background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.07);max-width:600px;">
-            <div id="feedback-msg" style="display:none;padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:16px;"></div>
-            <div class="form-group" style="margin-bottom:14px;">
-                <label for="fb-name" style="display:block;font-size:13px;font-weight:500;color:#0F2419;margin-bottom:6px;">Name</label>
-                <input type="text" id="fb-name" placeholder="Your name" style="width:100%;padding:10px 14px;border:1px solid #D1D1D1;border-radius:8px;font-size:14px;font-family:var(--font-primary);" />
-            </div>
-            <div class="form-group" style="margin-bottom:14px;">
-                <label for="fb-email" style="display:block;font-size:13px;font-weight:500;color:#0F2419;margin-bottom:6px;">Email</label>
-                <input type="email" id="fb-email" placeholder="you@example.com" style="width:100%;padding:10px 14px;border:1px solid #D1D1D1;border-radius:8px;font-size:14px;font-family:var(--font-primary);" />
-            </div>
-            <div class="form-group" style="margin-bottom:14px;">
-                <label for="fb-phone" style="display:block;font-size:13px;font-weight:500;color:#0F2419;margin-bottom:6px;">Phone (optional)</label>
-                <input type="tel" id="fb-phone" placeholder="10-digit phone number" maxlength="10" style="width:100%;padding:10px 14px;border:1px solid #D1D1D1;border-radius:8px;font-size:14px;font-family:var(--font-primary);" />
-            </div>
-            <div class="form-group" style="margin-bottom:14px;">
-                <label for="fb-message" style="display:block;font-size:13px;font-weight:500;color:#0F2419;margin-bottom:6px;">Message</label>
-                <textarea id="fb-message" rows="4" placeholder="Tell us what's on your mind..." style="width:100%;padding:10px 14px;border:1px solid #D1D1D1;border-radius:8px;font-size:14px;font-family:var(--font-primary);resize:vertical;"></textarea>
-            </div>
-            <button id="fb-submit-btn" onclick="submitFeedback()" style="width:100%;padding:12px;background:var(--deep-leaf-green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-primary);">Send Message</button>
-        </div>
-    </div>
-
     <!-- Don't See Your Brand? -->
     <div class="suggest-section" id="suggest-section">
         <div class="suggest-inner">
@@ -927,7 +898,8 @@
             <a href="/polling">Product Polling</a> |
             <a href="/privacy-policy.html">Privacy Policy</a> |
             <a href="/terms-conditions.html">Terms &amp; Conditions</a> |
-            <a href="/refund-policy.html">Refund Policy</a>
+            <a href="/refund-policy.html">Refund Policy</a> |
+            <a href="/contact">Contact Us</a>
         </div>
     </div>
 
@@ -1087,12 +1059,6 @@
                     manageSub.classList.remove('visible');
                 }
                 loadReferralStats();
-                // Auto-fill feedback form
-                if (document.getElementById('fb-name')) {
-                    document.getElementById('fb-name').value = user.name || '';
-                    document.getElementById('fb-email').value = user.email || '';
-                    document.getElementById('fb-phone').value = user.phone || '';
-                }
             } else {
                 currentUser = null;
                 isSubscribed = false;
@@ -1632,55 +1598,6 @@
                 copyReferralLink();
             }
             try { mixpanel.track('Referral Shared', { method: 'generic' }); } catch(e) {}
-        }
-
-        // ── Feedback ──
-        async function submitFeedback() {
-            const msgEl = document.getElementById('feedback-msg');
-            msgEl.style.display = 'none';
-
-            const name = document.getElementById('fb-name').value.trim();
-            const email = document.getElementById('fb-email').value.trim();
-            const phone = document.getElementById('fb-phone').value.trim();
-            const message = document.getElementById('fb-message').value.trim();
-
-            if (!name || !email || !message) {
-                msgEl.style.display = 'block';
-                msgEl.style.background = '#FFEBEE'; msgEl.style.color = '#C62828'; msgEl.style.border = '1px solid #EF5350';
-                msgEl.textContent = 'Please fill in name, email, and message.';
-                return;
-            }
-
-            // Auto-fill from currentUser if available
-            const btn = document.getElementById('fb-submit-btn');
-            btn.disabled = true; btn.textContent = 'Sending...';
-
-            try {
-                const res = await fetch(API_BASE + '/api/feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone, message })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    msgEl.style.display = 'block';
-                    msgEl.style.background = '#E8F5E9'; msgEl.style.color = '#2E7D32'; msgEl.style.border = '1px solid #81C784';
-                    msgEl.textContent = 'Thank you! We\'ll get back to you soon.';
-                    document.getElementById('fb-name').value = '';
-                    document.getElementById('fb-email').value = '';
-                    document.getElementById('fb-phone').value = '';
-                    document.getElementById('fb-message').value = '';
-                } else {
-                    msgEl.style.display = 'block';
-                    msgEl.style.background = '#FFEBEE'; msgEl.style.color = '#C62828'; msgEl.style.border = '1px solid #EF5350';
-                    msgEl.textContent = data.message || 'Failed to send. Please try again.';
-                }
-            } catch (e) {
-                msgEl.style.display = 'block';
-                msgEl.style.background = '#FFEBEE'; msgEl.style.color = '#C62828'; msgEl.style.border = '1px solid #EF5350';
-                msgEl.textContent = 'Network error. Please try again.';
-            }
-            btn.disabled = false; btn.textContent = 'Send Message';
         }
 
         // ── Session check ──

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - ChoosePure</title>
+    <link rel="icon" type="image/png" href="/public/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pure-ivory: #FAFAF7;
+            --deep-leaf-green: #1F6B4E;
+            --grain-brown: #8A6E4B;
+            --lab-grey: #6B6B6B;
+            --font-primary: 'Inter', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-primary); background: var(--pure-ivory); color: var(--lab-grey); line-height: 1.6; }
+        .header { background: white; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { height: 72px; }
+        .back-link { color: var(--deep-leaf-green); text-decoration: none; font-weight: 500; font-size: 14px; }
+        .back-link:hover { opacity: 0.8; }
+        .container { max-width: 600px; margin: 0 auto; padding: 48px 24px 80px; }
+        h1 { font-size: 28px; color: var(--deep-leaf-green); margin-bottom: 8px; }
+        .subtitle { font-size: 15px; color: var(--lab-grey); margin-bottom: 32px; }
+        .form-card { background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: #0F2419; margin-bottom: 6px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px 16px; border: 1px solid #D1D1D1; border-radius: 8px;
+            font-size: 15px; font-family: var(--font-primary); background: #fff; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--deep-leaf-green); box-shadow: 0 0 0 3px rgba(31,107,78,0.1); }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        .submit-btn {
+            width: 100%; padding: 14px; background: var(--deep-leaf-green); color: white; border: none;
+            border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: var(--font-primary); transition: background 0.2s;
+        }
+        .submit-btn:hover { background: #185A3F; }
+        .submit-btn:disabled { background: #8FA39A; cursor: not-allowed; }
+        .msg { display: none; padding: 14px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 20px; }
+        .msg.success { display: block; background: #E8F5E9; color: #2E7D32; border: 1px solid #81C784; }
+        .msg.error { display: block; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; }
+        .contact-info { margin-top: 32px; text-align: center; font-size: 14px; color: var(--lab-grey); }
+        .contact-info a { color: var(--deep-leaf-green); text-decoration: none; font-weight: 500; }
+        @media (max-width: 768px) {
+            .container { padding: 32px 16px 60px; }
+            .form-card { padding: 24px 20px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="/"><img src="/public/choosepure-logo.png" alt="ChoosePure" class="logo" /></a>
+            <a href="/" class="back-link">← Back to Home</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>💬 Contact Us</h1>
+        <p class="subtitle">Have a question, feedback, or need help? We'd love to hear from you.</p>
+
+        <div class="form-card">
+            <div id="contact-msg" class="msg"></div>
+            <div class="form-group">
+                <label for="ct-name">Name</label>
+                <input type="text" id="ct-name" placeholder="Your name" />
+            </div>
+            <div class="form-group">
+                <label for="ct-email">Email</label>
+                <input type="email" id="ct-email" placeholder="you@example.com" />
+            </div>
+            <div class="form-group">
+                <label for="ct-phone">Phone (optional)</label>
+                <input type="tel" id="ct-phone" placeholder="10-digit phone number" maxlength="10" />
+            </div>
+            <div class="form-group">
+                <label for="ct-message">Message</label>
+                <textarea id="ct-message" placeholder="Tell us what's on your mind..."></textarea>
+            </div>
+            <button class="submit-btn" id="ct-submit" onclick="submitContact()">Send Message</button>
+        </div>
+
+        <div class="contact-info">
+            <p>Or email us directly at <a href="mailto:support@choosepure.in">support@choosepure.in</a></p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' ? '' : 'https://api.choosepure.in';
+
+        async function submitContact() {
+            const msgEl = document.getElementById('contact-msg');
+            msgEl.className = 'msg';
+
+            const name = document.getElementById('ct-name').value.trim();
+            const email = document.getElementById('ct-email').value.trim();
+            const phone = document.getElementById('ct-phone').value.trim();
+            const message = document.getElementById('ct-message').value.trim();
+
+            if (!name || !email || !message) {
+                msgEl.className = 'msg error';
+                msgEl.textContent = 'Please fill in name, email, and message.';
+                return;
+            }
+
+            const btn = document.getElementById('ct-submit');
+            btn.disabled = true; btn.textContent = 'Sending...';
+
+            try {
+                const res = await fetch(API_BASE + '/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, message })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    msgEl.className = 'msg success';
+                    msgEl.textContent = 'Thank you! We\'ll get back to you soon.';
+                    document.getElementById('ct-name').value = '';
+                    document.getElementById('ct-email').value = '';
+                    document.getElementById('ct-phone').value = '';
+                    document.getElementById('ct-message').value = '';
+                } else {
+                    msgEl.className = 'msg error';
+                    msgEl.textContent = data.message || 'Failed to send. Please try again.';
+                }
+            } catch (e) {
+                msgEl.className = 'msg error';
+                msgEl.textContent = 'Network error. Please try again.';
+            }
+            btn.disabled = false; btn.textContent = 'Send Message';
+        }
+    </script>
+</body>
+</html>
