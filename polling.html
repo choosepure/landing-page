@@ -1942,6 +1942,11 @@
             try { mixpanel.track('Polling Page Viewed'); } catch(e) {}
         });
 
+        // Wake up server
+        fetch(API_BASE + '/api/health').catch(() => {
+            setTimeout(() => fetch(API_BASE + '/api/health').catch(() => {}), 5000);
+        });
+
         // ── Suggestions ──
         function getUpvotedIds() {
             try { return JSON.parse(localStorage.getItem('choosepure_upvoted_suggestions') || '[]'); } catch(e) { return []; }

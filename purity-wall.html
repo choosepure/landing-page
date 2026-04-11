@@ -1623,8 +1623,10 @@
             loadVotingProducts();
         })();
 
-        // Wake up server
-        fetch(API_BASE + '/api/health').catch(() => {});
+        // Wake up server (fire early, retry on failure)
+        fetch(API_BASE + '/api/health').catch(() => {
+            setTimeout(() => fetch(API_BASE + '/api/health').catch(() => {}), 5000);
+        });
     </script>
 </body>
 </html>
