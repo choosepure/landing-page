@@ -1107,6 +1107,11 @@
             } else if (tabName === 'register') {
                 document.getElementById('auth-register-form').classList.add('active');
                 document.getElementById('auth-tab-register').classList.add('active');
+                // Pre-fill referral code if pending from URL
+                if (window._pendingReferralCode) {
+                    const refInput = document.getElementById('auth-register-referral');
+                    if (refInput && !refInput.value) refInput.value = window._pendingReferralCode;
+                }
             } else if (tabName === 'forgot') {
                 document.getElementById('auth-forgot-form').classList.add('active');
             }
@@ -1604,6 +1609,8 @@
             // Pre-fill referral code from URL query parameter
             const refCode = new URLSearchParams(window.location.search).get('ref');
             if (refCode) {
+                // Store it so we can pre-fill when register tab opens
+                window._pendingReferralCode = refCode;
                 const refInput = document.getElementById('auth-register-referral');
                 if (refInput) refInput.value = refCode;
             }
@@ -1611,6 +1618,11 @@
             await checkSession();
             loadReports();
             loadVotingProducts();
+
+            // If referral code in URL and user not logged in, auto-open register
+            if (refCode && !currentUser) {
+                openAuthModal('register');
+            }
         })();
 
         // Wake up server (fire early, retry on failure)
