@@ -468,7 +468,7 @@
 
         /* ── Suggest Section ── */
         .suggest-section {
-            background: #0F2419;
+            background: linear-gradient(135deg, #E8F5E9 0%, #F0F8F5 100%);
             margin-top: 52px;
             padding: 56px 24px;
         }
@@ -483,27 +483,27 @@
         .suggest-left h2 {
             font-size: 28px;
             font-weight: 700;
-            color: #fff;
+            color: #0F2419;
             margin-bottom: 14px;
             line-height: 1.2;
             letter-spacing: -0.02em;
         }
         .suggest-left p {
             font-size: 15px;
-            color: rgba(255,255,255,0.65);
+            color: #3D5A4F;
             line-height: 1.7;
             margin-bottom: 24px;
         }
         .criteria-box {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: #fff;
+            border: 1px solid var(--deep-leaf-green);
             border-radius: 10px;
             padding: 18px 22px;
         }
         .criteria-box h4 {
             font-size: 12px;
             font-weight: 600;
-            color: var(--mint);
+            color: var(--deep-leaf-green);
             text-transform: uppercase;
             letter-spacing: 0.06em;
             margin-bottom: 10px;
@@ -511,7 +511,7 @@
         .criteria-box ul { list-style: none; }
         .criteria-box ul li {
             font-size: 13px;
-            color: rgba(255,255,255,0.6);
+            color: #3D5A4F;
             padding: 4px 0 4px 20px;
             position: relative;
         }
@@ -719,7 +719,7 @@
         <div class="welcome-banner-inner">
             <h1 id="welcome-heading">Welcome back</h1>
             <div class="subtitle">Your Purity Dashboard</div>
-            <div class="desc">Independent lab-tested purity scores for everyday products</div>
+            <div class="desc" id="welcome-desc">Independent lab-tested purity scores for everyday products</div>
         </div>
     </div>
 
@@ -770,7 +770,7 @@
         <p class="section-subtitle">Invite friends, earn free months when they subscribe</p>
 
         <!-- Main referral card -->
-        <div style="background:linear-gradient(135deg,#1A5C42 0%,#1F6B4E 40%,#267A59 100%);border-radius:16px;padding:32px 28px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#1A5C42 0%,#1F6B4E 40%,#267A59 100%);border-radius:16px;padding:24px 28px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden;">
             <div style="position:absolute;top:-30%;right:-8%;width:200px;height:200px;background:radial-gradient(circle,rgba(149,219,147,0.15) 0%,transparent 70%);border-radius:50%;pointer-events:none;"></div>
             <div style="text-align:center;position:relative;z-index:1;">
                 <div style="font-size:13px;font-weight:500;opacity:0.8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Your Referral Code</div>
@@ -788,30 +788,6 @@
                     <button onclick="shareReferralGeneric()" style="display:flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;font-family:var(--font-primary);">
                         📤 Share Link
                     </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- How it works -->
-        <div style="background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:20px;">
-            <div style="font-size:14px;font-weight:600;color:var(--deep-leaf-green);margin-bottom:14px;">How it works</div>
-            <div style="display:flex;gap:16px;align-items:flex-start;">
-                <div style="flex:1;text-align:center;">
-                    <div style="font-size:24px;margin-bottom:4px;">📤</div>
-                    <div style="font-size:12px;font-weight:600;color:#0F2419;">Share your link</div>
-                    <div style="font-size:11px;color:var(--lab-grey);margin-top:2px;">Send to friends & family</div>
-                </div>
-                <div style="color:var(--deep-leaf-green);font-size:18px;padding-top:8px;">→</div>
-                <div style="flex:1;text-align:center;">
-                    <div style="font-size:24px;margin-bottom:4px;">👤</div>
-                    <div style="font-size:12px;font-weight:600;color:#0F2419;">They subscribe</div>
-                    <div style="font-size:11px;color:var(--lab-grey);margin-top:2px;">₹299/month plan</div>
-                </div>
-                <div style="color:var(--deep-leaf-green);font-size:18px;padding-top:8px;">→</div>
-                <div style="flex:1;text-align:center;">
-                    <div style="font-size:24px;margin-bottom:4px;">🎉</div>
-                    <div style="font-size:12px;font-weight:600;color:#0F2419;">Both earn 1 free month</div>
-                    <div style="font-size:11px;color:var(--lab-grey);margin-top:2px;">Stackable rewards</div>
                 </div>
             </div>
         </div>
@@ -1044,6 +1020,13 @@
                 signout.classList.add('visible');
                 signin.style.display = 'none';
                 heading.textContent = 'Welcome back, ' + escapeHtml(user.name);
+                // Dynamic welcome subtitle
+                const welcomeDesc = document.getElementById('welcome-desc');
+                if (welcomeDesc) {
+                    welcomeDesc.textContent = isSubscribed
+                        ? 'You have access to all Purity Reports'
+                        : 'Unlock all reports by subscribing today';
+                }
                 if (isSubscribed) {
                     manageSub.classList.add('visible');
                 } else {
@@ -1058,6 +1041,11 @@
                 manageSub.classList.remove('visible');
                 signin.style.display = '';
                 heading.textContent = 'Welcome back';
+                // Reset welcome subtitle for logged-out state
+                const welcomeDesc = document.getElementById('welcome-desc');
+                if (welcomeDesc) {
+                    welcomeDesc.textContent = 'Independent lab-tested purity scores for everyday products';
+                }
                 document.getElementById('referral-section').style.display = 'none';
             }
             updatePageForSubscription();
@@ -1361,14 +1349,42 @@
                 card.setAttribute('aria-label', report.productName || report.brandName);
 
                 const scoreColor = report.purityScore != null ? getScoreColor(report.purityScore) : '#CCC';
+
+                // Score rating badge helper
+                function getScoreRating(score) {
+                    if (score >= 90) return { label: 'Excellent', color: '#1F6B4E' };
+                    if (score >= 70) return { label: 'Good', color: '#1F6B4E' };
+                    if (score >= 40) return { label: 'Caution', color: '#FFB703' };
+                    return { label: 'Alert', color: '#D62828' };
+                }
+
                 let html = '';
 
                 // Image container
-                html += '<div class="report-card-image' + (unlocked ? '' : ' dimmed') + '">';
+                html += '<div class="report-card-image' + (unlocked ? '' : ' dimmed') + '" style="position:relative;">';
                 html += '<img src="' + escapeHtml(report.imageUrl) + '" alt="' + escapeHtml(report.productName) + '" loading="lazy" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22><rect fill=%22%23F0F0F0%22 width=%22400%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%236B6B6B%22 font-size=%2214%22>No Image</text></svg>\'" />';
-                // Score badge
+
+                // Top-left corner badge
+                if (unlocked && isFirst && !isSubscribed) {
+                    html += '<div style="position:absolute;top:10px;left:10px;background:#1F6B4E;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;z-index:2;display:flex;align-items:center;gap:4px;">✅ Free Report</div>';
+                } else if (!unlocked) {
+                    html += '<div style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;z-index:2;display:flex;align-items:center;gap:4px;backdrop-filter:blur(4px);">🔒 Locked</div>';
+                }
+
+                // Score rating corner badge (top-right)
+                if (report.purityScore != null) {
+                    const rating = getScoreRating(report.purityScore);
+                    if (unlocked) {
+                        html += '<div style="position:absolute;top:10px;right:10px;background:' + rating.color + ';color:#fff;font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;z-index:2;text-transform:uppercase;letter-spacing:0.04em;">' + rating.label + '</div>';
+                    }
+                }
+
+                // Score badge (bottom-right)
                 if (unlocked && report.purityScore != null) {
-                    html += '<div class="score-badge" style="background:' + scoreColor + ';">' + formatScore(report.purityScore) + '%</div>';
+                    html += '<div class="score-badge" style="background:' + scoreColor + ';font-size:18px;font-weight:700;">' + formatScore(report.purityScore) + '%</div>';
+                } else if (!unlocked && report.purityScore != null) {
+                    // Blurred score effect for locked cards
+                    html += '<div class="score-badge locked" style="font-size:14px;font-family:var(--font-data);filter:blur(0);"><span style="filter:blur(4px);user-select:none;">' + formatScore(report.purityScore) + '%</span> 🔒</div>';
                 } else {
                     html += '<div class="score-badge locked">🔒</div>';
                 }
@@ -1393,8 +1409,8 @@
                     html += '</div>';
                 } else {
                     html += '<div class="locked-overlay">';
-                    html += '<p class="lock-text">Subscribe to unlock this report.</p>';
-                    html += '<span class="unlock-link" onclick="onLockedCardClick()">Unlock Report</span>';
+                    html += '<p class="lock-text" style="filter:blur(0);"><span style="font-family:var(--font-data);filter:blur(3px);user-select:none;font-size:14px;font-weight:600;color:#0F2419;">Score: ' + (report.purityScore != null ? formatScore(report.purityScore) + '%' : '??%') + '</span></p>';
+                    html += '<span class="unlock-link" onclick="onLockedCardClick()">Unlock Analysis →</span>';
                     html += '</div>';
                 }
                 html += '</div>';
