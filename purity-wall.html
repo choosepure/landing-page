@@ -706,7 +706,8 @@
                 <div id="user-avatar" class="user-avatar"></div>
                 <a id="manage-sub-link" class="manage-sub-link" onclick="showManageSub()">Manage</a>
                 <a id="header-signout" class="header-signout" onclick="handleSignOut()">Sign Out</a>
-                <a id="header-signin" class="header-signin" onclick="openAuthModal()">Sign In</a>
+                <a id="header-signin" class="header-signin" onclick="openAuthModal('register')">Join Free</a>
+                <a id="header-signin-link" style="color:var(--deep-leaf-green);text-decoration:none;font-size:13px;font-weight:500;cursor:pointer;" onclick="openAuthModal('signin')">Sign In</a>
             </div>
         </div>
     </header>
@@ -1019,6 +1020,8 @@
                 avatar.classList.add('visible');
                 signout.classList.add('visible');
                 signin.style.display = 'none';
+                var signinLink = document.getElementById('header-signin-link');
+                if (signinLink) signinLink.style.display = 'none';
                 heading.textContent = 'Welcome back, ' + escapeHtml(user.name);
                 // Dynamic welcome subtitle
                 const welcomeDesc = document.getElementById('welcome-desc');
@@ -1040,6 +1043,8 @@
                 signout.classList.remove('visible');
                 manageSub.classList.remove('visible');
                 signin.style.display = '';
+                var signinLink2 = document.getElementById('header-signin-link');
+                if (signinLink2) signinLink2.style.display = '';
                 heading.textContent = 'Welcome back';
                 // Reset welcome subtitle for logged-out state
                 const welcomeDesc = document.getElementById('welcome-desc');
