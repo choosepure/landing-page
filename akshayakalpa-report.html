@@ -63,7 +63,7 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: var(--font-primary); background: var(--pure-ivory); color: var(--lab-grey); line-height: 1.6; padding: 80px 20px 60px; }
-        .password-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .password-screen { display: none; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
         .password-container { max-width: 450px; width: 100%; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 48px 40px; text-align: center; }
         .lock-icon { width: 64px; height: 64px; margin: 0 auto 24px; background: var(--deep-leaf-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .lock-icon svg { width: 32px; height: 32px; color: white; }
@@ -528,6 +528,7 @@
 
         function showLoginPrompt() {
             passwordScreen.innerHTML = '<div class="password-container"><div class="lock-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9.243 2 7 4.243 7 7v3H6c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zm3 8V7c0-1.654-1.346-3-3-3S9 5.346 9 7v3h6z" fill="currentColor"/></svg></div><h2>Sign in to view this report</h2><p>This report is available for registered Choosepure members.</p><a href="/" style="display:inline-block;padding:14px 32px;background:#1F6B4E;color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:16px;">Sign In / Register</a></div>';
+            passwordScreen.style.display = 'flex';
         }
 
         function showReport() {

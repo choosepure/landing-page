@@ -1195,8 +1195,7 @@
         async function handleSignOut() {
             try { mixpanel.track('User Signed Out'); } catch(e) {}
             try { await fetch(API_BASE + '/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
-            updateAuthHeader(null);
-            loadReports();
+            window.location.href = '/';
         }
 
         // ── Subscription modal ──
