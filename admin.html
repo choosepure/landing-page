@@ -317,7 +317,8 @@
                 <h2 style="margin: 0;">Waitlist Members</h2>
                 <div>
                     <button id="select-all-btn" class="btn btn-secondary" onclick="selectAllMembers()">Select All</button>
-                    <button id="bulk-email-btn" class="btn btn-primary" onclick="openBulkEmailModal()" style="margin-left: 10px;">Send Bulk Email</button>
+                    <button class="btn btn-primary" onclick="emailAllMembers()" style="margin-left: 10px;">Email All Members</button>
+                    <button id="bulk-email-btn" class="btn btn-primary" onclick="openBulkEmailModal()" style="margin-left: 10px;background:#8A6E4B;">Email Selected</button>
                 </div>
             </div>
             <div id="loading" class="loading">Loading...</div>
@@ -366,6 +367,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0;">Registered Users</h2>
                     <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-primary" onclick="emailAllUsers()" style="font-size:12px;">Email All Users</button>
                         <select id="users-filter" onchange="filterUsers()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                             <option value="all">All Users</option>
                             <option value="subscribed">Subscribed</option>
@@ -1136,6 +1138,48 @@
             }
         }
         
+        async function emailAllMembers() {
+            try {
+                const res = await fetch('/api/admin/waitlist', { credentials: 'include' });
+                const data = await res.json();
+                if (!data.success || !data.members || !data.members.length) {
+                    alert('No members found.');
+                    return;
+                }
+                selectedMembers = data.members.map(m => ({
+                    id: m._id,
+                    name: m.name,
+                    email: m.email
+                }));
+                document.getElementById('selected-count').textContent = selectedMembers.length + ' recipients selected (all waitlist members)';
+                document.getElementById('bulk-email-modal').style.display = 'block';
+                updateEmailPreview();
+            } catch (e) {
+                alert('Failed to load members.');
+            }
+        }
+
+        async function emailAllUsers() {
+            try {
+                const res = await fetch('/api/admin/users', { credentials: 'include' });
+                const data = await res.json();
+                if (!data.success || !data.users || !data.users.length) {
+                    alert('No users found.');
+                    return;
+                }
+                selectedMembers = data.users.map(u => ({
+                    id: u._id,
+                    name: u.name,
+                    email: u.email
+                }));
+                document.getElementById('selected-count').textContent = selectedMembers.length + ' recipients selected (all registered users)';
+                document.getElementById('bulk-email-modal').style.display = 'block';
+                updateEmailPreview();
+            } catch (e) {
+                alert('Failed to load users.');
+            }
+        }
+
         function openBulkEmailModal() {
             if (selectedMembers.length === 0) {
                 alert('Please select at least one recipient');
