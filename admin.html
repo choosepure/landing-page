@@ -455,15 +455,15 @@
                         <input type="number" id="manual-vote-count" min="1" max="50" placeholder="Enter vote count (1-50)">
                     </div>
                     <div class="form-group">
-                        <label>Voter Name</label>
+                        <label>Voter Name (optional)</label>
                         <input type="text" id="manual-vote-name" placeholder="Enter voter's name">
                     </div>
                     <div class="form-group">
-                        <label>Voter Email</label>
+                        <label>Voter Email (optional)</label>
                         <input type="email" id="manual-vote-email" placeholder="Enter voter's email">
                     </div>
                     <div class="form-group">
-                        <label>Voter Phone</label>
+                        <label>Voter Phone (optional)</label>
                         <input type="tel" id="manual-vote-phone" pattern="[0-9]{10}" placeholder="Enter 10-digit phone number">
                     </div>
                     <div class="form-group">
@@ -1609,21 +1609,15 @@
                 return;
             }
 
-            if (!voterName) {
-                messageDiv.className = 'message error';
-                messageDiv.textContent = 'Voter name is required.';
-                return;
-            }
-
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!voterEmail || !emailRegex.test(voterEmail)) {
+            if (voterEmail && !emailRegex.test(voterEmail)) {
                 messageDiv.className = 'message error';
                 messageDiv.textContent = 'Please enter a valid email address.';
                 return;
             }
 
             const phoneRegex = /^[0-9]{10}$/;
-            if (!voterPhone || !phoneRegex.test(voterPhone)) {
+            if (voterPhone && !phoneRegex.test(voterPhone)) {
                 messageDiv.className = 'message error';
                 messageDiv.textContent = 'Please enter a valid 10-digit phone number.';
                 return;

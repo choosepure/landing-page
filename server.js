@@ -2043,15 +2043,8 @@ app.post('/api/admin/polls/manual-vote', authenticateAdmin, async (req, res) => 
             });
         }
 
-        if (!voterName || voterName.trim() === '') {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Voter name is required' 
-            });
-        }
-
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!voterEmail || !emailRegex.test(voterEmail)) {
+        if (voterEmail && !emailRegex.test(voterEmail)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Please enter a valid email address' 
@@ -2059,7 +2052,7 @@ app.post('/api/admin/polls/manual-vote', authenticateAdmin, async (req, res) => 
         }
 
         const phoneRegex = /^[0-9]{10}$/;
-        if (!voterPhone || !phoneRegex.test(voterPhone)) {
+        if (voterPhone && !phoneRegex.test(voterPhone)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Please enter a valid 10-digit phone number' 
@@ -2092,9 +2085,9 @@ app.post('/api/admin/polls/manual-vote', authenticateAdmin, async (req, res) => 
         const voteTransaction = {
             productId: new ObjectId(productId),
             productName: product.name,
-            userName: voterName.trim(),
-            userEmail: voterEmail,
-            userPhone: voterPhone,
+            userName: voterName ? voterName.trim() : '',
+            userEmail: voterEmail || '',
+            userPhone: voterPhone || '',
             voteCount: voteCount,
             amount: 0,
             isManualVote: true,
