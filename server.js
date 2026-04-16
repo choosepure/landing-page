@@ -1980,7 +1980,10 @@ app.get('/api/admin/polls/transactions', authenticateAdmin, async (req, res) => 
                 voteCount: 1, 
                 amount: 1, 
                 razorpayPaymentId: 1, 
-                createdAt: 1 
+                createdAt: 1,
+                isManualVote: 1,
+                reason: 1,
+                adminEmail: 1 
             })
             .toArray();
 
@@ -2009,6 +2012,121 @@ app.get('/api/admin/polls/transactions', authenticateAdmin, async (req, res) => 
         res.status(500).json({ 
             success: false, 
             message: 'Failed to fetch transactions' 
+        });
+    }
+});
+
+// Admin API: Cast manual vote for a product (protected)
+app.post('/api/admin/polls/manual-vote', authenticateAdmin, async (req, res) => {
+    try {
+        if (!isDbConnected || !productsCollection || !voteTransactionsCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { productId, voteCount, voterName, voterEmail, voterPhone, reason } = req.body;
+
+        // Validate required fields
+        if (!productId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Product selection is required' 
+            });
+        }
+
+        if (!Number.isInteger(voteCount) || voteCount < 1 || voteCount > 50) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Vote count must be between 1 and 50' 
+            });
+        }
+
+        if (!voterName || voterName.trim() === '') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Voter name is required' 
+            });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!voterEmail || !emailRegex.test(voterEmail)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid email address' 
+            });
+        }
+
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!voterPhone || !phoneRegex.test(voterPhone)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid 10-digit phone number' 
+            });
+        }
+
+        // Verify product exists and is active
+        const { ObjectId } = require('mongodb');
+        let product;
+        try {
+            product = await productsCollection.findOne({ 
+                _id: new ObjectId(productId), 
+                status: 'active' 
+            });
+        } catch (err) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found or not active' 
+            });
+        }
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found or not active' 
+            });
+        }
+
+        // Insert vote transaction record
+        const voteTransaction = {
+            productId: new ObjectId(productId),
+            productName: product.name,
+            userName: voterName.trim(),
+            userEmail: voterEmail,
+            userPhone: voterPhone,
+            voteCount: voteCount,
+            amount: 0,
+            isManualVote: true,
+            adminEmail: req.admin.email,
+            reason: reason || '',
+            status: 'completed',
+            createdAt: new Date()
+        };
+
+        await voteTransactionsCollection.insertOne(voteTransaction);
+
+        // Increment product's totalVotes
+        await productsCollection.updateOne(
+            { _id: new ObjectId(productId) },
+            { $inc: { totalVotes: voteCount } }
+        );
+
+        // Fetch updated product to get new totalVotes
+        const updatedProduct = await productsCollection.findOne({ _id: new ObjectId(productId) });
+
+        console.log(`✅ Manual vote: ${voteCount} votes cast for ${product.name} by admin ${req.admin.email}`);
+
+        res.json({ 
+            success: true, 
+            message: `Successfully cast ${voteCount} votes for ${product.name}`,
+            updatedVoteCount: updatedProduct.totalVotes
+        });
+    } catch (error) {
+        console.error('❌ Error casting manual vote:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to cast manual vote' 
         });
     }
 });

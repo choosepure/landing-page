@@ -439,6 +439,41 @@
                 </form>
             </div>
 
+            <!-- Cast Manual Vote Form -->
+            <div class="actions">
+                <h2>Cast Manual Vote</h2>
+                <div id="manual-vote-message" class="message"></div>
+                <form id="manual-vote-form" onsubmit="event.preventDefault(); submitManualVote();">
+                    <div class="form-group">
+                        <label>Product</label>
+                        <select id="manual-vote-product" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                            <option value="">-- Select a product --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Votes</label>
+                        <input type="number" id="manual-vote-count" min="1" max="50" placeholder="Enter vote count (1-50)">
+                    </div>
+                    <div class="form-group">
+                        <label>Voter Name</label>
+                        <input type="text" id="manual-vote-name" placeholder="Enter voter's name">
+                    </div>
+                    <div class="form-group">
+                        <label>Voter Email</label>
+                        <input type="email" id="manual-vote-email" placeholder="Enter voter's email">
+                    </div>
+                    <div class="form-group">
+                        <label>Voter Phone</label>
+                        <input type="tel" id="manual-vote-phone" pattern="[0-9]{10}" placeholder="Enter 10-digit phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Reason (optional)</label>
+                        <textarea id="manual-vote-reason" rows="3" placeholder="Why is this manual vote being cast?" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Cast Manual Vote</button>
+                </form>
+            </div>
+
             <!-- Products List Table -->
             <div class="table-container" style="margin-top: 20px;">
                 <h2 style="margin-bottom: 20px;">Products</h2>
@@ -1371,6 +1406,18 @@
             loading.style.display = 'none';
             table.style.display = 'table';
 
+            // Populate manual vote product dropdown with active products
+            const dropdown = document.getElementById('manual-vote-product');
+            const currentValue = dropdown.value;
+            dropdown.innerHTML = '<option value="">-- Select a product --</option>';
+            products.filter(p => p.status === 'active').forEach(product => {
+                const option = document.createElement('option');
+                option.value = product._id;
+                option.textContent = product.name;
+                dropdown.appendChild(option);
+            });
+            if (currentValue) dropdown.value = currentValue;
+
             if (products.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">No products added yet.</td></tr>';
                 return;
@@ -1509,23 +1556,109 @@
                 return;
             }
 
-            tbody.innerHTML = transactions.map(tx => `
-                <tr>
-                    <td>${tx.userName}</td>
-                    <td>${tx.userEmail}</td>
-                    <td>${tx.productName}</td>
-                    <td>${tx.voteCount}</td>
-                    <td>₹${tx.amount}</td>
-                    <td style="font-size: 12px; font-family: monospace;">${tx.razorpayPaymentId || '-'}</td>
-                    <td>${new Date(tx.createdAt).toLocaleString()}</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = transactions.map(tx => {
+                const isManual = tx.isManualVote === true;
+                const paymentCell = isManual
+                    ? '<span style="background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500;">Manual</span>'
+                    : '<span style="font-size: 12px; font-family: monospace;">' + (tx.razorpayPaymentId || '-') + '</span>';
+                const reasonText = isManual && tx.reason
+                    ? '<br><span style="font-size:11px;color:#666;font-style:italic;">Reason: ' + tx.reason + '</span>'
+                    : '';
+                return '<tr>' +
+                    '<td>' + tx.userName + '</td>' +
+                    '<td>' + tx.userEmail + '</td>' +
+                    '<td>' + tx.productName + reasonText + '</td>' +
+                    '<td>' + tx.voteCount + '</td>' +
+                    '<td>₹' + tx.amount + '</td>' +
+                    '<td>' + paymentCell + '</td>' +
+                    '<td>' + new Date(tx.createdAt).toLocaleString() + '</td>' +
+                    '</tr>';
+            }).join('');
         }
 
         function displayPollingSummary(summary) {
             if (summary) {
                 document.getElementById('polling-total-votes').textContent = summary.totalVotes || 0;
                 document.getElementById('polling-total-revenue').textContent = '₹' + (summary.totalRevenue || 0);
+            }
+        }
+
+        async function submitManualVote() {
+            const messageDiv = document.getElementById('manual-vote-message');
+            messageDiv.className = 'message';
+            messageDiv.style.display = 'none';
+
+            const productId = document.getElementById('manual-vote-product').value;
+            const voteCount = document.getElementById('manual-vote-count').value;
+            const voterName = document.getElementById('manual-vote-name').value.trim();
+            const voterEmail = document.getElementById('manual-vote-email').value.trim();
+            const voterPhone = document.getElementById('manual-vote-phone').value.trim();
+            const reason = document.getElementById('manual-vote-reason').value.trim();
+
+            // Client-side validation
+            if (!productId) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Please select a product.';
+                return;
+            }
+
+            const voteCountNum = parseInt(voteCount, 10);
+            if (!voteCount || isNaN(voteCountNum) || voteCountNum < 1 || voteCountNum > 50) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Vote count must be between 1 and 50.';
+                return;
+            }
+
+            if (!voterName) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Voter name is required.';
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!voterEmail || !emailRegex.test(voterEmail)) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Please enter a valid email address.';
+                return;
+            }
+
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!voterPhone || !phoneRegex.test(voterPhone)) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Please enter a valid 10-digit phone number.';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${POLLING_API_BASE}/api/admin/polls/manual-vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        productId,
+                        voteCount: voteCountNum,
+                        voterName,
+                        voterEmail,
+                        voterPhone,
+                        reason: reason || undefined
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = result.message || 'Manual vote cast successfully!';
+                    document.getElementById('manual-vote-form').reset();
+                    loadProducts();
+                    loadTransactions();
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = result.message || 'Failed to cast manual vote.';
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Network error. Please try again.';
             }
         }
 
