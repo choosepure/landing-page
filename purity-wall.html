@@ -1058,12 +1058,12 @@
 
         // ── Auth modal ──
         function openAuthModal(tab) {
-            showAuthTab(tab || 'signin');
             document.querySelectorAll('.auth-modal-form input').forEach(i => i.value = '');
             document.querySelectorAll('.auth-error-message').forEach(el => {
                 el.textContent = ''; el.classList.remove('visible');
                 el.style.background = ''; el.style.color = ''; el.style.borderColor = '';
             });
+            showAuthTab(tab || 'signin');
             document.getElementById('auth-signin-submit').disabled = false;
             document.getElementById('auth-signin-submit').textContent = 'Sign In';
             document.getElementById('auth-register-submit').disabled = false;
