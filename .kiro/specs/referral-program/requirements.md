@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This feature introduces a referral program for the ChoosePure web application to drive subscription growth through a referral loop. Each registered user receives a unique referral code (format: CP-XXXX). When a new user signs up using a referral code and subscribes, both the referrer and the referee receive one free month of subscription. The referral dashboard on the purity wall page provides visibility into referral activity and earned rewards.
+This feature introduces a referral program for the ChoosePure web application to drive subscription growth through a referral loop. Each registered user receives a unique referral code (format: CP-XXXXX). When a new user signs up using a referral code and subscribes, both the referrer and the referee receive one free month of subscription. The referral dashboard on the purity wall page provides visibility into referral activity and earned rewards.
 
 ## Glossary
 
@@ -10,8 +10,8 @@ This feature introduces a referral program for the ChoosePure web application to
 - **Referral_Dashboard**: The frontend UI section on the purity wall page that displays referral statistics and the user's referral code/link.
 - **Referrer**: A registered ChoosePure user who shares a referral code or link to invite new users.
 - **Referee**: A new user who signs up using a referral code or link.
-- **Referral_Code**: A unique alphanumeric identifier in the format CP-XXXX assigned to each registered user (where XXXX is 4 uppercase alphanumeric characters).
-- **Referral_Link**: A URL in the format `https://choosepure.in/signup?ref=CP-XXXX` that pre-fills the referral code during signup.
+- **Referral_Code**: A unique alphanumeric identifier in the format CP-XXXXX assigned to each registered user (where XXXXX is 5 uppercase alphanumeric characters).
+- **Referral_Link**: A URL in the format `https://choosepure.in/signup?ref=CP-XXXXX` that pre-fills the referral code during signup.
 - **Reward**: One free month of subscription credit granted to both the referrer and referee upon the referee's first subscription activation.
 - **Free_Month**: A stackable subscription credit that extends the user's subscription expiry date by one calendar month.
 - **Subscription_Expiry**: The date on which a user's subscription access ends, extended by free months when rewards are granted.
@@ -24,7 +24,7 @@ This feature introduces a referral program for the ChoosePure web application to
 
 #### Acceptance Criteria
 
-1. WHEN a new user completes registration, THE Referral_System SHALL generate a unique Referral_Code in the format CP-XXXX (where XXXX consists of 4 uppercase alphanumeric characters) and store it in the user's document.
+1. WHEN a new user completes registration, THE Referral_System SHALL generate a unique Referral_Code in the format CP-XXXXX (where XXXXX consists of 5 uppercase alphanumeric characters) and store it in the user's document.
 2. THE Referral_System SHALL ensure each generated Referral_Code is unique across all users in the database.
 3. IF a Referral_Code collision occurs during generation, THEN THE Referral_System SHALL regenerate the code until a unique code is produced.
 4. WHEN a registered user who does not have a Referral_Code logs in, THE Referral_System SHALL generate and assign a Referral_Code to that user (backfill for existing users).

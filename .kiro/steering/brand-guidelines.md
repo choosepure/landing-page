@@ -1,5 +1,6 @@
 ---
 inclusion: auto
+description: ChoosePure brand guidelines for colors, typography, and components
 ---
 
 # ChoosePure Brand Guidelines
