@@ -1104,7 +1104,7 @@
                 // Pre-fill referral code if pending from URL
                 if (window._pendingReferralCode) {
                     const refInput = document.getElementById('auth-register-referral');
-                    if (refInput && !refInput.value) refInput.value = window._pendingReferralCode;
+                    if (refInput) refInput.value = window._pendingReferralCode;
                 }
             } else if (tabName === 'forgot') {
                 document.getElementById('auth-forgot-form').classList.add('active');
