@@ -935,7 +935,8 @@
                 <a href="https://blog.choosepure.in" target="_blank">Blog</a>
                 
                 <div id="auth-header-section" class="auth-header-section">
-                    <a id="auth-signin-link" class="auth-signin-link" onclick="openAuthModal()">Sign In</a>
+                    <a id="auth-signin-link" class="auth-signin-link" onclick="openAuthModal('signin')">Sign In</a>
+                    <a id="auth-register-link" class="nav-cta" onclick="openAuthModal('register')" style="cursor:pointer;">Register</a>
                     <div id="auth-user-info" class="auth-user-info" style="display:none;">
                         <span>Hi, <span id="auth-user-name"></span></span>
                         <a id="auth-signout-link" class="auth-signout-link" onclick="handleSignOut()">Sign Out</a>
@@ -1411,16 +1412,19 @@
 
         function updateAuthHeader(user) {
             const signinLink = document.getElementById('auth-signin-link');
+            const registerLink = document.getElementById('auth-register-link');
             const userInfo = document.getElementById('auth-user-info');
             const userName = document.getElementById('auth-user-name');
             if (user) {
                 currentUser = user;
                 signinLink.style.display = 'none';
+                if (registerLink) registerLink.style.display = 'none';
                 userName.textContent = user.name;
                 userInfo.style.display = 'flex';
             } else {
                 currentUser = null;
                 signinLink.style.display = '';
+                if (registerLink) registerLink.style.display = '';
                 userInfo.style.display = 'none';
                 userName.textContent = '';
             }
