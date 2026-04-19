@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const Razorpay = require('razorpay');
+const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 
 const app = express();
@@ -296,7 +297,8 @@ async function authenticateUser(req, res, next) {
             subscriptionStatus: user.subscriptionStatus || 'free',
             referral_code: user.referral_code || null,
             freeMonthsEarned: user.freeMonthsEarned || 0,
-            subscriptionExpiry: user.subscriptionExpiry || null
+            subscriptionExpiry: user.subscriptionExpiry || null,
+            auth_provider: user.auth_provider || 'email'
         };
         next();
     } catch (error) {
@@ -593,6 +595,217 @@ app.post('/api/user/logout', (req, res) => {
     res.json({ success: true, message: 'Logged out successfully' });
 });
 
+// Get Google Client ID for frontend initialization
+app.get('/api/config/google-client-id', (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+        return res.status(503).json({
+            success: false,
+            message: 'Google authentication is not configured'
+        });
+    }
+    res.json({ clientId });
+});
+
+// Google authentication endpoint (sign-in and auto-registration)
+app.post('/api/user/google-auth', async (req, res) => {
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database not connected'
+            });
+        }
+
+        const googleClientId = process.env.GOOGLE_CLIENT_ID;
+        if (!googleClientId) {
+            return res.status(503).json({
+                success: false,
+                message: 'Google authentication is not configured'
+            });
+        }
+
+        const { credential, referral_code } = req.body;
+
+        if (!credential) {
+            return res.status(400).json({
+                success: false,
+                message: 'Google credential is required'
+            });
+        }
+
+        // Verify Google ID token
+        let payload;
+        try {
+            const client = new OAuth2Client(googleClientId);
+            const ticket = await client.verifyIdToken({
+                idToken: credential,
+                audience: googleClientId
+            });
+            payload = ticket.getPayload();
+        } catch (verifyError) {
+            console.error('❌ Google token verification failed:', verifyError.message);
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid Google token'
+            });
+        }
+
+        const { email, name, sub, email_verified } = payload;
+
+        // Check email is verified
+        if (!email_verified) {
+            return res.status(400).json({
+                success: false,
+                message: 'Google account email is not verified'
+            });
+        }
+
+        // Look up user by email
+        const existingUser = await usersCollection.findOne({ email: email });
+
+        if (existingUser) {
+            // Check auth_provider
+            const authProvider = existingUser.auth_provider || 'email';
+
+            if (authProvider === 'email') {
+                // Existing email/password user — reject
+                return res.status(409).json({
+                    success: false,
+                    message: 'This email is registered with email/password. Please sign in with your password.'
+                });
+            }
+
+            // Existing Google user — sign in
+            await usersCollection.updateOne(
+                { _id: existingUser._id },
+                { $set: { last_login: new Date() } }
+            );
+
+            // Backfill referral code if missing
+            let referralCode = existingUser.referral_code;
+            if (!referralCode) {
+                referralCode = await generateReferralCode(usersCollection);
+                await usersCollection.updateOne(
+                    { _id: existingUser._id },
+                    { $set: { referral_code: referralCode } }
+                );
+            }
+
+            const token = jwt.sign(
+                { id: existingUser._id, email: existingUser.email, role: 'user' },
+                JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            res.cookie('user_token', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            console.log('✅ Google user signed in:', email);
+
+            return res.json({
+                success: true,
+                token,
+                user: {
+                    name: existingUser.name,
+                    email: existingUser.email,
+                    phone: existingUser.phone || null,
+                    subscriptionStatus: existingUser.subscriptionStatus || 'free',
+                    referral_code: referralCode,
+                    auth_provider: 'google'
+                },
+                isNewUser: false
+            });
+        }
+
+        // New user — auto-register
+        const newUserReferralCode = await generateReferralCode(usersCollection);
+
+        // Handle referral code
+        let referrerUser = null;
+        if (referral_code) {
+            referrerUser = await usersCollection.findOne({ referral_code: referral_code });
+            // Ignore invalid codes silently
+            if (referrerUser) {
+                // Check self-referral
+                if (referrerUser.email === email) {
+                    referrerUser = null; // Ignore self-referral
+                }
+            }
+        }
+
+        const newUser = {
+            name: name || email.split('@')[0],
+            email,
+            phone: null,
+            pincode: null,
+            password: null,
+            role: 'user',
+            auth_provider: 'google',
+            google_id: sub,
+            subscriptionStatus: 'free',
+            referral_code: newUserReferralCode,
+            referred_by: referrerUser ? referrerUser._id : null,
+            freeMonthsEarned: 0,
+            subscriptionExpiry: null,
+            createdAt: new Date()
+        };
+
+        const result = await usersCollection.insertOne(newUser);
+
+        // Create referral record if valid referrer
+        if (referrerUser) {
+            await referralsCollection.insertOne({
+                referrer_user_id: referrerUser._id,
+                referee_user_id: result.insertedId,
+                status: 'pending',
+                reward_granted: false,
+                created_at: new Date(),
+                completed_at: null
+            });
+        }
+
+        const token = jwt.sign(
+            { id: result.insertedId, email: email, role: 'user' },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.cookie('user_token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        console.log('✅ Google user registered:', email, referrerUser ? `(referred by ${referrerUser.email})` : '(no referral)');
+
+        return res.json({
+            success: true,
+            token,
+            user: {
+                name: newUser.name,
+                email: newUser.email,
+                phone: null,
+                subscriptionStatus: 'free',
+                referral_code: newUserReferralCode,
+                auth_provider: 'google'
+            },
+            isNewUser: true
+        });
+    } catch (error) {
+        console.error('❌ Google auth error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Authentication failed'
+        });
+    }
+});
+
 // Get current user profile (session check)
 app.get('/api/user/me', authenticateUser, (req, res) => {
     res.json({ 
@@ -604,9 +817,74 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
             subscriptionStatus: req.user.subscriptionStatus,
             referral_code: req.user.referral_code,
             freeMonthsEarned: req.user.freeMonthsEarned,
-            subscriptionExpiry: req.user.subscriptionExpiry
+            subscriptionExpiry: req.user.subscriptionExpiry,
+            auth_provider: req.user.auth_provider
         } 
     });
+});
+
+// Profile completion endpoint (for Google users to add phone/pincode)
+app.put('/api/user/profile', authenticateUser, async (req, res) => {
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database not connected' 
+            });
+        }
+
+        const { phone, pincode } = req.body;
+
+        // Validate phone (exactly 10 digits)
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phone || !phoneRegex.test(phone)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid 10-digit phone number' 
+            });
+        }
+
+        // Validate pincode (exactly 6 digits)
+        const pincodeRegex = /^[0-9]{6}$/;
+        if (!pincode || !pincodeRegex.test(pincode)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid 6-digit pincode' 
+            });
+        }
+
+        // Check phone uniqueness (exclude current user)
+        const { ObjectId } = require('mongodb');
+        const existingPhone = await usersCollection.findOne({ 
+            phone: phone, 
+            _id: { $ne: new ObjectId(req.user.id) } 
+        });
+        if (existingPhone) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This phone number is already registered' 
+            });
+        }
+
+        // Update user document
+        await usersCollection.updateOne(
+            { _id: new ObjectId(req.user.id) },
+            { $set: { phone, pincode } }
+        );
+
+        console.log('✅ Profile updated for user:', req.user.email);
+
+        res.json({ 
+            success: true, 
+            message: 'Profile updated successfully' 
+        });
+    } catch (error) {
+        console.error('❌ Profile update error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Profile update failed' 
+        });
+    }
 });
 
 // User forgot password endpoint
@@ -644,6 +922,14 @@ app.post('/api/user/forgot-password', async (req, res) => {
         if (!user) {
             console.log('⚠️ User password reset requested for non-existent email:', email);
             return res.json(successResponse);
+        }
+
+        // Reject password reset for Google users
+        if ((user.auth_provider || 'email') === 'google') {
+            return res.status(400).json({
+                success: false,
+                message: 'This account uses Google sign-in. Please sign in with Google.'
+            });
         }
 
         // Generate JWT reset token (valid for 1 hour)

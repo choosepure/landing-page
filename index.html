@@ -58,6 +58,9 @@
     <meta property="og:url" content="https://choosepure.in" />
     <meta name="twitter:card" content="summary_large_image" />
     
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -786,6 +789,10 @@
         .auth-modal-submit:disabled { background: #8FA39A; cursor: not-allowed; }
         .auth-error-message { display: none; padding: 12px 16px; background: #FFEBEE; color: #C62828; border: 1px solid #EF5350; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
         .auth-error-message.visible { display: block; }
+        .google-btn-container { display: flex; justify-content: center; min-height: 44px; margin-bottom: 4px; }
+        .auth-divider { display: flex; align-items: center; text-align: center; margin: 16px 0; color: var(--lab-grey); font-size: 13px; }
+        .auth-divider::before, .auth-divider::after { content: ''; flex: 1; border-bottom: 1px solid #E5E5E5; }
+        .auth-divider span { padding: 0 12px; }
 
         @media (max-width: 768px) {
             .share-button {
@@ -1201,6 +1208,8 @@
             </div>
             <form id="auth-signin-form" class="auth-modal-form active" onsubmit="return false;">
                 <div id="auth-signin-error" class="auth-error-message"></div>
+                <div id="google-signin-btn-signin" class="google-btn-container"></div>
+                <div class="auth-divider"><span>or</span></div>
                 <div class="form-group">
                     <label for="auth-signin-email">Email</label>
                     <input type="email" id="auth-signin-email" placeholder="you@example.com" autocomplete="email" />
@@ -1214,6 +1223,8 @@
             </form>
             <form id="auth-register-form" class="auth-modal-form" onsubmit="return false;">
                 <div id="auth-register-error" class="auth-error-message"></div>
+                <div id="google-signin-btn-register" class="google-btn-container"></div>
+                <div class="auth-divider"><span>or</span></div>
                 <div class="form-group">
                     <label for="auth-register-name">Full Name</label>
                     <input type="text" id="auth-register-name" placeholder="Your full name" autocomplete="name" />
@@ -1581,6 +1592,114 @@
                 window.location.href = '/dashboard';
             }
         });
+
+        // ── Google Sign-In (GIS) ──
+        function initializeGoogleSignIn() {
+            fetch(API_BASE + '/api/config/google-client-id')
+                .then(function(res) {
+                    if (!res.ok) throw new Error('Google auth not configured');
+                    return res.json();
+                })
+                .then(function(data) {
+                    if (!data.clientId) throw new Error('No client ID');
+                    if (typeof google === 'undefined' || !google.accounts) {
+                        console.warn('⚠️ Google Identity Services library not loaded');
+                        return;
+                    }
+                    google.accounts.id.initialize({
+                        client_id: data.clientId,
+                        callback: handleGoogleAuth
+                    });
+                    var signinContainer = document.getElementById('google-signin-btn-signin');
+                    var registerContainer = document.getElementById('google-signin-btn-register');
+                    if (signinContainer) {
+                        google.accounts.id.renderButton(signinContainer, {
+                            theme: 'outline', size: 'large', width: '100%', text: 'signin_with'
+                        });
+                    }
+                    if (registerContainer) {
+                        google.accounts.id.renderButton(registerContainer, {
+                            theme: 'outline', size: 'large', width: '100%', text: 'signup_with'
+                        });
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('⚠️ Google Sign-In init failed:', err.message);
+                });
+        }
+
+        async function handleGoogleAuth(response) {
+            // Show loading state
+            var activeForm = document.querySelector('.auth-modal-form.active');
+            var googleBtnContainer = activeForm ? activeForm.querySelector('.google-btn-container') : null;
+            if (googleBtnContainer) {
+                googleBtnContainer.style.opacity = '0.5';
+                googleBtnContainer.style.pointerEvents = 'none';
+            }
+
+            // Get referral code from URL params if present
+            var urlParams = new URLSearchParams(window.location.search);
+            var referralCode = urlParams.get('ref') || urlParams.get('referral_code') || null;
+
+            // Determine which error element to use
+            var errorElId = 'auth-signin-error';
+            if (activeForm && activeForm.id === 'auth-register-form') {
+                errorElId = 'auth-register-error';
+            }
+
+            try {
+                var res = await fetch(API_BASE + '/api/user/google-auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ credential: response.credential, referral_code: referralCode })
+                });
+                var data = await res.json();
+
+                if (!res.ok) {
+                    showAuthError(errorElId, data.message || 'Google sign-in failed.');
+                    // Analytics: Google Auth Failed (Task 5.3)
+                    try { mixpanel.track('Google Auth Failed', { error: data.message || 'Unknown error' }); } catch(e) {}
+                    if (googleBtnContainer) {
+                        googleBtnContainer.style.opacity = '1';
+                        googleBtnContainer.style.pointerEvents = '';
+                    }
+                    return;
+                }
+
+                updateAuthHeader(data.user);
+                closeAuthModal();
+
+                // Analytics tracking (Task 5.3)
+                if (data.isNewUser) {
+                    // New user auto-registration
+                    try { gtag('event', 'sign_up', { method: 'google' }); } catch(e) {}
+                    try { fbq('track', 'CompleteRegistration', { method: 'google' }); } catch(e) {}
+                    try { mixpanel.track('User Registered', { method: 'google' }); } catch(e) {}
+                } else {
+                    // Existing user sign-in
+                    try { gtag('event', 'login', { method: 'google' }); } catch(e) {}
+                    try { fbq('trackCustom', 'UserSignedIn', { method: 'google' }); } catch(e) {}
+                    try { mixpanel.track('User Signed In', { method: 'google' }); } catch(e) {}
+                }
+
+                window.location.href = '/dashboard';
+            } catch (err) {
+                showAuthError(errorElId, 'Network error. Please try again.');
+                try { mixpanel.track('Google Auth Failed', { error: 'Network error' }); } catch(e) {}
+                if (googleBtnContainer) {
+                    googleBtnContainer.style.opacity = '1';
+                    googleBtnContainer.style.pointerEvents = '';
+                }
+            }
+        }
+
+        // Initialize Google Sign-In after GIS library loads
+        if (document.readyState === 'complete') {
+            initializeGoogleSignIn();
+        } else {
+            window.addEventListener('load', initializeGoogleSignIn);
+        }
 
         // Testimonial Slider
         let currentSlide = 0;
