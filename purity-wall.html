@@ -1587,10 +1587,10 @@
 
                 // Score badge (bottom-right)
                 if (unlocked && report.purityScore != null) {
-                    html += '<div class="score-badge" style="background:' + scoreColor + ';font-size:18px;font-weight:700;">' + formatScore(report.purityScore) + '%</div>';
+                    html += '<div class="score-badge" style="background:' + scoreColor + ';font-size:16px;font-weight:700;">' + formatScore(report.purityScore) + '<span style="font-size:11px;opacity:0.8;">/100</span></div>';
                 } else if (!unlocked && report.purityScore != null) {
                     // Blurred score effect for locked cards
-                    html += '<div class="score-badge locked" style="font-size:14px;font-family:var(--font-data);filter:blur(0);"><span style="filter:blur(4px);user-select:none;">' + formatScore(report.purityScore) + '%</span> 🔒</div>';
+                    html += '<div class="score-badge locked" style="font-size:14px;font-family:var(--font-data);filter:blur(0);"><span style="filter:blur(4px);user-select:none;">' + formatScore(report.purityScore) + '/100</span> 🔒</div>';
                 } else {
                     html += '<div class="score-badge locked">🔒</div>';
                 }
@@ -1615,7 +1615,7 @@
                     html += '</div>';
                 } else {
                     html += '<div class="locked-overlay">';
-                    html += '<p class="lock-text" style="filter:blur(0);"><span style="font-family:var(--font-data);filter:blur(3px);user-select:none;font-size:14px;font-weight:600;color:#0F2419;">Score: ' + (report.purityScore != null ? formatScore(report.purityScore) + '%' : '??%') + '</span></p>';
+                    html += '<p class="lock-text" style="filter:blur(0);"><span style="font-family:var(--font-data);filter:blur(3px);user-select:none;font-size:14px;font-weight:600;color:#0F2419;">Score: ' + (report.purityScore != null ? formatScore(report.purityScore) + '/100' : '??') + '</span></p>';
                     html += '<span class="unlock-link" onclick="onLockedCardClick()">Unlock Analysis →</span>';
                     html += '</div>';
                 }
