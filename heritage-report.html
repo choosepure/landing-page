@@ -116,11 +116,12 @@
         /* ── SCORE CIRCLE ── */
         .score-badge { text-align: center; flex-shrink: 0; }
         .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; margin: 0 auto 10px; box-shadow: 0 4px 20px rgba(255,183,3,0.35); }
+        .score-circle.blue { background: #2196F3; box-shadow: 0 4px 20px rgba(33,150,243,0.35); }
         .score-circle.amber { background: var(--warning-amber); }
         .score-circle.green { background: var(--deep-leaf-green); box-shadow: 0 4px 20px rgba(31,107,78,0.25); }
         .score-number { font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
         .score-of { font-size: 13px; opacity: 0.8; font-weight: 500; }
-        .score-verdict { font-size: 14px; font-weight: 600; color: var(--warning-amber); }
+        .score-verdict { font-size: 14px; font-weight: 600; color: #2196F3; }
         .score-batch { font-size: 11px; color: var(--lab-grey); margin-top: 4px; font-family: var(--font-data); }
 
         /* ── META GRID ── */
@@ -286,7 +287,7 @@
                             <p class="report-subtitle">NABL-accredited lab report · 127 parameters tested · Compared against FSSAI, EU &amp; US FDA standards</p>
                         </div>
                         <div class="score-badge">
-                            <div class="score-circle amber">
+                            <div class="score-circle blue">
                                 <span class="score-number">82</span>
                                 <span class="score-of">/ 100</span>
                             </div>
