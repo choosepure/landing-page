@@ -6,7 +6,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
 
 ## Tasks
 
-- [ ] 1. Implement OFF cache module and proxy endpoints in server.js
+- [x] 1. Implement OFF cache module and proxy endpoints in server.js
   - [x] 1.1 Add the OFF in-memory cache module at the top of server.js
     - Create the `offCache` Map, `OFF_CACHE_TTL` constant (24h), `offCacheGet(key)`, and `offCacheSet(key, data)` functions
     - Implement timestamp-based expiry check in `offCacheGet`
@@ -63,7 +63,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
 - [x] 2. Checkpoint — Verify backend proxy endpoints
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Add barcode field to admin report form and backend
+- [x] 3. Add barcode field to admin report form and backend
   - [x] 3.1 Add barcode field to the report creation/edit form in admin.html
     - Add an optional text input with label "Barcode (EAN-13)", `pattern="[0-9]{13}"`, `maxlength="13"` in the report form grid after the "Status Badges" field
     - Add client-side validation: if non-empty, must be exactly 13 digits; show inline error otherwise
@@ -86,7 +86,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
 - [x] 4. Checkpoint — Verify admin barcode field
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Create the Product Lookup page (product-lookup.html)
+- [x] 5. Create the Product Lookup page (product-lookup.html)
   - [x] 5.1 Create product-lookup.html with page structure and styles
     - Use the same header, footer, fonts, and colour palette as purity-wall.html
     - Add search section with single input field (placeholder "Enter barcode or product name") and submit button
@@ -135,7 +135,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
 - [x] 6. Checkpoint — Verify Product Lookup page
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Enhance Purity Wall with Nutri-Score badges and filters (purity-wall.html)
+- [x] 7. Enhance Purity Wall with Nutri-Score badges and filters (purity-wall.html)
   - [x] 7.1 Add Nutri-Score badge to report cards on the Purity Wall
     - After report cards load, for each report with a `barcode` field, fetch OFF data via `/api/off/product/:barcode`
     - Display a small Nutri-Score badge on the card image area at `bottom: 12px; left: 12px` (existing purity score badge is at right)
@@ -143,7 +143,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
     - Silently omit badge if OFF data fetch fails or product not found
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-  - [~] 7.2 Add Nutri-Score and NOVA group filter controls to the Purity Wall
+  - [x] 7.2 Add Nutri-Score and NOVA group filter controls to the Purity Wall
     - Add a filter bar below the welcome banner with Nutri-Score dropdown (All, A, B, C, D, E) and NOVA group dropdown (All, 1, 2, 3, 4)
     - Implement client-side filtering: hide/show cards based on cached OFF data
     - Apply AND logic when both filters are active
@@ -155,11 +155,11 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
     - **Property 9: Combined Nutri-Score and NOVA filtering** — generate random arrays of report card objects with random nutriScore/novaGroup values, apply random filter combinations, verify result is correct AND-logic subset
     - **Validates: Requirements 9.3, 9.4, 9.5, 9.6, 9.7**
 
-- [~] 8. Checkpoint — Verify Purity Wall enhancements
+- [x] 8. Checkpoint — Verify Purity Wall enhancements
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Enrich Deep Dive report page with OFF data (deep-dive.html)
-  - [~] 9.1 Add OFF data section to the Deep Dive report page
+- [x] 9. Enrich Deep Dive report page with OFF data (deep-dive.html)
+  - [x] 9.1 Add OFF data section to the Deep Dive report page
     - After the existing report renders, check if the report document has a `barcode` field
     - If barcode exists, call `GET /api/off/product/:barcode`
     - On success (`found: true`), append a new section with heading "Supplemental Data from Open Food Facts"
@@ -168,7 +168,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
     - Visually separate from ChoosePure lab data with the section heading
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 10.1, 10.3, 10.4_
 
-  - [~] 9.2 Handle OFF data errors silently on Deep Dive page
+  - [x] 9.2 Handle OFF data errors silently on Deep Dive page
     - If the proxy returns `{ found: false }`, a timeout, or any error, do not render the OFF section and do not show any error to the user
     - _Requirements: 7.5_
 

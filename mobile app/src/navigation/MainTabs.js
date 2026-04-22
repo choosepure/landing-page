@@ -13,10 +13,14 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ReportDetailScreen from '../screens/ReportDetailScreen';
 import SubscriptionScreen from '../screens/SubscriptionScreen';
 import VisionScreen from '../screens/VisionScreen';
+import ScannerScreen from '../screens/ScannerScreen';
+import ResultCardScreen from '../screens/ResultCardScreen';
+import ScanHistoryScreen from '../screens/ScanHistoryScreen';
 
 const Tab = createBottomTabNavigator();
 const DashStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
+const ScanStack = createStackNavigator();
 
 const stackScreenOptions = {
   headerStyle: { backgroundColor: theme.colors.background, elevation: 0, shadowOpacity: 0 },
@@ -44,8 +48,19 @@ function ProfileStackScreen() {
   );
 }
 
+function ScannerStackScreen() {
+  return (
+    <ScanStack.Navigator screenOptions={stackScreenOptions}>
+      <ScanStack.Screen name="ScannerHome" component={ScannerScreen} options={{ title: 'Scan Product' }} />
+      <ScanStack.Screen name="ResultCard" component={ResultCardScreen} options={{ title: 'Product Details' }} />
+      <ScanStack.Screen name="ScanHistory" component={ScanHistoryScreen} options={{ title: 'Scan History' }} />
+      <ScanStack.Screen name="ScanReportDetail" component={ReportDetailScreen} options={{ title: 'Lab Report' }} />
+    </ScanStack.Navigator>
+  );
+}
+
 function TabIcon({ label, focused }) {
-  const icons = { Dashboard: '🏠', Polling: '🗳️', Suggestions: '💡', Referral: '🎁', Profile: '👤' };
+  const icons = { Dashboard: '🏠', Scan: '📷', Polling: '🗳️', Suggestions: '💡', Referral: '🎁', Profile: '👤' };
   return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{icons[label] || '•'}</Text>;
 }
 
@@ -62,6 +77,7 @@ export default function MainTabs() {
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardStackScreen} />
+      <Tab.Screen name="Scan" component={ScannerStackScreen} />
       <Tab.Screen name="Polling" component={PollingScreen} />
       <Tab.Screen name="Suggestions" component={SuggestionScreen} />
       <Tab.Screen name="Referral" component={ReferralScreen} />

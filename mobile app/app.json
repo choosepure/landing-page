@@ -23,7 +23,14 @@
       "package": "in.choosepure.app"
     },
     "plugins": [
-      "expo-linking"
+      "expo-linking",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ChoosePure to access your camera to scan product barcodes",
+          "recordAudioAndroid": false
+        }
+      ]
     ]
   }
 }
