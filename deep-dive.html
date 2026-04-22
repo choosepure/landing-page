@@ -417,6 +417,99 @@
             text-align: center;
             padding: 0 24px 40px;
         }
+
+        /* ── OFF Supplemental Data Section ── */
+        .off-section {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .off-section-header {
+            padding: 16px 20px;
+            background: var(--pure-ivory);
+            border-bottom: 1px solid #E5E5E5;
+            font-size: 16px;
+            font-weight: 600;
+            color: #0F2419;
+        }
+        .off-section-body {
+            padding: 24px 20px;
+        }
+        .off-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .off-row:last-child { margin-bottom: 0; }
+        .off-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--lab-grey);
+            min-width: 120px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .off-value {
+            font-size: 14px;
+            color: #0F2419;
+            line-height: 1.6;
+            flex: 1;
+        }
+        .nutri-score-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 10px;
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+        }
+        .nutri-score-a { background: #1F6B4E; }
+        .nutri-score-b { background: #85BB65; }
+        .nutri-score-c { background: #FFB703; }
+        .nutri-score-d { background: #E67E22; }
+        .nutri-score-e { background: #D62828; }
+        .nova-group {
+            font-size: 14px;
+            color: #0F2419;
+        }
+        .nova-group strong {
+            font-weight: 700;
+        }
+        .additive-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2px 4px 2px 0;
+        }
+        .additive-low { background: #E8F5E9; color: #2E7D32; }
+        .additive-moderate { background: #FFF8E1; color: #E65100; }
+        .additive-high { background: #FFEBEE; color: #C62828; }
+        .additive-unknown { background: #F5F5F5; color: #6B6B6B; }
+        .off-attribution {
+            font-size: 12px;
+            color: var(--lab-grey);
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #F0F0F0;
+        }
+        .off-attribution a {
+            color: var(--deep-leaf-green);
+            text-decoration: none;
+        }
+        .off-attribution a:hover { text-decoration: underline; }
         .footer a { color: var(--deep-leaf-green); text-decoration: none; margin: 0 8px; }
 
         @media (max-width: 768px) {
@@ -528,6 +621,9 @@
                 <h3>Testing Methodology</h3>
                 <p id="methodology-text"></p>
             </div>
+
+            <!-- OFF Supplemental Data (populated dynamically) -->
+            <div id="off-section-container"></div>
         </div>
 
         <!-- Footer -->
@@ -731,6 +827,97 @@
             trackEvent('deep_dive_view', 'engagement', report.productName);
         }
 
+        // ── OFF Data Enrichment (Tasks 9.1 & 9.2) ──
+        function getNovaLabel(group) {
+            const labels = {
+                1: 'Unprocessed or minimally processed',
+                2: 'Processed culinary ingredients',
+                3: 'Processed foods',
+                4: 'Ultra-processed food and drink products'
+            };
+            return labels[group] || null;
+        }
+
+        async function fetchAndRenderOffData(report) {
+            if (!report.barcode) return;
+            try {
+                const res = await fetch(API_BASE + '/api/off/product/' + report.barcode);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.found || !data.product) return;
+                renderOffSection(data.product);
+            } catch (e) {
+                // Silently omit — Task 9.2
+            }
+        }
+
+        function renderOffSection(product) {
+            const container = document.getElementById('off-section-container');
+            if (!container) return;
+
+            let html = '<div class="off-section">';
+            html += '<div class="off-section-header">Supplemental Data from Open Food Facts</div>';
+            html += '<div class="off-section-body">';
+
+            // Nutri-Score
+            if (product.nutriScore) {
+                const grade = product.nutriScore.toLowerCase();
+                html += '<div class="off-row">';
+                html += '<div class="off-label">Nutri-Score</div>';
+                html += '<div class="off-value"><span class="nutri-score-badge nutri-score-' + grade + '">' + grade.toUpperCase() + '</span></div>';
+                html += '</div>';
+            }
+
+            // NOVA Group
+            if (product.novaGroup) {
+                const label = getNovaLabel(product.novaGroup);
+                if (label) {
+                    html += '<div class="off-row">';
+                    html += '<div class="off-label">NOVA Group</div>';
+                    html += '<div class="off-value"><span class="nova-group">NOVA <strong>' + product.novaGroup + '</strong> — ' + escapeHtml(label) + '</span></div>';
+                    html += '</div>';
+                }
+            }
+
+            // Ingredients
+            if (product.ingredients) {
+                html += '<div class="off-row">';
+                html += '<div class="off-label">Ingredients</div>';
+                html += '<div class="off-value">' + escapeHtml(product.ingredients) + '</div>';
+                html += '</div>';
+            }
+
+            // Additives
+            if (product.additives && product.additives.length > 0) {
+                html += '<div class="off-row">';
+                html += '<div class="off-label">Additives</div>';
+                html += '<div class="off-value">';
+                product.additives.forEach(function(additive) {
+                    const risk = (additive.risk || 'unknown').toLowerCase();
+                    const riskClass = 'additive-' + risk;
+                    html += '<span class="additive-badge ' + riskClass + '">' + escapeHtml(additive.code) + ' — ' + escapeHtml(additive.name) + '</span>';
+                });
+                html += '</div>';
+                html += '</div>';
+            }
+
+            // Allergens
+            if (product.allergens) {
+                html += '<div class="off-row">';
+                html += '<div class="off-label">Allergens</div>';
+                html += '<div class="off-value">' + escapeHtml(product.allergens) + '</div>';
+                html += '</div>';
+            }
+
+            // Attribution
+            html += '<div class="off-attribution">Data from <a href="https://openfoodfacts.org" target="_blank" rel="noopener noreferrer">Open Food Facts</a> (openfoodfacts.org) under ODbL licence</div>';
+
+            html += '</div>'; // off-section-body
+            html += '</div>'; // off-section
+
+            container.innerHTML = html;
+        }
+
         function showError(title, message) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('report-content').style.display = 'none';
@@ -817,6 +1004,7 @@
                 const data = await res.json();
                 if (data.success && data.report) {
                     renderReport(data.report);
+                    fetchAndRenderOffData(data.report);
                 } else {
                     showError('Report not found', 'This report may have been removed.');
                 }

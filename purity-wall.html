@@ -725,6 +725,71 @@
         .footer-social a:hover { background: rgba(255,255,255,0.15); color: #fff; }
         .footer-social a svg { width: 18px; height: 18px; }
 
+        /* ── Nutri-Score Badge on Cards ── */
+        .nutri-score-card-badge {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            min-width: 28px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-data);
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            z-index: 2;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .nutri-score-a { background: #1F6B4E; }
+        .nutri-score-b { background: #85BB65; }
+        .nutri-score-c { background: #FFB703; }
+        .nutri-score-d { background: #E67E22; }
+        .nutri-score-e { background: #D62828; }
+
+        /* ── OFF Filter Bar ── */
+        .off-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .off-filter-bar label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dark-green);
+            white-space: nowrap;
+        }
+        .off-filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid #D1D1D1;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: var(--font-primary);
+            background: #fff;
+            color: var(--dark-green);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .off-filter-bar select:focus {
+            outline: none;
+            border-color: var(--deep-leaf-green);
+            box-shadow: 0 0 0 3px rgba(31,107,78,0.1);
+        }
+        .off-filter-empty {
+            text-align: center;
+            padding: 32px 24px;
+            color: var(--lab-grey);
+            font-size: 15px;
+            display: none;
+        }
+
         /* ── Loading / Empty ── */
         .loading-spinner { text-align: center; padding: 48px 24px; }
         .spinner {
@@ -897,6 +962,27 @@
             <a href="#" class="view-all" id="view-all-reports">View All Reports</a>
         </div>
         <p class="section-subtitle">Verified analysis from the last 24 hours</p>
+
+        <div class="off-filter-bar" id="off-filter-bar" style="display:none;">
+            <label for="nutri-score-filter">Nutri-Score</label>
+            <select id="nutri-score-filter" onchange="applyOffFilters()">
+                <option value="all">All</option>
+                <option value="a">A</option>
+                <option value="b">B</option>
+                <option value="c">C</option>
+                <option value="d">D</option>
+                <option value="e">E</option>
+            </select>
+            <label for="nova-group-filter">NOVA Group</label>
+            <select id="nova-group-filter" onchange="applyOffFilters()">
+                <option value="all">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
+        </div>
+        <div class="off-filter-empty" id="off-filter-empty">No products match the selected filters</div>
 
         <div id="reports-loading" class="loading-spinner">
             <div class="spinner"></div>
@@ -1175,6 +1261,104 @@
         let isSubscribed = false;
         let allReports = [];
         let pendingSubscribeAfterAuth = false;
+
+        // ── OFF Data Cache (client-side, keyed by report ID) ──
+        const offDataMap = new Map();
+
+        function getNutriScoreColor(grade) {
+            if (!grade) return null;
+            const colors = { a: '#1F6B4E', b: '#85BB65', c: '#FFB703', d: '#E67E22', e: '#D62828' };
+            return colors[grade.toLowerCase()] || null;
+        }
+
+        async function fetchOffDataForReports(reports) {
+            const barcodeReports = reports.filter(r => r.barcode);
+            if (barcodeReports.length === 0) return;
+
+            const fetches = barcodeReports.map(async (report) => {
+                try {
+                    const res = await fetch(API_BASE + '/api/off/product/' + report.barcode);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data.found && data.product) {
+                        offDataMap.set(report._id, data.product);
+                    }
+                } catch (e) {
+                    // Silently omit
+                }
+            });
+
+            await Promise.all(fetches);
+
+            // Show filter bar if we have any OFF data
+            if (offDataMap.size > 0) {
+                document.getElementById('off-filter-bar').style.display = '';
+            }
+
+            // Re-render cards to add badges
+            addNutriScoreBadgesToCards();
+        }
+
+        function addNutriScoreBadgesToCards() {
+            const row = document.getElementById('reports-row');
+            if (!row) return;
+            const cards = row.querySelectorAll('.report-card');
+            cards.forEach((card, index) => {
+                if (index >= allReports.length) return;
+                const report = allReports[index];
+                const offData = offDataMap.get(report._id);
+                if (!offData || !offData.nutriScore) return;
+
+                const imageContainer = card.querySelector('.report-card-image');
+                if (!imageContainer) return;
+
+                // Don't add duplicate badges
+                if (imageContainer.querySelector('.nutri-score-card-badge')) return;
+
+                const badge = document.createElement('div');
+                badge.className = 'nutri-score-card-badge nutri-score-' + offData.nutriScore.toLowerCase();
+                badge.textContent = offData.nutriScore.toUpperCase();
+                badge.setAttribute('title', 'Nutri-Score ' + offData.nutriScore.toUpperCase());
+                imageContainer.appendChild(badge);
+            });
+        }
+
+        function applyOffFilters() {
+            const nutriFilter = document.getElementById('nutri-score-filter').value;
+            const novaFilter = document.getElementById('nova-group-filter').value;
+            const row = document.getElementById('reports-row');
+            const emptyFilter = document.getElementById('off-filter-empty');
+            if (!row) return;
+
+            const cards = row.querySelectorAll('.report-card');
+            let visibleCount = 0;
+
+            cards.forEach((card, index) => {
+                if (index >= allReports.length) return;
+                const report = allReports[index];
+                const offData = offDataMap.get(report._id);
+
+                let show = true;
+
+                if (nutriFilter !== 'all') {
+                    if (!offData || !offData.nutriScore || offData.nutriScore.toLowerCase() !== nutriFilter) {
+                        show = false;
+                    }
+                }
+
+                if (novaFilter !== 'all') {
+                    if (!offData || !offData.novaGroup || String(offData.novaGroup) !== novaFilter) {
+                        show = false;
+                    }
+                }
+
+                card.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            emptyFilter.style.display = visibleCount === 0 ? '' : 'none';
+            row.style.display = visibleCount === 0 ? 'none' : '';
+        }
 
         // ── Analytics ──
         function trackEvent(eventName, eventCategory, eventLabel, eventValue) {
@@ -1722,6 +1906,7 @@
                 if (res.ok && data.success) {
                     allReports = data.reports || [];
                     renderReportCards();
+                    fetchOffDataForReports(allReports);
                 } else {
                     loading.style.display = 'none';
                     emptyState.style.display = '';

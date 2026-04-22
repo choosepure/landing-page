@@ -87,7 +87,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Create the Product Lookup page (product-lookup.html)
-  - [~] 5.1 Create product-lookup.html with page structure and styles
+  - [x] 5.1 Create product-lookup.html with page structure and styles
     - Use the same header, footer, fonts, and colour palette as purity-wall.html
     - Add search section with single input field (placeholder "Enter barcode or product name") and submit button
     - Add results area container for product detail view and search results grid
@@ -95,13 +95,13 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
     - Add OFF attribution footer element
     - _Requirements: 4.1, 4.2, 10.3, 10.4_
 
-  - [~] 5.2 Implement search input classification and API call logic
+  - [x] 5.2 Implement search input classification and API call logic
     - Detect input type: if `/^\d{13}$/` → call `GET /api/off/product/:barcode`; else if ≥ 2 chars → call `GET /api/off/search?q=term`
     - Handle loading state, error responses (400, 502, 504), and `{ found: false }`
     - Display "Product not found in Open Food Facts database" for not-found results
     - _Requirements: 4.3, 4.4, 4.6_
 
-  - [~] 5.3 Implement Nutri-Score badge, NOVA group label, and Additive badge rendering helpers
+  - [x] 5.3 Implement Nutri-Score badge, NOVA group label, and Additive badge rendering helpers
     - Create `getNutriScoreColor(grade)` returning correct background colour per grade (A→#1F6B4E, B→#85BB65, C→#FFB703, D→#E67E22, E→#D62828) or null for missing grades
     - Create `getNovaLabel(group)` returning correct descriptive label per group (1-4) or null for missing groups
     - Create `getAdditiveColors(risk)` returning correct bg/text colours per risk level (low, moderate, high, unknown)
@@ -110,17 +110,17 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
     - Render additives as `<span class="additive-badge">{E-number} — {name}</span>` with risk-level colouring
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 11.1, 11.2, 11.3, 11.4, 11.5_
 
-  - [~] 5.4 Implement product detail view rendering
+  - [x] 5.4 Implement product detail view rendering
     - Display: product name, brand, product image, Nutri-Score badge, NOVA group with label, full ingredients list, additive badges with risk colouring, allergens list, nutrition facts per 100g table
     - Display OFF attribution text "Data from Open Food Facts (openfoodfacts.org) under ODbL licence" with clickable link to https://openfoodfacts.org
     - _Requirements: 4.5, 4.8, 10.2, 10.3, 10.4_
 
-  - [~] 5.5 Implement search results grid and product card click handling
+  - [x] 5.5 Implement search results grid and product card click handling
     - Render search results as a grid of product cards showing name, brand, image, Nutri-Score badge, NOVA group
     - On card click, call barcode lookup for that product and render the full detail view
     - _Requirements: 4.4, 4.7_
 
-  - [~] 5.6 Implement ChoosePure report cross-reference
+  - [x] 5.6 Implement ChoosePure report cross-reference
     - After rendering product detail, fetch `GET /api/reports` and match by barcode field
     - If a matching ChoosePure report exists, display a "View ChoosePure Lab Report" link pointing to `/deep-dive?id={reportId}`
     - _Requirements: 4.9, 10.1_
@@ -132,11 +132,11 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
     - **Property 10: Additive risk colour mapping** — verify correct bg/text colours for each risk level
     - **Validates: Requirements 4.3, 4.4, 5.1–5.7, 6.1–6.6, 11.1–11.5**
 
-- [~] 6. Checkpoint — Verify Product Lookup page
+- [x] 6. Checkpoint — Verify Product Lookup page
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Enhance Purity Wall with Nutri-Score badges and filters (purity-wall.html)
-  - [~] 7.1 Add Nutri-Score badge to report cards on the Purity Wall
+  - [x] 7.1 Add Nutri-Score badge to report cards on the Purity Wall
     - After report cards load, for each report with a `barcode` field, fetch OFF data via `/api/off/product/:barcode`
     - Display a small Nutri-Score badge on the card image area at `bottom: 12px; left: 12px` (existing purity score badge is at right)
     - Store fetched OFF data in a client-side map keyed by report ID for filtering
@@ -172,7 +172,7 @@ This plan implements the Open Food Facts (OFF) integration for ChoosePure in fiv
     - If the proxy returns `{ found: false }`, a timeout, or any error, do not render the OFF section and do not show any error to the user
     - _Requirements: 7.5_
 
-- [~] 10. Final checkpoint — Ensure all tests pass
+- [x] 10. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
