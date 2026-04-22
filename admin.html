@@ -624,6 +624,11 @@
                                 <label>Status Badges (comma-separated)</label>
                                 <input type="text" id="report-status-badges" placeholder="e.g., Recent Test, Top Rated">
                             </div>
+                            <div class="form-group">
+                                <label>Barcode (EAN-13)</label>
+                                <input type="text" id="report-barcode" pattern="[0-9]{13}" maxlength="13" placeholder="e.g., 8901262011112">
+                                <span id="report-barcode-error" style="color: #dc3545; font-size: 12px; display: none;">Barcode must be exactly 13 digits</span>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Methodology</label>
@@ -1833,6 +1838,15 @@
             const badgesInput = document.getElementById('report-status-badges').value.trim();
             const statusBadges = badgesInput ? badgesInput.split(',').map(b => b.trim()).filter(b => b) : [];
 
+            // Validate barcode if provided
+            const barcodeVal = document.getElementById('report-barcode').value.trim();
+            const barcodeError = document.getElementById('report-barcode-error');
+            if (barcodeVal && !/^\d{13}$/.test(barcodeVal)) {
+                barcodeError.style.display = 'block';
+                return;
+            }
+            barcodeError.style.display = 'none';
+
             const reportData = {
                 productName: document.getElementById('report-product-name').value.trim(),
                 brandName: document.getElementById('report-brand-name').value.trim(),
@@ -1845,12 +1859,18 @@
                 statusBadges: statusBadges,
                 batchCode: document.getElementById('report-batch-code').value.trim(),
                 shelfLife: document.getElementById('report-shelf-life').value.trim(),
-                methodology: document.getElementById('report-methodology').value.trim()
+                methodology: document.getElementById('report-methodology').value.trim(),
+                barcode: barcodeVal || null
             };
 
+            // Determine if this is an edit (PUT) or create (POST)
+            const editId = document.getElementById('report-edit-id').value;
+            const url = editId ? '/api/admin/reports/' + editId : '/api/admin/reports';
+            const method = editId ? 'PUT' : 'POST';
+
             try {
-                const response = await fetch('/api/admin/reports', {
-                    method: 'POST',
+                const response = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify(reportData)
@@ -1858,9 +1878,14 @@
                 const result = await response.json();
                 if (result.success) {
                     messageDiv.className = 'message success';
-                    messageDiv.textContent = 'Test report created successfully!';
+                    messageDiv.textContent = editId ? 'Test report updated successfully!' : 'Test report created successfully!';
+                    document.getElementById('report-edit-id').value = '';
                     document.getElementById('add-report-form').reset();
             document.getElementById('report-url').value = '';
+            document.getElementById('report-barcode').value = '';
+            document.getElementById('report-barcode-error').style.display = 'none';
+            document.getElementById('report-submit-btn').textContent = 'Create Test Report';
+            document.getElementById('report-cancel-edit').style.display = 'none';
                     // Reset test parameters to single empty row
                     const container = document.getElementById('test-parameters-container');
                     const rows = container.querySelectorAll('.test-param-row');
@@ -1905,6 +1930,7 @@
                 document.getElementById('report-status-badges').value = (r.statusBadges || []).join(', ');
                 document.getElementById('report-methodology').value = r.methodology || '';
                 document.getElementById('report-expert-commentary').value = r.expertCommentary || '';
+                document.getElementById('report-barcode').value = r.barcode || '';
 
                 var container = document.getElementById('test-parameters-container');
                 container.innerHTML = '';
@@ -1937,6 +1963,8 @@
             document.getElementById('report-edit-id').value = '';
             document.getElementById('add-report-form').reset();
             document.getElementById('report-url').value = '';
+            document.getElementById('report-barcode').value = '';
+            document.getElementById('report-barcode-error').style.display = 'none';
             document.getElementById('test-parameters-container').innerHTML = '';
             addTestParameterRow();
             document.getElementById('report-submit-btn').textContent = 'Create Test Report';

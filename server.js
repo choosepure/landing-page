@@ -167,6 +167,100 @@ async function connectToDatabase() {
 
 connectToDatabase();
 
+// ── Open Food Facts (OFF) in-memory cache ──
+const offCache = new Map();
+const OFF_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+function offCacheGet(key) {
+    const entry = offCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > OFF_CACHE_TTL) {
+        offCache.delete(key);
+        return null;
+    }
+    return entry.data;
+}
+
+function offCacheSet(key, data) {
+    offCache.set(key, { data, timestamp: Date.now() });
+}
+
+// ── OFF helpers ──
+
+function isValidBarcode(barcode) {
+    return /^\d{13}$/.test(barcode);
+}
+
+function normaliseProduct(raw) {
+    const product = raw.product || raw;
+
+    // Map additives with risk levels
+    const additives = [];
+    const additiveTags = product.additives_tags || [];
+    additiveTags.forEach(tag => {
+        // tag format: "en:e330-citric-acid" or "en:e330"
+        const cleaned = tag.replace(/^en:/, '');
+        const codeMatch = cleaned.match(/^(e\d+)/i);
+        const code = codeMatch ? codeMatch[1].toUpperCase() : cleaned.toUpperCase();
+        // Derive name from the tag after the code
+        const namePart = cleaned.replace(/^e\d+[-]?/i, '').replace(/-/g, ' ').trim();
+        const name = namePart || code;
+
+        // Determine risk from knowledge panels or default to unknown
+        let risk = 'unknown';
+        const kp = product.knowledge_panels;
+        if (kp) {
+            const panelKey = `additive_${tag.replace(/^en:/, '')}`;
+            const panel = kp[panelKey];
+            if (panel && panel.level) {
+                const level = panel.level.toLowerCase();
+                if (level === 'safe' || level === 'low' || level === 'green') risk = 'low';
+                else if (level === 'moderate' || level === 'yellow' || level === 'orange') risk = 'moderate';
+                else if (level === 'high' || level === 'red' || level === 'hazardous') risk = 'high';
+            }
+        }
+
+        additives.push({ code, name, risk });
+    });
+
+    const nutriments = product.nutriments || {};
+
+    return {
+        name: product.product_name || product.product_name_en || '',
+        brand: product.brands || '',
+        barcode: product.code || '',
+        nutriScore: product.nutriscore_grade || product.nutrition_grades || null,
+        novaGroup: product.nova_group != null ? Number(product.nova_group) : null,
+        ingredients: product.ingredients_text || product.ingredients_text_en || '',
+        additives,
+        allergens: product.allergens || product.allergens_from_ingredients || '',
+        nutritionPer100g: {
+            energy_kcal: nutriments['energy-kcal_100g'] || nutriments['energy-kcal'] || 0,
+            fat: nutriments.fat_100g || nutriments.fat || 0,
+            saturated_fat: nutriments['saturated-fat_100g'] || nutriments['saturated-fat'] || 0,
+            carbohydrates: nutriments.carbohydrates_100g || nutriments.carbohydrates || 0,
+            sugars: nutriments.sugars_100g || nutriments.sugars || 0,
+            proteins: nutriments.proteins_100g || nutriments.proteins || 0,
+            salt: nutriments.salt_100g || nutriments.salt || 0,
+            fiber: nutriments.fiber_100g || nutriments.fiber || 0
+        },
+        ecoScore: product.ecoscore_grade || null,
+        imageUrl: product.image_url || product.image_front_url || null
+    };
+}
+
+function normaliseSearchResults(rawProducts) {
+    const products = rawProducts || [];
+    return products.slice(0, 24).map(p => ({
+        name: p.product_name || p.product_name_en || '',
+        brand: p.brands || '',
+        barcode: p.code || '',
+        nutriScore: p.nutriscore_grade || p.nutrition_grades || null,
+        novaGroup: p.nova_group != null ? Number(p.nova_group) : null,
+        imageUrl: p.image_url || p.image_front_url || null
+    }));
+}
+
 // Generate a unique referral code in the format CP-XXXXX
 async function generateReferralCode(usersCol) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -3186,7 +3280,7 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
         }
 
         const { productName, brandName, category, imageUrl, reportUrl, purityScore, testParameters,
-                expertCommentary, statusBadges, batchCode, shelfLife, testDate, methodology } = req.body;
+                expertCommentary, statusBadges, batchCode, shelfLife, testDate, methodology, barcode } = req.body;
 
         // Validate required fields
         const missingFields = [];
@@ -3202,6 +3296,16 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
                 success: false, 
                 message: `Missing required fields: ${missingFields.join(', ')}` 
             });
+        }
+
+        // Validate barcode format if provided
+        if (barcode !== undefined && barcode !== null && barcode !== '') {
+            if (!/^\d{13}$/.test(barcode)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Barcode must be exactly 13 digits'
+                });
+            }
         }
 
         // Validate purityScore range
@@ -3227,6 +3331,7 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
             testDate: testDate ? new Date(testDate) : null,
             methodology: methodology || '',
             reportUrl: reportUrl || '',
+            barcode: (barcode && /^\d{13}$/.test(barcode)) ? barcode : null,
             published: true,
             createdAt: now,
             updatedAt: now
@@ -3309,6 +3414,16 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
             }
         }
 
+        // Validate barcode format if provided
+        if (req.body.barcode !== undefined && req.body.barcode !== null && req.body.barcode !== '') {
+            if (!/^\d{13}$/.test(req.body.barcode)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Barcode must be exactly 13 digits'
+                });
+            }
+        }
+
         // Build update object from provided fields
         const updateFields = {};
         const allowedFields = ['productName', 'brandName', 'category', 'imageUrl', 'reportUrl', 'purityScore',
@@ -3319,6 +3434,11 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
             if (req.body[field] !== undefined) {
                 updateFields[field] = req.body[field];
             }
+        }
+
+        // Handle barcode: store as string or null
+        if (req.body.barcode !== undefined) {
+            updateFields.barcode = (req.body.barcode && /^\d{13}$/.test(req.body.barcode)) ? req.body.barcode : null;
         }
 
         // Convert testDate string to Date if provided
@@ -4017,6 +4137,146 @@ app.get('/namdhari-report', (req, res) => {
 // Serve contact us page
 app.get('/contact', (req, res) => {
     res.sendFile(path.join(__dirname, 'contact-us.html'));
+});
+
+// Serve product lookup page
+app.get('/product-lookup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'product-lookup.html'));
+});
+
+// ── Open Food Facts proxy endpoints ──
+
+// GET /api/off/product/:barcode — lookup a single product by EAN-13 barcode
+app.get('/api/off/product/:barcode', async (req, res) => {
+    const { barcode } = req.params;
+
+    if (!isValidBarcode(barcode)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid barcode format. Must be exactly 13 digits.'
+        });
+    }
+
+    // Check cache
+    const cacheKey = 'product:' + barcode;
+    const cached = offCacheGet(cacheKey);
+    if (cached !== null) {
+        return res.json(cached);
+    }
+
+    // Fetch from OFF API with 3s timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    try {
+        const offRes = await fetch(
+            `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`,
+            {
+                signal: controller.signal,
+                headers: { 'User-Agent': 'ChoosePure/1.0 (choosepure.in)' }
+            }
+        );
+        clearTimeout(timeout);
+
+        if (!offRes.ok) {
+            return res.status(502).json({
+                success: false,
+                message: 'Open Food Facts API error.'
+            });
+        }
+
+        const data = await offRes.json();
+
+        if (data.status === 0 || !data.product) {
+            const notFound = { found: false };
+            offCacheSet(cacheKey, notFound);
+            return res.json(notFound);
+        }
+
+        const product = normaliseProduct(data);
+        const result = { found: true, product };
+        offCacheSet(cacheKey, result);
+        return res.json(result);
+    } catch (err) {
+        clearTimeout(timeout);
+        if (err.name === 'AbortError') {
+            return res.status(504).json({
+                success: false,
+                message: 'Open Food Facts API timed out.'
+            });
+        }
+        console.error('❌ OFF product fetch error:', err.message);
+        return res.status(502).json({
+            success: false,
+            message: 'Open Food Facts API error.'
+        });
+    }
+});
+
+// GET /api/off/search?q=term — search products by name
+app.get('/api/off/search', async (req, res) => {
+    const q = req.query.q;
+
+    if (!q) {
+        return res.status(400).json({
+            success: false,
+            message: "Query parameter 'q' is required."
+        });
+    }
+
+    if (q.trim().length < 2) {
+        return res.status(400).json({
+            success: false,
+            message: 'Search query must be at least 2 characters.'
+        });
+    }
+
+    const normalisedQuery = q.trim().toLowerCase();
+    const cacheKey = 'search:' + normalisedQuery;
+    const cached = offCacheGet(cacheKey);
+    if (cached !== null) {
+        return res.json(cached);
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    try {
+        const offRes = await fetch(
+            `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(normalisedQuery)}&json=1&page_size=24`,
+            {
+                signal: controller.signal,
+                headers: { 'User-Agent': 'ChoosePure/1.0 (choosepure.in)' }
+            }
+        );
+        clearTimeout(timeout);
+
+        if (!offRes.ok) {
+            return res.status(502).json({
+                success: false,
+                message: 'Open Food Facts API error.'
+            });
+        }
+
+        const data = await offRes.json();
+        const products = normaliseSearchResults(data.products);
+        const result = { products };
+        offCacheSet(cacheKey, result);
+        return res.json(result);
+    } catch (err) {
+        clearTimeout(timeout);
+        if (err.name === 'AbortError') {
+            return res.status(504).json({
+                success: false,
+                message: 'Open Food Facts API timed out.'
+            });
+        }
+        console.error('❌ OFF search fetch error:', err.message);
+        return res.status(502).json({
+            success: false,
+            message: 'Open Food Facts API error.'
+        });
+    }
 });
 
 
