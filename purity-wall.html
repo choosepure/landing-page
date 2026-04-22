@@ -798,6 +798,15 @@
         .sub-modal .sub-note { font-family: var(--font-data); font-size: 11px; color: var(--lab-grey); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
         .sub-modal .sub-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--lab-grey); }
 
+        /* ── Plan Toggle ── */
+        .plan-toggle { display: flex; gap: 10px; margin-bottom: 24px; }
+        .plan-toggle-btn { flex: 1; padding: 14px 12px; border: 2px solid #E5E5E5; border-radius: 10px; background: #fff; cursor: pointer; font-family: var(--font-primary); font-size: 14px; font-weight: 600; color: var(--dark-green); text-align: center; transition: border-color 0.2s, background 0.2s; position: relative; }
+        .plan-toggle-btn:hover { border-color: #C5C5C5; }
+        .plan-toggle-btn.active { border-color: var(--deep-leaf-green); background: rgba(31,107,78,0.04); }
+        .plan-toggle-btn .plan-label { display: block; font-size: 14px; font-weight: 600; }
+        .plan-toggle-btn .plan-price { display: block; font-size: 12px; font-weight: 400; color: var(--lab-grey); margin-top: 2px; }
+        .plan-savings-badge { display: inline-block; background: #E8F5E9; color: #2E7D32; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 100px; margin-top: 4px; letter-spacing: 0.02em; }
+
         /* ── Responsive ── */
         @media (max-width: 768px) {
             .header-inner { height: 56px; }
@@ -843,6 +852,7 @@
             </div>
             <div class="header-right">
                 <div id="user-avatar" class="user-avatar"></div>
+                <span id="plan-badge" style="display:none;color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;font-family:var(--font-data);letter-spacing:0.04em;"></span>
                 <a id="manage-sub-link" class="manage-sub-link" onclick="showManageSub()">Manage</a>
                 <a id="header-signout" class="header-signout" onclick="handleSignOut()">Sign Out</a>
                 <a id="header-signin-link" style="color:rgba(255,255,255,0.85);text-decoration:none;font-size:13px;font-weight:500;cursor:pointer;padding:8px 16px;border:1.5px solid rgba(255,255,255,0.4);border-radius:8px;" onclick="openAuthModal('signin')">Sign In</a>
@@ -1143,8 +1153,19 @@
             <div class="warning-icon">⚠️</div>
             <h2>Don't feed your family in the dark.</h2>
             <p id="sub-modal-text">Unlock detailed lab reports covering toxins, shelf-life, and nutritional accuracy.</p>
-            <button class="sub-cta" id="sub-cta-btn" onclick="handleSubscribe()">Subscribe for ₹299</button>
-            <div class="sub-note">MONTHLY ACCESS • CANCEL ANYTIME</div>
+            <div class="plan-toggle">
+                <button type="button" class="plan-toggle-btn" data-plan="monthly" onclick="selectPlan('monthly')">
+                    <span class="plan-label">Monthly</span>
+                    <span class="plan-price">₹299/mo</span>
+                </button>
+                <button type="button" class="plan-toggle-btn active" data-plan="annual" onclick="selectPlan('annual')">
+                    <span class="plan-label">Annual</span>
+                    <span class="plan-price">₹2,499/yr</span>
+                    <span class="plan-savings-badge">Save ~30%</span>
+                </button>
+            </div>
+            <button class="sub-cta" id="sub-cta-btn" onclick="handleSubscribe()">Subscribe for ₹2,499/year</button>
+            <div class="sub-note" id="sub-note">ANNUAL ACCESS • SAVE ~30%</div>
         </div>
     </div>
 
@@ -1216,6 +1237,7 @@
             const signin = document.getElementById('header-signin');
             const manageSub = document.getElementById('manage-sub-link');
             const heading = document.getElementById('welcome-heading');
+            const planBadge = document.getElementById('plan-badge');
 
             if (user) {
                 currentUser = user;
@@ -1236,8 +1258,17 @@
                 }
                 if (isSubscribed) {
                     manageSub.classList.add('visible');
+                    // Display plan type badge
+                    if (user.subscriptionPlan === 'annual') {
+                        planBadge.textContent = 'Premium · Annual';
+                        planBadge.style.display = 'inline';
+                    } else {
+                        planBadge.textContent = 'Premium · Monthly';
+                        planBadge.style.display = 'inline';
+                    }
                 } else {
                     manageSub.classList.remove('visible');
+                    planBadge.style.display = 'none';
                 }
                 loadReferralStats();
             } else {
@@ -1246,6 +1277,7 @@
                 avatar.classList.remove('visible');
                 signout.classList.remove('visible');
                 manageSub.classList.remove('visible');
+                planBadge.style.display = 'none';
                 signin.style.display = '';
                 var signinLink2 = document.getElementById('header-signin-link');
                 if (signinLink2) signinLink2.style.display = '';
@@ -1408,6 +1440,24 @@
         }
 
         // ── Subscription modal ──
+        let selectedPlan = 'annual'; // default to annual
+
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.querySelectorAll('.plan-toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.plan === plan);
+            });
+            const btn = document.getElementById('sub-cta-btn');
+            const note = document.getElementById('sub-note');
+            if (plan === 'annual') {
+                btn.textContent = 'Subscribe for ₹2,499/year';
+                note.textContent = 'ANNUAL ACCESS • SAVE ~30%';
+            } else {
+                btn.textContent = 'Subscribe for ₹299/month';
+                note.textContent = 'MONTHLY ACCESS • CANCEL ANYTIME';
+            }
+        }
+
         function openSubModal() {
             document.getElementById('sub-modal').classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -1426,25 +1476,31 @@
                 return;
             }
             const btn = document.getElementById('sub-cta-btn');
+            const plan = selectedPlan;
+            const btnTextDefault = plan === 'annual' ? 'Subscribe for ₹2,499/year' : 'Subscribe for ₹299/month';
             btn.disabled = true; btn.textContent = 'Processing...';
             try {
                 const res = await fetch(API_BASE + '/api/subscription/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
+                    credentials: 'include',
+                    body: JSON.stringify({ plan: plan })
                 });
                 const data = await res.json();
                 if (!res.ok) {
                     alert(data.message || 'Could not create order. Please try again.');
-                    btn.disabled = false; btn.textContent = 'Subscribe for ₹299';
+                    btn.disabled = false; btn.textContent = btnTextDefault;
                     return;
                 }
+                const checkoutDesc = plan === 'annual'
+                    ? 'Annual Subscription – Purity Reports'
+                    : 'Monthly Subscription – Purity Reports';
                 const options = {
                     key: data.key,
                     amount: data.amount,
                     currency: 'INR',
                     name: 'ChoosePure',
-                    description: 'Monthly Subscription – Purity Reports',
+                    description: checkoutDesc,
                     subscription_id: data.subscriptionId,
                     prefill: {
                         name: currentUser.name || '',
@@ -1459,22 +1515,24 @@
                                 body: JSON.stringify({
                                     razorpay_subscription_id: response.razorpay_subscription_id,
                                     razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature
+                                    razorpay_signature: response.razorpay_signature,
+                                    plan: plan
                                 })
                             });
                             const verifyData = await verifyRes.json();
                             if (verifyRes.ok && verifyData.success) {
+                                const purchaseAmount = plan === 'annual' ? 2499 : 299;
                                 trackEvent('subscription_success', 'conversion', 'razorpay');
-                                if (typeof fbq !== 'undefined') fbq('track', 'Purchase', { value: 299, currency: 'INR' });
+                                if (typeof fbq !== 'undefined') fbq('track', 'Purchase', { value: purchaseAmount, currency: 'INR' });
                                 closeSubModal();
                                 window.location.reload();
                             } else {
                                 alert(verifyData.message || 'Payment verification failed.');
-                                btn.disabled = false; btn.textContent = 'Subscribe for ₹299';
+                                btn.disabled = false; btn.textContent = btnTextDefault;
                             }
                         } catch (err) {
                             alert('Payment verification error. Please contact support.');
-                            btn.disabled = false; btn.textContent = 'Subscribe for ₹299';
+                            btn.disabled = false; btn.textContent = btnTextDefault;
                         }
                     },
                     modal: {
@@ -1483,7 +1541,7 @@
                             cancelMsg.textContent = 'Payment was cancelled. You can subscribe anytime to unlock all reports.';
                             cancelMsg.classList.add('visible');
                             setTimeout(() => cancelMsg.classList.remove('visible'), 5000);
-                            btn.disabled = false; btn.textContent = 'Subscribe for ₹299';
+                            btn.disabled = false; btn.textContent = btnTextDefault;
                         }
                     },
                     theme: { color: '#1F6B4E' }
@@ -1492,7 +1550,7 @@
                 rzp.open();
             } catch (err) {
                 alert('Unable to connect. Please check your internet connection and try again.');
-                btn.disabled = false; btn.textContent = 'Subscribe for ₹299';
+                btn.disabled = false; btn.textContent = btnTextDefault;
             }
         }
 

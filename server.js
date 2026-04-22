@@ -36,6 +36,13 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+// Startup validation: check annual plan configuration
+if (process.env.RAZORPAY_ANNUAL_PLAN_ID) {
+    console.log('✅ RAZORPAY_ANNUAL_PLAN_ID configured');
+} else {
+    console.log('⚠️ RAZORPAY_ANNUAL_PLAN_ID not set — annual subscriptions unavailable');
+}
+
 // MongoDB connection
 let db;
 let waitlistCollection;
@@ -298,10 +305,12 @@ async function authenticateUser(req, res, next) {
             name: user.name, 
             phone: user.phone,
             subscriptionStatus: user.subscriptionStatus || 'free',
+            subscriptionPlan: user.subscriptionPlan || null,
             referral_code: user.referral_code || null,
             freeMonthsEarned: user.freeMonthsEarned || 0,
             subscriptionExpiry: user.subscriptionExpiry || null,
-            auth_provider: user.auth_provider || 'email'
+            auth_provider: user.auth_provider || 'email',
+            graceDeadline: user.graceDeadline || null
         };
         next();
     } catch (error) {
@@ -315,16 +324,45 @@ async function authenticateUser(req, res, next) {
 // Subscribed user authentication middleware
 async function authenticateSubscribedUser(req, res, next) {
     // First run authenticateUser
-    await authenticateUser(req, res, () => {
-        // After authenticateUser succeeds, check subscription status
-        if (!req.user || req.user.subscriptionStatus !== 'subscribed' && req.user.subscriptionStatus !== 'cancelled') {
+    await authenticateUser(req, res, async () => {
+        if (!req.user) {
             return res.status(403).json({ 
                 success: false, 
                 message: 'Subscription required',
                 redirect: '/purity-wall'
             });
         }
-        next();
+
+        const status = req.user.subscriptionStatus;
+
+        // Active subscribed or cancelled (still in billing cycle) — allow
+        if (status === 'subscribed' || status === 'cancelled') {
+            return next();
+        }
+
+        // Grace period check: expired but within grace window
+        if (status === 'expired' && req.user.graceDeadline) {
+            const now = new Date();
+            const deadline = new Date(req.user.graceDeadline);
+            if (now < deadline) {
+                // Still within grace period — treat as subscribed
+                return next();
+            } else {
+                // Grace period has passed — ensure status is expired and clear graceDeadline
+                const { ObjectId } = require('mongodb');
+                await usersCollection.updateOne(
+                    { _id: new ObjectId(req.user.id) },
+                    { $set: { subscriptionStatus: 'expired' }, $unset: { graceDeadline: '' } }
+                );
+                req.user.graceDeadline = null;
+            }
+        }
+
+        return res.status(403).json({ 
+            success: false, 
+            message: 'Subscription required',
+            redirect: '/purity-wall'
+        });
     });
 }
 
@@ -818,6 +856,7 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
             email: req.user.email, 
             phone: req.user.phone,
             subscriptionStatus: req.user.subscriptionStatus,
+            subscriptionPlan: req.user.subscriptionPlan,
             referral_code: req.user.referral_code,
             freeMonthsEarned: req.user.freeMonthsEarned,
             subscriptionExpiry: req.user.subscriptionExpiry,
@@ -3597,14 +3636,35 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
         if (req.user.subscriptionStatus === 'subscribed') {
             return res.status(400).json({ success: false, message: 'Already subscribed' });
         }
+
+        // Plan selection with backward compatibility
+        const plan = req.body.plan || 'monthly';
+        if (plan !== 'monthly' && plan !== 'annual') {
+            return res.status(400).json({ success: false, message: 'Invalid plan type' });
+        }
+
+        // Resolve plan_id and total_count based on selected plan
+        let planId;
+        let totalCount;
+        if (plan === 'annual') {
+            planId = process.env.RAZORPAY_ANNUAL_PLAN_ID;
+            if (!planId) {
+                return res.status(503).json({ success: false, message: 'Annual plan is currently unavailable' });
+            }
+            totalCount = 1;
+        } else {
+            planId = process.env.RAZORPAY_PLAN_ID;
+            totalCount = 12;
+        }
+
         const subscription = await razorpay.subscriptions.create({
-            plan_id: process.env.RAZORPAY_PLAN_ID,
+            plan_id: planId,
             customer_notify: 1,
-            total_count: 12,
+            total_count: totalCount,
             notes: { userId: req.user.id.toString(), userEmail: req.user.email }
         });
-        console.log('Subscription created:', subscription.id);
-        res.json({ success: true, subscriptionId: subscription.id, key: process.env.RAZORPAY_KEY_ID });
+        console.log('Subscription created:', subscription.id, 'plan:', plan);
+        res.json({ success: true, subscriptionId: subscription.id, key: process.env.RAZORPAY_KEY_ID, plan });
     } catch (error) {
         console.error('Error creating subscription:', error.message || error);
         res.status(500).json({ success: false, message: 'Payment initialization failed. Please try again.' });
@@ -3617,7 +3677,8 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
         if (!usersCollection || !subscriptionTransactionsCollection) {
             return res.status(500).json({ success: false, message: 'Database not connected' });
         }
-        const { razorpay_subscription_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const { razorpay_subscription_id, razorpay_payment_id, razorpay_signature, plan: reqPlan } = req.body;
+        const plan = reqPlan || 'monthly';
         if (!razorpay_subscription_id || !razorpay_payment_id || !razorpay_signature) {
             return res.status(400).json({ success: false, message: 'Payment verification details are incomplete' });
         }
@@ -3629,22 +3690,24 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
             return res.status(400).json({ success: false, message: 'Payment verification failed' });
         }
         const { ObjectId } = require('mongodb');
+        const amount = plan === 'annual' ? 2499 : 299;
         await usersCollection.updateOne(
             { _id: new ObjectId(req.user.id) },
-            { $set: { subscriptionStatus: 'subscribed', subscribedAt: new Date(), razorpaySubscriptionId: razorpay_subscription_id } }
+            { $set: { subscriptionStatus: 'subscribed', subscriptionPlan: plan, subscribedAt: new Date(), razorpaySubscriptionId: razorpay_subscription_id } }
         );
         await subscriptionTransactionsCollection.insertOne({
             userId: new ObjectId(req.user.id),
             userName: req.user.name,
             userEmail: req.user.email,
-            amount: 299,
+            amount: amount,
+            plan: plan,
             razorpaySubscriptionId: razorpay_subscription_id,
             razorpayPaymentId: razorpay_payment_id,
             razorpaySignature: razorpay_signature,
             status: 'active',
             createdAt: new Date()
         });
-        console.log('Subscription activated for:', req.user.email);
+        console.log('Subscription activated for:', req.user.email, 'plan:', plan, 'amount:', amount);
 
         // Referral reward logic: check if this user was referred
         try {
@@ -3798,15 +3861,60 @@ app.post('/api/razorpay/webhook', async (req, res) => {
         if (event === 'subscription.charged') {
             const subscriptionId = payload.subscription?.entity?.id;
             const paymentId = payload.payment?.entity?.id;
+            const paymentAmount = payload.payment?.entity?.amount; // amount in paise
             if (subscriptionId && usersCollection) {
                 const user = await usersCollection.findOne({ razorpaySubscriptionId: subscriptionId });
                 if (user) {
-                    // Ensure user is marked as subscribed on each successful charge
+                    // Successful charge: mark as subscribed, clear grace deadline
                     await usersCollection.updateOne(
                         { _id: user._id },
-                        { $set: { subscriptionStatus: 'subscribed', lastChargedAt: new Date() } }
+                        { 
+                            $set: { subscriptionStatus: 'subscribed', lastChargedAt: new Date() },
+                            $unset: { graceDeadline: '' }
+                        }
                     );
                     console.log('✅ Webhook: Subscription charged for', user.email, 'payment:', paymentId);
+
+                    // Send invoice email (fire-and-forget)
+                    try {
+                        const planType = user.subscriptionPlan || 'monthly';
+                        const amountInRupees = paymentAmount ? (paymentAmount / 100) : (planType === 'annual' ? 2499 : 299);
+                        const paymentDate = new Date();
+                        const nextBillingDate = new Date(paymentDate);
+                        if (planType === 'annual') {
+                            nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+                        } else {
+                            nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                        }
+
+                        const invoiceHtml = `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                                <h2 style="color: #2d6a4f;">ChoosePure — Payment Receipt</h2>
+                                <p>Hi ${user.name || 'there'},</p>
+                                <p>Thank you for your subscription payment. Here are your payment details:</p>
+                                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Amount</td><td style="padding: 8px; border-bottom: 1px solid #eee;">₹${amountInRupees}</td></tr>
+                                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Payment Date</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${paymentDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</td></tr>
+                                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Plan</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${planType === 'annual' ? 'Annual' : 'Monthly'}</td></tr>
+                                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Payment ID</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${paymentId}</td></tr>
+                                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Next Billing Date</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${nextBillingDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</td></tr>
+                                </table>
+                                <p>If you have any questions, feel free to reach out to us.</p>
+                                <p>— Team ChoosePure</p>
+                            </div>
+                        `;
+
+                        mg.messages.create(process.env.MAILGUN_DOMAIN, {
+                            from: process.env.MAILGUN_FROM_EMAIL || 'ChoosePure <noreply@choosepure.in>',
+                            to: [user.email],
+                            subject: `ChoosePure Payment Receipt — ₹${amountInRupees}`,
+                            html: invoiceHtml
+                        }).catch(emailErr => {
+                            console.error('⚠️ Invoice email failed (non-blocking):', emailErr.message);
+                        });
+                    } catch (invoiceErr) {
+                        console.error('⚠️ Invoice email error (non-blocking):', invoiceErr.message);
+                    }
                 }
             }
         }
@@ -3821,6 +3929,24 @@ app.post('/api/razorpay/webhook', async (req, res) => {
             const paymentId = payload.payment?.entity?.id;
             const error = payload.payment?.entity?.error_description;
             console.log('⚠️ Webhook: Payment failed', paymentId, 'error:', error);
+
+            // Set grace period for subscription-related payment failures
+            if (usersCollection) {
+                const subscriptionId = payload.payment?.entity?.notes?.razorpay_subscription_id 
+                    || payload.subscription?.entity?.id;
+                if (subscriptionId) {
+                    const user = await usersCollection.findOne({ razorpaySubscriptionId: subscriptionId });
+                    if (user) {
+                        const graceDeadline = new Date();
+                        graceDeadline.setDate(graceDeadline.getDate() + 3);
+                        await usersCollection.updateOne(
+                            { _id: user._id },
+                            { $set: { graceDeadline: graceDeadline } }
+                        );
+                        console.log('⚠️ Webhook: Grace period set for', user.email, 'until', graceDeadline.toISOString());
+                    }
+                }
+            }
         }
 
         // Always return 200 to acknowledge receipt

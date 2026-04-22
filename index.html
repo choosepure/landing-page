@@ -183,6 +183,16 @@
         .pricing-cta-secondary { background: transparent; color: var(--deep-leaf-green); border: 2px solid var(--deep-leaf-green); }
         .pricing-cta-secondary:hover { background: rgba(31,107,78,0.06); }
 
+        /* ── Pricing Plan Toggle ── */
+        .pricing-plan-toggle { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .pricing-plan-toggle .toggle-label { font-size: 13px; font-weight: 500; color: var(--lab-grey); transition: color 0.2s; }
+        .pricing-plan-toggle .toggle-label.active { color: var(--dark-green); font-weight: 600; }
+        .pricing-toggle-switch { position: relative; width: 44px; height: 24px; background: #D1D1D1; border-radius: 12px; cursor: pointer; transition: background 0.2s; border: none; padding: 0; }
+        .pricing-toggle-switch.active { background: var(--deep-leaf-green); }
+        .pricing-toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .pricing-toggle-switch.active::after { transform: translateX(20px); }
+        .pricing-savings-badge { display: inline-block; background: #E8F5E9; color: #2E7D32; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 100px; margin-left: 4px; letter-spacing: 0.02em; }
+
         /* ── TESTIMONIALS ── */
         .testimonials-title { font-size: 32px; font-weight: 700; color: var(--dark-green); letter-spacing: -0.02em; text-align: center; margin-bottom: 40px; }
         .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
@@ -499,7 +509,13 @@
                 <div class="pricing-card featured">
                     <div class="pricing-badge">MOST POPULAR</div>
                     <div class="pricing-tier">Premium Family</div>
-                    <div class="pricing-price">&#8377;299<span>/month</span></div>
+                    <div class="pricing-plan-toggle">
+                        <span class="toggle-label" id="pricing-label-monthly">Monthly</span>
+                        <button type="button" class="pricing-toggle-switch active" id="pricing-toggle" onclick="togglePricingPlan()" aria-label="Toggle between monthly and annual pricing"></button>
+                        <span class="toggle-label active" id="pricing-label-annual">Annual</span>
+                    </div>
+                    <div class="pricing-price" id="premium-price">&#8377;2,499<span>/year</span></div>
+                    <div id="premium-savings-badge" style="margin-bottom:4px;"><span class="pricing-savings-badge">Save ~30%</span></div>
                     <div class="pricing-desc">Full transparency for parents who want the complete picture.</div>
                     <ul class="pricing-features">
                         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Full lab data &amp; methodology</li>
@@ -695,6 +711,32 @@
     </button>
 
     <script>
+        // ── Pricing plan toggle (index.html) ──
+        let pricingPlanAnnual = true; // default to annual
+
+        function togglePricingPlan() {
+            pricingPlanAnnual = !pricingPlanAnnual;
+            const toggle = document.getElementById('pricing-toggle');
+            const priceEl = document.getElementById('premium-price');
+            const badgeEl = document.getElementById('premium-savings-badge');
+            const labelMonthly = document.getElementById('pricing-label-monthly');
+            const labelAnnual = document.getElementById('pricing-label-annual');
+
+            if (pricingPlanAnnual) {
+                toggle.classList.add('active');
+                priceEl.innerHTML = '&#8377;2,499<span>/year</span>';
+                badgeEl.style.display = '';
+                labelAnnual.classList.add('active');
+                labelMonthly.classList.remove('active');
+            } else {
+                toggle.classList.remove('active');
+                priceEl.innerHTML = '&#8377;299<span>/month</span>';
+                badgeEl.style.display = 'none';
+                labelAnnual.classList.remove('active');
+                labelMonthly.classList.add('active');
+            }
+        }
+
         // Google Analytics, Meta Pixel & Mixpanel Event Tracking
         function trackEvent(eventName, eventCategory, eventLabel = null, eventValue = null) {
             // Track with Google Analytics
