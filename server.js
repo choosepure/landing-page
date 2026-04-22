@@ -3723,6 +3723,112 @@ app.post('/api/subscription/cancel', authenticateUser, async (req, res) => {
     }
 });
 
+// ==========================================
+// RAZORPAY WEBHOOK
+// ==========================================
+app.post('/api/razorpay/webhook', async (req, res) => {
+    try {
+        // Verify webhook signature
+        const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+        if (!webhookSecret) {
+            console.error('❌ RAZORPAY_WEBHOOK_SECRET not configured');
+            return res.status(500).json({ success: false });
+        }
+
+        const signature = req.headers['x-razorpay-signature'];
+        if (!signature) {
+            console.error('❌ Webhook: Missing signature header');
+            return res.status(400).json({ success: false });
+        }
+
+        const expectedSignature = crypto
+            .createHmac('sha256', webhookSecret)
+            .update(JSON.stringify(req.body))
+            .digest('hex');
+
+        if (expectedSignature !== signature) {
+            console.error('❌ Webhook: Invalid signature');
+            return res.status(400).json({ success: false });
+        }
+
+        const event = req.body.event;
+        const payload = req.body.payload;
+        console.log('🔔 Razorpay webhook:', event);
+
+        const { ObjectId } = require('mongodb');
+
+        // Handle subscription events
+        if (event === 'subscription.activated') {
+            const subscriptionId = payload.subscription?.entity?.id;
+            if (subscriptionId && usersCollection) {
+                const user = await usersCollection.findOne({ razorpaySubscriptionId: subscriptionId });
+                if (user && user.subscriptionStatus !== 'subscribed') {
+                    await usersCollection.updateOne(
+                        { _id: user._id },
+                        { $set: { subscriptionStatus: 'subscribed', subscribedAt: new Date() } }
+                    );
+                    console.log('✅ Webhook: Subscription activated for', user.email);
+                }
+            }
+        }
+
+        if (event === 'subscription.cancelled') {
+            const subscriptionId = payload.subscription?.entity?.id;
+            if (subscriptionId && usersCollection) {
+                const user = await usersCollection.findOne({ razorpaySubscriptionId: subscriptionId });
+                if (user && user.subscriptionStatus !== 'cancelled') {
+                    await usersCollection.updateOne(
+                        { _id: user._id },
+                        { $set: { subscriptionStatus: 'cancelled', cancelledAt: new Date() } }
+                    );
+                    if (subscriptionTransactionsCollection) {
+                        await subscriptionTransactionsCollection.updateOne(
+                            { userId: user._id, status: 'active' },
+                            { $set: { status: 'cancelled', cancelledAt: new Date() } }
+                        );
+                    }
+                    console.log('✅ Webhook: Subscription cancelled for', user.email);
+                }
+            }
+        }
+
+        if (event === 'subscription.charged') {
+            const subscriptionId = payload.subscription?.entity?.id;
+            const paymentId = payload.payment?.entity?.id;
+            if (subscriptionId && usersCollection) {
+                const user = await usersCollection.findOne({ razorpaySubscriptionId: subscriptionId });
+                if (user) {
+                    // Ensure user is marked as subscribed on each successful charge
+                    await usersCollection.updateOne(
+                        { _id: user._id },
+                        { $set: { subscriptionStatus: 'subscribed', lastChargedAt: new Date() } }
+                    );
+                    console.log('✅ Webhook: Subscription charged for', user.email, 'payment:', paymentId);
+                }
+            }
+        }
+
+        if (event === 'payment.captured') {
+            const paymentId = payload.payment?.entity?.id;
+            const amount = payload.payment?.entity?.amount;
+            console.log('✅ Webhook: Payment captured', paymentId, 'amount:', amount);
+        }
+
+        if (event === 'payment.failed') {
+            const paymentId = payload.payment?.entity?.id;
+            const error = payload.payment?.entity?.error_description;
+            console.log('⚠️ Webhook: Payment failed', paymentId, 'error:', error);
+        }
+
+        // Always return 200 to acknowledge receipt
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('❌ Webhook error:', error);
+        // Still return 200 to prevent Razorpay from retrying
+        res.status(200).json({ success: true });
+    }
+});
+
 // Serve purity wall / dashboard page
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'purity-wall.html'));
