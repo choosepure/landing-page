@@ -3627,7 +3627,7 @@ app.get('/api/reports/:id/pdf', authenticateSubscribedUser, async (req, res) => 
 // SUBSCRIPTION PAYMENT API (Razorpay Subscriptions)
 // ==========================================
 
-// Authenticated API: Create Razorpay subscription
+// Authenticated API: Create Razorpay subscription or one-time order
 app.post('/api/subscription/create-order', authenticateUser, async (req, res) => {
     try {
         if (!usersCollection) {
@@ -3643,30 +3643,30 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
             return res.status(400).json({ success: false, message: 'Invalid plan type' });
         }
 
-        // Resolve plan_id and total_count based on selected plan
-        let planId;
-        let totalCount;
         if (plan === 'annual') {
-            planId = process.env.RAZORPAY_ANNUAL_PLAN_ID;
-            if (!planId) {
-                return res.status(503).json({ success: false, message: 'Annual plan is currently unavailable' });
-            }
-            totalCount = 1;
+            // Annual: One-time Razorpay PG order (not subscription)
+            const order = await razorpay.orders.create({
+                amount: 249900, // ₹2,499 in paise
+                currency: 'INR',
+                receipt: 'annual_' + req.user.id.toString() + '_' + Date.now(),
+                notes: { userId: req.user.id.toString(), userEmail: req.user.email, plan: 'annual' }
+            });
+            console.log('Annual order created:', order.id);
+            res.json({ success: true, orderId: order.id, key: process.env.RAZORPAY_KEY_ID, amount: 249900, plan: 'annual', type: 'order' });
         } else {
-            planId = process.env.RAZORPAY_PLAN_ID;
-            totalCount = 12;
+            // Monthly: Razorpay Subscription (recurring)
+            const planId = process.env.RAZORPAY_PLAN_ID;
+            const subscription = await razorpay.subscriptions.create({
+                plan_id: planId,
+                customer_notify: 1,
+                total_count: 12,
+                notes: { userId: req.user.id.toString(), userEmail: req.user.email }
+            });
+            console.log('Monthly subscription created:', subscription.id);
+            res.json({ success: true, subscriptionId: subscription.id, key: process.env.RAZORPAY_KEY_ID, plan: 'monthly', type: 'subscription' });
         }
-
-        const subscription = await razorpay.subscriptions.create({
-            plan_id: planId,
-            customer_notify: 1,
-            total_count: totalCount,
-            notes: { userId: req.user.id.toString(), userEmail: req.user.email }
-        });
-        console.log('Subscription created:', subscription.id, 'plan:', plan);
-        res.json({ success: true, subscriptionId: subscription.id, key: process.env.RAZORPAY_KEY_ID, plan });
     } catch (error) {
-        console.error('Error creating subscription:', error.message || error);
+        console.error('Error creating order:', error.message || error);
         res.status(500).json({ success: false, message: 'Payment initialization failed. Please try again.' });
     }
 });
@@ -3677,43 +3677,80 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
         if (!usersCollection || !subscriptionTransactionsCollection) {
             return res.status(500).json({ success: false, message: 'Database not connected' });
         }
-        const { razorpay_subscription_id, razorpay_payment_id, razorpay_signature, plan: reqPlan } = req.body;
+        const { razorpay_subscription_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, plan: reqPlan } = req.body;
         const plan = reqPlan || 'monthly';
-        if (!razorpay_subscription_id || !razorpay_payment_id || !razorpay_signature) {
-            return res.status(400).json({ success: false, message: 'Payment verification details are incomplete' });
+
+        if (plan === 'annual') {
+            // Annual: Verify one-time PG payment (order_id + payment_id)
+            if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+                return res.status(400).json({ success: false, message: 'Payment verification details are incomplete' });
+            }
+            const expectedSignature = crypto
+                .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+                .update(razorpay_order_id + '|' + razorpay_payment_id)
+                .digest('hex');
+            if (expectedSignature !== razorpay_signature) {
+                return res.status(400).json({ success: false, message: 'Payment verification failed' });
+            }
+            const { ObjectId } = require('mongodb');
+            // Set subscription expiry to 1 year from now
+            const subscriptionExpiry = new Date();
+            subscriptionExpiry.setFullYear(subscriptionExpiry.getFullYear() + 1);
+            await usersCollection.updateOne(
+                { _id: new ObjectId(req.user.id) },
+                { $set: { subscriptionStatus: 'subscribed', subscriptionPlan: 'annual', subscribedAt: new Date(), subscriptionExpiry: subscriptionExpiry, razorpayOrderId: razorpay_order_id } }
+            );
+            await subscriptionTransactionsCollection.insertOne({
+                userId: new ObjectId(req.user.id),
+                userName: req.user.name,
+                userEmail: req.user.email,
+                amount: 2499,
+                plan: 'annual',
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+                razorpaySignature: razorpay_signature,
+                status: 'active',
+                createdAt: new Date()
+            });
+            console.log('Annual subscription activated for:', req.user.email, 'expires:', subscriptionExpiry.toISOString());
+        } else {
+            // Monthly: Verify recurring subscription payment
+            if (!razorpay_subscription_id || !razorpay_payment_id || !razorpay_signature) {
+                return res.status(400).json({ success: false, message: 'Payment verification details are incomplete' });
+            }
+            const expectedSignature = crypto
+                .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+                .update(razorpay_payment_id + '|' + razorpay_subscription_id)
+                .digest('hex');
+            if (expectedSignature !== razorpay_signature) {
+                return res.status(400).json({ success: false, message: 'Payment verification failed' });
+            }
+            const { ObjectId } = require('mongodb');
+            await usersCollection.updateOne(
+                { _id: new ObjectId(req.user.id) },
+                { $set: { subscriptionStatus: 'subscribed', subscriptionPlan: 'monthly', subscribedAt: new Date(), razorpaySubscriptionId: razorpay_subscription_id } }
+            );
+            await subscriptionTransactionsCollection.insertOne({
+                userId: new ObjectId(req.user.id),
+                userName: req.user.name,
+                userEmail: req.user.email,
+                amount: 299,
+                plan: 'monthly',
+                razorpaySubscriptionId: razorpay_subscription_id,
+                razorpayPaymentId: razorpay_payment_id,
+                razorpaySignature: razorpay_signature,
+                status: 'active',
+                createdAt: new Date()
+            });
+            console.log('Monthly subscription activated for:', req.user.email);
         }
-        const expectedSignature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-            .update(razorpay_payment_id + '|' + razorpay_subscription_id)
-            .digest('hex');
-        if (expectedSignature !== razorpay_signature) {
-            return res.status(400).json({ success: false, message: 'Payment verification failed' });
-        }
-        const { ObjectId } = require('mongodb');
-        const amount = plan === 'annual' ? 2499 : 299;
-        await usersCollection.updateOne(
-            { _id: new ObjectId(req.user.id) },
-            { $set: { subscriptionStatus: 'subscribed', subscriptionPlan: plan, subscribedAt: new Date(), razorpaySubscriptionId: razorpay_subscription_id } }
-        );
-        await subscriptionTransactionsCollection.insertOne({
-            userId: new ObjectId(req.user.id),
-            userName: req.user.name,
-            userEmail: req.user.email,
-            amount: amount,
-            plan: plan,
-            razorpaySubscriptionId: razorpay_subscription_id,
-            razorpayPaymentId: razorpay_payment_id,
-            razorpaySignature: razorpay_signature,
-            status: 'active',
-            createdAt: new Date()
-        });
-        console.log('Subscription activated for:', req.user.email, 'plan:', plan, 'amount:', amount);
+        const { ObjectId: ObjId } = require('mongodb');
 
         // Referral reward logic: check if this user was referred
         try {
             if (referralsCollection && rewardsCollection) {
                 const pendingReferral = await referralsCollection.findOne({
-                    referee_user_id: new ObjectId(req.user.id),
+                    referee_user_id: new ObjId(req.user.id),
                     status: 'pending',
                     reward_granted: false
                 });
@@ -3730,13 +3767,13 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
                         user_id: pendingReferral.referrer_user_id,
                         reward_type: 'referral',
                         months: 1,
-                        source: new ObjectId(req.user.id),
+                        source: new ObjId(req.user.id),
                         created_at: new Date()
                     });
 
                     // Create reward for referee
                     await rewardsCollection.insertOne({
-                        user_id: new ObjectId(req.user.id),
+                        user_id: new ObjId(req.user.id),
                         reward_type: 'referral_signup',
                         months: 1,
                         source: pendingReferral.referrer_user_id,
@@ -3745,7 +3782,7 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
 
                     // Extend subscription expiry for both
                     await extendSubscriptionExpiry(usersCollection, pendingReferral.referrer_user_id);
-                    await extendSubscriptionExpiry(usersCollection, new ObjectId(req.user.id));
+                    await extendSubscriptionExpiry(usersCollection, new ObjId(req.user.id));
 
                     console.log('🎁 Referral rewards granted for referrer:', pendingReferral.referrer_user_id, 'and referee:', req.user.email);
                 }
