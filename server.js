@@ -208,6 +208,9 @@ async function extendSubscriptionExpiry(usersCollection, userId) {
 }
 
 // Middleware
+// CORS: Static origin array allows listed web origins with credentials.
+// React Native mobile clients send no Origin header — the cors package
+// does not block requests without an Origin, so mobile requests pass through.
 app.use(cors({
     origin: ['https://choosepure.in', 'https://www.choosepure.in', 'http://localhost:3000'],
     credentials: true
