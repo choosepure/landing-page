@@ -33,7 +33,8 @@
           "recordAudioAndroid": false
         }
       ],
-      "./plugins/withRazorpay"
+      "./plugins/withRazorpay",
+      "./plugins/withKotlinVersion"
     ],
     "extra": {
       "eas": {
