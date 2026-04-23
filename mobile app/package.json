@@ -41,5 +41,12 @@
   },
   "jest": {
     "preset": "react-native"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": ["react-native-razorpay"]
+      }
+    }
   }
 }
