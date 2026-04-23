@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+import 'react-native-gesture-handler';
+import React, { useRef, useCallback } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
@@ -11,8 +12,13 @@ import { theme } from './src/theme';
 export default function App() {
   const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
   const navigationRef = useRef(null);
+  const isNavigationReady = useRef(false);
 
   useDeepLink(navigationRef);
+
+  const onNavigationReady = useCallback(() => {
+    isNavigationReady.current = true;
+  }, []);
 
   if (!fontsLoaded) {
     return (
@@ -24,7 +30,7 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <NavigationContainer ref={navigationRef}>
+      <NavigationContainer ref={navigationRef} onReady={onNavigationReady}>
         <StatusBar style="dark" />
         <RootNavigator />
       </NavigationContainer>
