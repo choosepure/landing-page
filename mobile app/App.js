@@ -1,12 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+
+// Global error handler
+if (typeof ErrorUtils !== 'undefined') {
+  const defaultHandler = ErrorUtils.getGlobalHandler();
+  ErrorUtils.setGlobalHandler((error, isFatal) => {
+    Alert.alert('App Error', String(error));
+    if (defaultHandler) defaultHandler(error, isFatal);
+  });
+}
 
 export default function App() {
   return (
     <View style={styles.container}>
+      <StatusBar style="dark" />
       <Text style={styles.title}>ChoosePure</Text>
       <Text style={styles.subtitle}>Lab | Verified | Trusted</Text>
-      <Text style={styles.info}>App is working!</Text>
+      <Text style={styles.info}>App is working! v2</Text>
     </View>
   );
 }
