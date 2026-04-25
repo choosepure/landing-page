@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-ND4G882J');</script>
+<!-- End Google Tag Manager -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChoosePure – Purity Dashboard</title>
 
@@ -17,6 +24,7 @@
         'https://connect.facebook.net/en_US/fbevents.js');
         fbq('init', '3534907673428830');
         fbq('track', 'PageView');
+        fbq('track', 'ViewContent', { content_name: 'Purity Wall Dashboard', content_category: 'Dashboard' });
     </script>
     <noscript>
         <img height="1" width="1" style="display:none"
@@ -900,6 +908,10 @@
     </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-ND4G882J"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
     <!-- Header -->
     <header class="header">
         <div class="header-inner">
@@ -1369,7 +1381,10 @@
                 gtag('event', eventName, p);
             }
             if (typeof fbq !== 'undefined') {
-                fbq('trackCustom', eventName, { category: eventCategory, label: eventLabel });
+                const fbqExcludeList = ['scroll_depth', 'social_click', 'locked_card_click', 'vision_click', 'polling_click'];
+                if (!fbqExcludeList.includes(eventName)) {
+                    fbq('trackCustom', eventName, { category: eventCategory, label: eventLabel });
+                }
             }
             if (typeof mixpanel !== 'undefined') {
                 const mp = { category: eventCategory };
@@ -1663,6 +1678,8 @@
             const plan = selectedPlan;
             const btnTextDefault = plan === 'annual' ? 'Subscribe for ₹2,499/year' : 'Subscribe for ₹299/month';
             btn.disabled = true; btn.textContent = 'Processing...';
+            // Track Lead event when subscribe button is clicked
+            if (typeof fbq !== 'undefined') fbq('track', 'Lead', { content_name: 'Subscribe Button Click', content_category: plan });
             try {
                 const res = await fetch(API_BASE + '/api/subscription/create-order', {
                     method: 'POST',
@@ -2186,7 +2203,7 @@
                     try { mixpanel.track('User Registered', { method: 'google' }); } catch(e) {}
                 } else {
                     try { gtag('event', 'login', { method: 'google' }); } catch(e) {}
-                    try { fbq('trackCustom', 'UserSignedIn', { method: 'google' }); } catch(e) {}
+                    try { fbq('track', 'Lead', { content_name: 'User Sign In', method: 'google' }); } catch(e) {}
                     try { mixpanel.track('User Signed In', { method: 'google' }); } catch(e) {}
                 }
 

@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-ND4G882J');</script>
+<!-- End Google Tag Manager -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChoosePure – Deep Dive Report</title>
 
@@ -17,6 +24,7 @@
         'https://connect.facebook.net/en_US/fbevents.js');
         fbq('init', '3534907673428830');
         fbq('track', 'PageView');
+        fbq('track', 'ViewContent', { content_name: 'Deep Dive Analysis', content_category: 'Analysis' });
     </script>
     <noscript>
         <img height="1" width="1" style="display:none"
@@ -532,6 +540,10 @@
 </head>
 
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-ND4G882J"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
     <!-- Header -->
     <header class="header">
         <div class="header-inner">
@@ -650,7 +662,10 @@
                 gtag('event', eventName, { event_category: eventCategory, event_label: eventLabel });
             }
             if (typeof fbq !== 'undefined') {
-                fbq('trackCustom', eventName, { category: eventCategory, label: eventLabel });
+                const fbqExcludeList = ['scroll_depth', 'social_click', 'locked_card_click', 'vision_click', 'polling_click'];
+                if (!fbqExcludeList.includes(eventName)) {
+                    fbq('trackCustom', eventName, { category: eventCategory, label: eventLabel });
+                }
             }
             if (typeof mixpanel !== 'undefined') {
                 mixpanel.track(eventName, { category: eventCategory, label: eventLabel });

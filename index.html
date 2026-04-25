@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-ND4G882J');</script>
+<!-- End Google Tag Manager -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChoosePure – Know What's in Your Child's Food</title>
     
@@ -316,6 +323,10 @@
     </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-ND4G882J"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
     <!-- ═══ HEADER ═══ -->
     <header class="site-header">
@@ -754,13 +765,14 @@
             // Track with Meta Pixel
             if (typeof fbq !== 'undefined') {
                 // Map specific events to Meta Pixel standard events
+                const fbqExcludeList = ['scroll_depth', 'social_click', 'locked_card_click', 'vision_click', 'polling_click'];
                 if (eventName === 'cta_click' && eventLabel === 'join_waitlist_hero') {
-                    fbq('track', 'InitiateCheckout', {
+                    fbq('track', 'Lead', {
                         content_name: 'Join Waitlist CTA',
                         content_category: 'Engagement'
                     });
-                    console.log('📊 Meta Pixel: InitiateCheckout tracked');
-                } else if (eventCategory === 'engagement') {
+                    console.log('📊 Meta Pixel: Lead tracked');
+                } else if (eventCategory === 'engagement' && !fbqExcludeList.includes(eventName)) {
                     fbq('trackCustom', eventName, {
                         category: eventCategory,
                         label: eventLabel
@@ -1141,7 +1153,7 @@
                 } else {
                     // Existing user sign-in
                     try { gtag('event', 'login', { method: 'google' }); } catch(e) {}
-                    try { fbq('trackCustom', 'UserSignedIn', { method: 'google' }); } catch(e) {}
+                    try { fbq('track', 'Lead', { content_name: 'User Sign In', method: 'google' }); } catch(e) {}
                     try { mixpanel.track('User Signed In', { method: 'google' }); } catch(e) {}
                 }
 
