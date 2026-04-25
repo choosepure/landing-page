@@ -3768,7 +3768,7 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
             const order = await razorpay.orders.create({
                 amount: 249900, // ₹2,499 in paise
                 currency: 'INR',
-                receipt: 'annual_' + req.user.id.toString() + '_' + Date.now(),
+                receipt: 'ann_' + req.user.id.toString().slice(-8) + '_' + Date.now().toString(36),
                 notes: { userId: req.user.id.toString(), userEmail: req.user.email, plan: 'annual' }
             });
             console.log('Annual order created:', order.id);
@@ -3787,7 +3787,9 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
         }
     } catch (error) {
         console.error('Error creating order:', error.message || error);
-        res.status(500).json({ success: false, message: 'Payment initialization failed. Please try again.' });
+        console.error('Razorpay error details:', JSON.stringify(error.error || error.statusCode || error));
+        const errMsg = error.error?.description || error.message || 'Payment initialization failed. Please try again.';
+        res.status(500).json({ success: false, message: errMsg });
     }
 });
 
