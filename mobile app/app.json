@@ -33,7 +33,6 @@
           "recordAudioAndroid": false
         }
       ],
-      "./plugins/withRazorpay",
       [
         "expo-build-properties",
         {
