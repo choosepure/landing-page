@@ -20,13 +20,25 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FAFAF7"
       },
-      "package": "in.choosepure.app"
+      "package": "in.choosepure.app",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ChoosePure to access your camera to scan product barcodes",
+          "recordAudioAndroid": false
+        }
+      ],
+      "./plugins/withRazorpay",
       [
         "expo-build-properties",
         {
           "android": {
+            "kotlinVersion": "1.9.25",
             "newArchEnabled": false
           }
         }

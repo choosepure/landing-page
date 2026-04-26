@@ -1,47 +1,43 @@
-import React from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import 'react-native-gesture-handler';
+import React, { useRef, useCallback } from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { StatusBar } from 'expo-status-bar';
-
-// Global error handler
-if (typeof ErrorUtils !== 'undefined') {
-  const defaultHandler = ErrorUtils.getGlobalHandler();
-  ErrorUtils.setGlobalHandler((error, isFatal) => {
-    Alert.alert('App Error', String(error));
-    if (defaultHandler) defaultHandler(error, isFatal);
-  });
-}
+import { AuthProvider } from './src/context/AuthContext';
+import RootNavigator from './src/navigation/RootNavigator';
+import useDeepLink from './src/hooks/useDeepLink';
+import { theme } from './src/theme';
 
 export default function App() {
+  const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
+  const navigationRef = useRef(null);
+  const isNavigationReady = useRef(false);
+
+  useDeepLink(navigationRef);
+
+  const onNavigationReady = useCallback(() => {
+    isNavigationReady.current = true;
+  }, []);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      <Text style={styles.title}>ChoosePure</Text>
-      <Text style={styles.subtitle}>Lab | Verified | Trusted</Text>
-      <Text style={styles.info}>App is working! v2</Text>
-    </View>
+    <AuthProvider>
+      <NavigationContainer ref={navigationRef} onReady={onNavigationReady}>
+        <StatusBar style="dark" />
+        <RootNavigator />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FAFAF7',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1F6B4E',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8A6E4B',
-    marginBottom: 24,
-  },
-  info: {
-    fontSize: 14,
-    color: '#666',
-  },
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAF7' },
 });
