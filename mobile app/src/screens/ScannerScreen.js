@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  AppState,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -19,8 +20,6 @@ import OfflineBanner from '../components/OfflineBanner';
 
 /**
  * Validate a barcode string for EAN-13 format.
- * @param {string} input - The barcode string to validate
- * @returns {{ valid: boolean, error: string|null }}
  */
 export function validateBarcode(input) {
   if (!/^\d+$/.test(input)) {
@@ -40,8 +39,28 @@ export default function ScannerScreen({ navigation }) {
   const [lookupBarcode, setLookupBarcode] = useState('');
   const [error, setError] = useState(null);
   const [manualError, setManualError] = useState(null);
+  const [permissionRequested, setPermissionRequested] = useState(false);
   const netInfo = useNetInfo();
   const isOffline = netInfo.isConnected === false;
+
+  // Re-check permission when app comes back from settings
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && permission && !permission.granted) {
+        // Re-request to refresh the permission status
+        requestPermission();
+      }
+    });
+    return () => subscription.remove();
+  }, [permission, requestPermission]);
+
+  // Auto-request permission on first mount
+  useEffect(() => {
+    if (permission && !permission.granted && !permissionRequested) {
+      setPermissionRequested(true);
+      requestPermission();
+    }
+  }, [permission, permissionRequested, requestPermission]);
 
   function handleBarcodeScanned({ type, data }) {
     if (data.length !== 13 || !/^\d{13}$/.test(data)) return;
@@ -87,6 +106,14 @@ export default function ScannerScreen({ navigation }) {
     setScanned(false);
   }
 
+  async function handleRequestPermission() {
+    const result = await requestPermission();
+    if (!result.granted && result.canAskAgain === false) {
+      // User permanently denied — open settings
+      Linking.openSettings();
+    }
+  }
+
   // Loading permission state
   if (!permission) {
     return (
@@ -110,7 +137,7 @@ export default function ScannerScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Camera or denied state */}
+        {/* Camera or permission request */}
         {cameraGranted ? (
           <View style={styles.cameraContainer}>
             <CameraView
@@ -121,20 +148,24 @@ export default function ScannerScreen({ navigation }) {
             />
             <View style={styles.scanOverlay}>
               <View style={styles.scanFrame} />
+              <Text style={styles.scanHint}>Point camera at a barcode</Text>
             </View>
           </View>
         ) : (
           <View style={styles.deniedContainer}>
-            <Text style={styles.deniedTitle}>Camera Access Required</Text>
+            <Text style={styles.deniedIcon}>📷</Text>
+            <Text style={styles.deniedTitle}>Camera Permission Needed</Text>
             <Text style={styles.deniedText}>
-              Camera access is needed to scan barcodes. You can still enter barcodes manually.
+              We need camera access to scan product barcodes. You can also enter barcodes manually below.
             </Text>
             <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={() => Linking.openSettings()}
+              style={styles.grantButton}
+              onPress={handleRequestPermission}
               activeOpacity={0.8}
             >
-              <Text style={styles.settingsButtonText}>Open Settings</Text>
+              <Text style={styles.grantButtonText}>
+                {permission.canAskAgain === false ? 'Open Settings' : 'Allow Camera Access'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -145,7 +176,7 @@ export default function ScannerScreen({ navigation }) {
           onPress={() => navigation.navigate('ScanHistory')}
           activeOpacity={0.8}
         >
-          <Text style={styles.historyButtonText}>📋 History</Text>
+          <Text style={styles.historyButtonText}>📋 Scan History</Text>
         </TouchableOpacity>
 
         {/* Error display */}
@@ -207,7 +238,6 @@ export default function ScannerScreen({ navigation }) {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -246,15 +276,28 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.sm,
     backgroundColor: 'transparent',
   },
+  scanHint: {
+    color: '#fff',
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    marginTop: theme.spacing.sm,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   deniedContainer: {
-    padding: theme.spacing.lg,
+    padding: theme.spacing.xl,
     alignItems: 'center',
     backgroundColor: theme.colors.cardBackground,
     marginHorizontal: theme.spacing.md,
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  deniedIcon: {
+    fontSize: 48,
+    marginBottom: theme.spacing.md,
   },
   deniedTitle: {
     fontFamily: theme.fonts.semiBold,
@@ -268,18 +311,20 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
-  settingsButton: {
+  grantButton: {
     backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.sm + 4,
     borderRadius: theme.borderRadius.sm,
+    width: '100%',
+    alignItems: 'center',
   },
-  settingsButtonText: {
+  grantButtonText: {
     color: '#fff',
     fontFamily: theme.fonts.semiBold,
-    fontSize: 14,
+    fontSize: 15,
   },
   historyButton: {
     alignSelf: 'flex-end',
