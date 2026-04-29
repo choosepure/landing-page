@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-ND4G882J');</script>
+<!-- End Google Tag Manager -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - ChoosePure</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -254,6 +261,10 @@
     </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-ND4G882J"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <h1 style="margin: 0;">🎯 ChoosePure Admin Panel</h1>
@@ -1002,8 +1013,19 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Preserve selected checkboxes during refresh
+                    const previouslySelected = new Set(
+                        Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value)
+                    );
                     displayMembers(data.members);
                     updateStats(data.members);
+                    // Restore selections after refresh
+                    if (previouslySelected.size > 0) {
+                        document.querySelectorAll('.member-checkbox').forEach(cb => {
+                            if (previouslySelected.has(cb.value)) cb.checked = true;
+                        });
+                        updateSelectedCount();
+                    }
                 }
             } catch (error) {
                 console.error('Error loading members:', error);
