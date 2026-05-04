@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { mapFirebaseAuthError, signInWithPhone } from '../services/firebase/auth';
 import { theme } from '../theme';
+import Card from '../components/Card';
+import Input from '../components/Input';
+import Button from '../components/Button';
+import Icon from '../components/Icon';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [tab, setTab] = useState('email');
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleLogin() {
     setError('');
@@ -25,65 +34,173 @@ export default function LoginScreen({ navigation }) {
         setError(result.message || 'Login failed');
       }
     } catch (e) {
-      setError(e.response?.data?.message || 'Something went wrong. Please try again.');
+      if (e.code) {
+        setError(mapFirebaseAuthError(e));
+      } else {
+        setError(e.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   }
 
+  async function handlePhoneSignIn() {
+    setError('');
+    const digits = phoneNumber.replace(/[^0-9]/g, '');
+    if (digits.length !== 10) {
+      setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+    setPhoneLoading(true);
+    try {
+      const confirmation = await signInWithPhone(digits);
+      navigation.navigate('OTP', { phoneNumber: digits, confirmation });
+    } catch (e) {
+      if (e.code) {
+        setError(mapFirebaseAuthError(e));
+      } else {
+        setError(e.message || 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setPhoneLoading(false);
+    }
+  }
+
+  const isSubmitting = tab === 'email' ? loading : phoneLoading;
+
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>ChoosePure</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Icon name="arrow-left" size={20} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Welcome Back</Text>
+          <View style={styles.headerSpacer} />
         </View>
-        <Text style={styles.heading}>Sign In</Text>
-        <Text style={styles.subheading}>Welcome back</Text>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {/* Logo card */}
+        <Card style={styles.logoCard}>
+          <Text style={styles.logoText}>ChoosePure</Text>
+          <Text style={styles.logoSubtitle}>Sign in to continue your pure journey</Text>
+        </Card>
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          placeholderTextColor={theme.colors.textSecondary}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          accessibilityLabel="Email input"
-        />
+        {/* Tab switcher */}
+        <View style={styles.tabContainer}>
+          {[
+            ['email', 'Email'],
+            ['mobile', 'Mobile Number'],
+          ].map(([id, label]) => (
+            <TouchableOpacity
+              key={id}
+              style={[styles.tabButton, tab === id && styles.tabButtonActive]}
+              onPress={() => { setTab(id); setError(''); }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === id }}
+              accessibilityLabel={label}
+            >
+              <Text style={[styles.tabText, tab === id && styles.tabTextActive]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          placeholderTextColor={theme.colors.textSecondary}
-          secureTextEntry
-          accessibilityLabel="Password input"
-        />
+        {/* Form card */}
+        <Card style={styles.formCard}>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-          accessibilityRole="button"
-          accessibilityLabel="Sign in"
+          {tab === 'email' ? (
+            <>
+              <Input
+                label="Email Address"
+                leftIcon="mail"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="sarah@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel="Email input"
+              />
+              <View style={styles.fieldSpacer} />
+              <Input
+                label="Password"
+                leftIcon="lock"
+                rightIcon="eye"
+                onRightIconPress={() => setShowPassword(!showPassword)}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry={!showPassword}
+                accessibilityLabel="Password input"
+              />
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ForgotPassword')}
+                style={styles.forgotContainer}
+                accessibilityRole="link"
+              >
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <Input
+              label="Mobile Number"
+              leftIcon="phone"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              placeholder="10-digit phone number"
+              keyboardType="phone-pad"
+              maxLength={10}
+              accessibilityLabel="Phone number input"
+            />
+          )}
+        </Card>
+
+        {/* Sign In button */}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          onPress={tab === 'email' ? handleLogin : handlePhoneSignIn}
+          disabled={isSubmitting}
         >
-          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Sign In</Text>}
-        </TouchableOpacity>
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            'Sign In'
+          )}
+        </Button>
 
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} accessibilityRole="link">
-          <Text style={styles.link}>Forgot password?</Text>
-        </TouchableOpacity>
+        {/* OR divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
-        <View style={styles.row}>
-          <Text style={styles.rowText}>Don't have an account? </Text>
+        {/* Social login buttons */}
+        <View style={styles.socialContainer}>
+          <Button variant="outline" fullWidth>
+            Continue with Google
+          </Button>
+          <View style={styles.socialSpacer} />
+          <Button variant="outline" fullWidth>
+            Continue with Apple
+          </Button>
+        </View>
+
+        {/* Register link */}
+        <View style={styles.registerRow}>
+          <Text style={styles.registerText}>New to Choosepure? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')} accessibilityRole="link">
-            <Text style={styles.linkBold}>Register</Text>
+            <Text style={styles.registerLink}>Create account</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -92,20 +209,143 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: theme.colors.background },
-  container: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.xl },
-  logoContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: theme.spacing.lg },
-  logoText: { fontFamily: theme.fonts.bold, fontSize: 13, color: '#FFFFFF' },
-  heading: { fontFamily: theme.fonts.bold, fontSize: 28, color: theme.colors.text, textAlign: 'center' },
-  subheading: { fontFamily: theme.fonts.regular, fontSize: 15, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.lg },
-  label: { fontFamily: theme.fonts.medium, fontSize: 14, color: theme.colors.text, marginBottom: theme.spacing.xs, marginTop: theme.spacing.md },
-  input: { fontFamily: theme.fonts.regular, fontSize: 15, color: theme.colors.text, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.borderRadius.sm, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: theme.colors.cardBackground },
-  button: { backgroundColor: theme.colors.primary, paddingVertical: 14, borderRadius: theme.borderRadius.sm, alignItems: 'center', marginTop: theme.spacing.lg },
-  buttonDisabled: { opacity: 0.7 },
-  buttonText: { fontFamily: theme.fonts.semiBold, fontSize: 16, color: '#FFFFFF' },
-  error: { fontFamily: theme.fonts.regular, fontSize: 13, color: theme.colors.error, textAlign: 'center', marginBottom: theme.spacing.sm },
-  link: { fontFamily: theme.fonts.medium, fontSize: 14, color: theme.colors.primary, textAlign: 'center', marginTop: theme.spacing.md },
-  linkBold: { fontFamily: theme.fonts.semiBold, fontSize: 14, color: theme.colors.primary },
-  row: { flexDirection: 'row', justifyContent: 'center', marginTop: theme.spacing.md },
-  rowText: { fontFamily: theme.fonts.regular, fontSize: 14, color: theme.colors.textSecondary },
+  flex: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: theme.spacing.lg,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: theme.spacing.xs,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.primary,
+  },
+  headerSpacer: {
+    width: 36,
+  },
+
+  // Logo card
+  logoCard: {
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  logoText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xl'],
+    color: theme.colors.primary,
+    marginBottom: 12,
+  },
+  logoSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // Tab switcher
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.md,
+    padding: 4,
+    marginBottom: theme.spacing.md,
+    ...theme.shadow.card,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: theme.borderRadius.sm,
+    alignItems: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  tabText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // Form card
+  formCard: {
+    padding: 20,
+    marginBottom: 20,
+  },
+  fieldSpacer: {
+    height: theme.spacing.md,
+  },
+  error: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.error,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  forgotContainer: {
+    marginTop: theme.spacing.md,
+  },
+  forgotText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+  },
+
+  // Divider
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  dividerText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textDim,
+  },
+
+  // Social login
+  socialContainer: {
+    gap: theme.spacing.sm,
+  },
+  socialSpacer: {
+    height: theme.spacing.sm,
+  },
+
+  // Register link
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: theme.spacing.lg,
+  },
+  registerText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  registerLink: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+  },
 });

@@ -17,6 +17,8 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { theme } from '../theme';
 import apiClient from '../api/client';
 import OfflineBanner from '../components/OfflineBanner';
+import Icon from '../components/Icon';
+import { logScanProduct } from '../services/firebase/analytics';
 
 /**
  * Validate a barcode string for EAN-13 format.
@@ -31,6 +33,9 @@ export function validateBarcode(input) {
   return { valid: true, error: null };
 }
 
+// Recent scan placeholder colors matching the handoff
+const RECENT_SCAN_COLORS = ['#F4D03F', '#E8DCC4', '#D14E36', '#E5D5BE'];
+
 export default function ScannerScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -40,6 +45,7 @@ export default function ScannerScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [manualError, setManualError] = useState(null);
   const [permissionRequested, setPermissionRequested] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
   const netInfo = useNetInfo();
   const isOffline = netInfo.isConnected === false;
 
@@ -75,6 +81,7 @@ export default function ScannerScreen({ navigation }) {
     try {
       const res = await apiClient.get(`/api/off/product/${barcode}`);
       if (res.data.found) {
+        try { logScanProduct(barcode); } catch (e) { /* analytics should never break user flow */ }
         navigation.navigate('ResultCard', { product: res.data.product, barcode });
       } else {
         setError('Product not found in Open Food Facts database');
@@ -118,7 +125,7 @@ export default function ScannerScreen({ navigation }) {
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.primarySoft} />
       </View>
     );
   }
@@ -132,10 +139,23 @@ export default function ScannerScreen({ navigation }) {
     >
       <OfflineBanner />
 
+      {/* Dark header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Scan Product</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('DashboardHome')}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="close" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        bounces={false}
       >
         {/* Camera or permission request */}
         {cameraGranted ? (
@@ -146,14 +166,35 @@ export default function ScannerScreen({ navigation }) {
               onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
               barcodeScannerSettings={{ barcodeTypes: ['ean13'] }}
             />
-            <View style={styles.scanOverlay}>
-              <View style={styles.scanFrame} />
-              <Text style={styles.scanHint}>Point camera at a barcode</Text>
+
+            {/* Flash and Gallery buttons */}
+            <View style={styles.actionButtonsRow}>
+              <TouchableOpacity style={styles.circleButton} activeOpacity={0.8}>
+                <Icon name="flash" size={20} color={theme.colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} activeOpacity={0.8}>
+                <Icon name="image" size={18} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Green corner brackets viewfinder */}
+            <View style={styles.viewfinderOverlay}>
+              <View style={styles.viewfinderFrame}>
+                {/* Top-left corner */}
+                <View style={[styles.corner, styles.cornerTopLeft]} />
+                {/* Top-right corner */}
+                <View style={[styles.corner, styles.cornerTopRight]} />
+                {/* Bottom-left corner */}
+                <View style={[styles.corner, styles.cornerBottomLeft]} />
+                {/* Bottom-right corner */}
+                <View style={[styles.corner, styles.cornerBottomRight]} />
+              </View>
+              <Text style={styles.scanHint}>Position barcode within frame</Text>
             </View>
           </View>
         ) : (
           <View style={styles.deniedContainer}>
-            <Text style={styles.deniedIcon}>📷</Text>
+            <Icon name="scan" size={48} color={theme.colors.primarySoft} />
             <Text style={styles.deniedTitle}>Camera Permission Needed</Text>
             <Text style={styles.deniedText}>
               We need camera access to scan product barcodes. You can also enter barcodes manually below.
@@ -170,15 +211,6 @@ export default function ScannerScreen({ navigation }) {
           </View>
         )}
 
-        {/* History button */}
-        <TouchableOpacity
-          style={styles.historyButton}
-          onPress={() => navigation.navigate('ScanHistory')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.historyButtonText}>📋 Scan History</Text>
-        </TouchableOpacity>
-
         {/* Error display */}
         {error ? (
           <View style={styles.errorContainer}>
@@ -193,37 +225,66 @@ export default function ScannerScreen({ navigation }) {
           </View>
         ) : null}
 
-        {/* Manual entry */}
-        <View style={styles.manualSection}>
-          <Text style={styles.manualTitle}>Or enter barcode manually</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter 13-digit barcode"
-            placeholderTextColor={theme.colors.textSecondary}
-            value={manualBarcode}
-            onChangeText={(text) => {
-              setManualBarcode(text);
-              if (manualError) setManualError(null);
-            }}
-            keyboardType="numeric"
-            maxLength={13}
-            returnKeyType="done"
-            onSubmitEditing={handleManualSubmit}
-          />
-          {manualError ? (
-            <Text style={styles.manualErrorText}>{manualError}</Text>
-          ) : null}
+        {/* Bottom white section */}
+        <View style={styles.bottomSection}>
+          {/* Recent Scans */}
+          <Text style={styles.recentScansLabel}>Recent Scans</Text>
+          <View style={styles.recentScansRow}>
+            {RECENT_SCAN_COLORS.map((color, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.recentScanThumb, { backgroundColor: color }]}
+                onPress={() => navigation.navigate('ScanHistory')}
+                activeOpacity={0.8}
+              />
+            ))}
+          </View>
+
+          {/* Manual barcode entry link */}
           <TouchableOpacity
-            style={[
-              styles.lookupButton,
-              (isOffline || loading) && styles.lookupButtonDisabled,
-            ]}
-            onPress={handleManualSubmit}
-            disabled={isOffline || loading}
-            activeOpacity={0.8}
+            style={styles.manualEntryLink}
+            onPress={() => setShowManualEntry(!showManualEntry)}
+            activeOpacity={0.7}
           >
-            <Text style={styles.lookupButtonText}>Look Up</Text>
+            <Text style={styles.manualEntryLinkText}>
+              Can't scan? Enter barcode manually
+            </Text>
+            <Icon name="chevron-right" size={18} color={theme.colors.primary} />
           </TouchableOpacity>
+
+          {/* Manual entry form (shown when link is tapped) */}
+          {showManualEntry ? (
+            <View style={styles.manualEntryForm}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter 13-digit barcode"
+                placeholderTextColor={theme.colors.textDim}
+                value={manualBarcode}
+                onChangeText={(text) => {
+                  setManualBarcode(text);
+                  if (manualError) setManualError(null);
+                }}
+                keyboardType="numeric"
+                maxLength={13}
+                returnKeyType="done"
+                onSubmitEditing={handleManualSubmit}
+              />
+              {manualError ? (
+                <Text style={styles.manualErrorText}>{manualError}</Text>
+              ) : null}
+              <TouchableOpacity
+                style={[
+                  styles.lookupButton,
+                  (isOffline || loading) && styles.lookupButtonDisabled,
+                ]}
+                onPress={handleManualSubmit}
+                disabled={isOffline || loading}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.lookupButtonText}>Look Up</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -238,168 +299,262 @@ export default function ScannerScreen({ navigation }) {
   );
 }
 
+const CORNER_SIZE = 32;
+const CORNER_BORDER_WIDTH = 3;
+const VIEWFINDER_WIDTH = 240;
+const VIEWFINDER_HEIGHT = 208;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#000000',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#000000',
   },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#0D0D0D',
+  },
+  headerTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.primarySoft,
+  },
+
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: theme.spacing.xl,
+    flexGrow: 1,
   },
+
+  // Camera / Viewfinder
   cameraContainer: {
-    height: 300,
-    overflow: 'hidden',
+    flex: 1,
+    minHeight: 400,
     position: 'relative',
+    backgroundColor: '#1A1208',
   },
   camera: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
-  scanOverlay: {
+
+  // Flash / Gallery action buttons
+  actionButtonsRow: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    zIndex: 10,
+  },
+  circleButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Viewfinder overlay with corner brackets
+  viewfinderOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scanFrame: {
-    width: 220,
-    height: 220,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: 'transparent',
+  viewfinderFrame: {
+    width: VIEWFINDER_WIDTH,
+    height: VIEWFINDER_HEIGHT,
+    position: 'relative',
+  },
+  corner: {
+    position: 'absolute',
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+  },
+  cornerTopLeft: {
+    top: 0,
+    left: 0,
+    borderTopWidth: CORNER_BORDER_WIDTH,
+    borderLeftWidth: CORNER_BORDER_WIDTH,
+    borderColor: theme.colors.primarySoft,
+    borderTopLeftRadius: theme.borderRadius.sm,
+  },
+  cornerTopRight: {
+    top: 0,
+    right: 0,
+    borderTopWidth: CORNER_BORDER_WIDTH,
+    borderRightWidth: CORNER_BORDER_WIDTH,
+    borderColor: theme.colors.primarySoft,
+    borderTopRightRadius: theme.borderRadius.sm,
+  },
+  cornerBottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: CORNER_BORDER_WIDTH,
+    borderLeftWidth: CORNER_BORDER_WIDTH,
+    borderColor: theme.colors.primarySoft,
+    borderBottomLeftRadius: theme.borderRadius.sm,
+  },
+  cornerBottomRight: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: CORNER_BORDER_WIDTH,
+    borderRightWidth: CORNER_BORDER_WIDTH,
+    borderColor: theme.colors.primarySoft,
+    borderBottomRightRadius: theme.borderRadius.sm,
   },
   scanHint: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: theme.fonts.medium,
-    fontSize: 13,
-    marginTop: theme.spacing.sm,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    fontSize: theme.fontSize.base,
+    marginTop: 24,
+    textAlign: 'center',
   },
+
+  // Permission denied
   deniedContainer: {
+    flex: 1,
+    minHeight: 300,
     padding: theme.spacing.xl,
     alignItems: 'center',
-    backgroundColor: theme.colors.cardBackground,
-    marginHorizontal: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  deniedIcon: {
-    fontSize: 48,
-    marginBottom: theme.spacing.md,
+    justifyContent: 'center',
+    backgroundColor: '#0D0D0D',
   },
   deniedTitle: {
     fontFamily: theme.fonts.semiBold,
-    fontSize: 18,
-    color: theme.colors.text,
+    fontSize: theme.fontSize.lg,
+    color: '#FFFFFF',
+    marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
   deniedText: {
     fontFamily: theme.fonts.regular,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.base,
+    color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: theme.spacing.lg,
   },
   grantButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.primarySoft,
     paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.sm + 4,
-    borderRadius: theme.borderRadius.sm,
+    paddingVertical: 12,
+    borderRadius: theme.borderRadius.lg,
     width: '100%',
     alignItems: 'center',
   },
   grantButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: theme.fonts.semiBold,
-    fontSize: 15,
+    fontSize: theme.fontSize.md,
   },
-  historyButton: {
-    alignSelf: 'flex-end',
-    marginRight: theme.spacing.md,
-    marginTop: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs + 2,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: theme.colors.cardBackground,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  historyButtonText: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 14,
-    color: theme.colors.text,
-  },
+
+  // Error
   errorContainer: {
-    marginHorizontal: theme.spacing.md,
+    marginHorizontal: 20,
     marginTop: theme.spacing.md,
     padding: theme.spacing.md,
-    backgroundColor: '#FFEBEE',
+    backgroundColor: 'rgba(209, 78, 54, 0.15)',
     borderRadius: theme.borderRadius.sm,
     alignItems: 'center',
   },
   errorText: {
     fontFamily: theme.fonts.medium,
-    fontSize: 14,
+    fontSize: theme.fontSize.base,
     color: theme.colors.error,
     textAlign: 'center',
     marginBottom: theme.spacing.sm,
   },
   scanAgainButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.primarySoft,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
   },
   scanAgainButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: theme.fonts.semiBold,
-    fontSize: 14,
+    fontSize: theme.fontSize.base,
   },
-  manualSection: {
-    marginHorizontal: theme.spacing.md,
-    marginTop: theme.spacing.lg,
+
+  // Bottom white section
+  bottomSection: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
-  manualTitle: {
+  recentScansLabel: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginBottom: 10,
+  },
+  recentScansRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  recentScanThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.borderRadius.md,
+  },
+
+  // Manual entry link
+  manualEntryLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  manualEntryLinkText: {
     fontFamily: theme.fonts.semiBold,
-    fontSize: 16,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.primary,
+  },
+
+  // Manual entry form (expandable)
+  manualEntryForm: {
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   input: {
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.sm,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm + 4,
+    paddingVertical: 12,
     fontFamily: theme.fonts.regular,
-    fontSize: 16,
+    fontSize: theme.fontSize.md,
     color: theme.colors.text,
     letterSpacing: 1,
   },
   manualErrorText: {
     fontFamily: theme.fonts.regular,
-    fontSize: 13,
+    fontSize: theme.fontSize.sm,
     color: theme.colors.error,
     marginTop: theme.spacing.xs,
   },
   lookupButton: {
     backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.sm + 4,
-    borderRadius: theme.borderRadius.sm,
+    paddingVertical: 12,
+    borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
     marginTop: theme.spacing.sm,
   },
@@ -407,20 +562,22 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   lookupButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: theme.fonts.semiBold,
-    fontSize: 16,
+    fontSize: theme.fontSize.base,
   },
+
+  // Loading overlay
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: theme.fonts.medium,
-    fontSize: 14,
+    fontSize: theme.fontSize.base,
     marginTop: theme.spacing.sm,
   },
 });

@@ -4,24 +4,25 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
+import Button from '../components/Button';
 
 const { width } = Dimensions.get('window');
 
 const slides = [
   {
     id: '1',
-    title: 'Welcome to ChoosePure',
-    description: 'We are an independent food purity testing platform helping parents make informed choices about the food they buy.',
+    title: 'Is it really clean?',
+    description: 'Discover products free from harmful additives, pesticides, and contaminants.',
   },
   {
     id: '2',
-    title: 'Lab-Tested Results',
-    description: 'Every product is tested in accredited labs. We publish transparent purity scores so you know exactly what you are consuming.',
+    title: 'Is it nutritious?',
+    description: 'Every product is scored on calories, sugars, sodium, and key micronutrients.',
   },
   {
     id: '3',
-    title: 'Join the Community',
-    description: 'Vote for products you want tested, suggest new ones, and help build a movement for food transparency in India.',
+    title: 'Is it actually pure?',
+    description: 'Make confident decisions with transparent safety scores you can rely on.',
   },
 ];
 
@@ -59,17 +60,46 @@ export default function OnboardingScreen({ navigation }) {
   function renderSlide({ item }) {
     return (
       <View style={styles.slide}>
-        <View style={styles.logoContainer}>
+        {/* Logo circle */}
+        <View style={styles.logoCircle}>
           <Text style={styles.logoText}>ChoosePure</Text>
         </View>
+
+        {/* Title */}
         <Text style={styles.title}>{item.title}</Text>
+
+        {/* Description */}
         <Text style={styles.description}>{item.description}</Text>
+
+        {/* Dot indicators */}
+        <View style={styles.dotsContainer}>
+          {slides.map((_, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.dot,
+                idx === currentIndex ? styles.dotActive : styles.dotInactive,
+              ]}
+            />
+          ))}
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {/* Skip button in top-right corner */}
+      <View style={styles.skipRow}>
+        <TouchableOpacity
+          onPress={completeOnboarding}
+          accessibilityRole="button"
+          accessibilityLabel="Skip onboarding"
+        >
+          <Text style={styles.skipText}>Skip</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -82,21 +112,12 @@ export default function OnboardingScreen({ navigation }) {
         viewabilityConfig={viewabilityConfig}
       />
 
-      <View style={styles.pagination}>
-        {slides.map((_, i) => (
-          <View key={i} style={[styles.dot, i === currentIndex && styles.dotActive]} />
-        ))}
-      </View>
-
+      {/* Bottom button */}
       <View style={styles.footer}>
-        <TouchableOpacity onPress={completeOnboarding} accessibilityRole="button" accessibilityLabel="Skip onboarding">
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          accessibilityRole="button"
-          accessibilityLabel={isLastSlide ? 'Get Started' : 'Next'}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
           onPress={() => {
             if (isLastSlide) {
               completeOnboarding();
@@ -105,25 +126,85 @@ export default function OnboardingScreen({ navigation }) {
             }
           }}
         >
-          <Text style={styles.buttonText}>{isLastSlide ? 'Get Started' : 'Next'}</Text>
-        </TouchableOpacity>
+          {isLastSlide ? 'Get Started' : 'Continue'}
+        </Button>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  slide: { width, alignItems: 'center', justifyContent: 'center', paddingHorizontal: theme.spacing.xl },
-  logoContainer: { width: 100, height: 100, borderRadius: 50, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: theme.spacing.lg },
-  logoText: { fontFamily: theme.fonts.bold, fontSize: 16, color: '#FFFFFF' },
-  title: { fontFamily: theme.fonts.bold, fontSize: 24, color: theme.colors.text, textAlign: 'center', marginBottom: theme.spacing.md },
-  description: { fontFamily: theme.fonts.regular, fontSize: 15, color: theme.colors.textSecondary, textAlign: 'center', lineHeight: 22 },
-  pagination: { flexDirection: 'row', justifyContent: 'center', marginBottom: theme.spacing.md },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.border, marginHorizontal: 4 },
-  dotActive: { backgroundColor: theme.colors.primary, width: 24 },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: theme.spacing.xl, paddingBottom: theme.spacing.xl },
-  skipText: { fontFamily: theme.fonts.medium, fontSize: 15, color: theme.colors.textSecondary },
-  button: { backgroundColor: theme.colors.primary, paddingVertical: 12, paddingHorizontal: 24, borderRadius: theme.borderRadius.sm },
-  buttonText: { fontFamily: theme.fonts.semiBold, fontSize: 15, color: '#FFFFFF' },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.green50, // #EDF3EE
+  },
+  skipRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: theme.spacing.lg, // 24
+    paddingTop: 12,
+  },
+  skipText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm, // 13
+    color: theme.colors.textSecondary, // #6B7268
+  },
+  slide: {
+    width,
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl, // 32
+    paddingTop: 40,
+  },
+  logoCircle: {
+    width: 176,
+    height: 176,
+    borderRadius: 88,
+    backgroundColor: theme.colors.green100, // #D4E3D8
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  logoText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.lg, // 17
+    color: theme.colors.text, // #1A201A
+  },
+  title: {
+    fontFamily: theme.fonts.display, // Inter_700Bold
+    fontSize: theme.fontSize['3xl'], // 26
+    color: theme.colors.text, // #1A201A
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  description: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.md, // 15
+    color: theme.colors.textSecondary, // #6B7268
+    textAlign: 'center',
+    lineHeight: theme.lineHeight.md, // 22.5
+    maxWidth: 280,
+    marginBottom: theme.spacing.xl, // 32
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm, // 8
+    marginBottom: 40,
+  },
+  dot: {
+    height: 8,
+    borderRadius: 4,
+  },
+  dotActive: {
+    width: 24,
+    backgroundColor: theme.colors.primaryLight, // #2D7A52 (green-700)
+  },
+  dotInactive: {
+    width: 8,
+    backgroundColor: theme.colors.green100, // #D4E3D8
+  },
+  footer: {
+    paddingHorizontal: theme.spacing.lg, // 24
+    paddingBottom: theme.spacing.xl, // 32
+  },
 });

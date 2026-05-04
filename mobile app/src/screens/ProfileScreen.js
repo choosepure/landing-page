@@ -1,7 +1,36 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import Card from '../components/Card';
+import Icon from '../components/Icon';
+
+const MENU_SECTIONS = [
+  {
+    group: 'Account',
+    rows: [
+      { icon: 'user', label: 'Edit profile' },
+      { icon: 'bell', label: 'Notifications' },
+      { icon: 'lock', label: 'Privacy & security' },
+    ],
+  },
+  {
+    group: 'Subscription',
+    rows: [
+      { icon: 'star', label: 'Plan & billing', route: 'ProfileSubscription' },
+      { icon: 'gift', label: 'Refer & earn', route: 'Referral' },
+    ],
+  },
+  {
+    group: 'Support',
+    rows: [
+      { icon: 'help', label: 'Help center' },
+      { icon: 'info', label: 'About Choosepure' },
+      { icon: 'logout', label: 'Sign out', isSignOut: true },
+    ],
+  },
+];
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
@@ -13,84 +42,232 @@ export default function ProfileScreen({ navigation }) {
     ]);
   };
 
+  const initials = user?.name?.charAt(0)?.toUpperCase() || '?';
+  const displayName = user?.name || 'User';
+  const displayEmail = user?.email || '';
+  const isSubscribed = user?.subscriptionStatus === 'subscribed';
+
+  const handleMenuPress = (row) => {
+    if (row.isSignOut) {
+      handleSignOut();
+    } else if (row.route) {
+      navigation.navigate(row.route);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{user?.name?.charAt(0)?.toUpperCase() || '?'}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Profile card */}
+        <Card style={styles.profileCard}>
+          <LinearGradient
+            colors={['#B85C4D', '#7E2A1E']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatar}
+          >
+            <Text style={styles.avatarText}>{initials}</Text>
+          </LinearGradient>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{displayName}</Text>
+            <Text style={styles.profileEmail}>{displayEmail}</Text>
+            {isSubscribed && (
+              <View style={styles.subBadge}>
+                <Text style={styles.subBadgeText}>Premium · Yearly</Text>
+              </View>
+            )}
+          </View>
+        </Card>
+
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          {[
+            ['142', 'Scans'],
+            ['38', 'Saved'],
+            ['9', 'Referrals'],
+          ].map(([num, label]) => (
+            <Card key={label} style={styles.statCell}>
+              <Text style={styles.statNumber}>{num}</Text>
+              <Text style={styles.statLabel}>{label}</Text>
+            </Card>
+          ))}
         </View>
-        <Text style={styles.name}>{user?.name || 'User'}</Text>
-        <Text style={styles.email}>{user?.email}</Text>
-      </View>
 
-      <View style={styles.infoCard}>
-        <InfoRow label="Phone" value={user?.phone || '—'} />
-        <InfoRow label="Status" value={user?.subscriptionStatus === 'subscribed' ? 'Subscribed' : 'Free'} />
-        <InfoRow label="Referral Code" value={user?.referral_code || '—'} />
-        {user?.freeMonthsEarned ? <InfoRow label="Free Months" value={String(user.freeMonthsEarned)} /> : null}
-        {user?.subscriptionExpiry ? (
-          <InfoRow label="Expires" value={new Date(user.subscriptionExpiry).toLocaleDateString()} />
-        ) : null}
-      </View>
+        {/* Menu sections */}
+        {MENU_SECTIONS.map((section) => (
+          <View key={section.group} style={styles.menuSection}>
+            <Text style={styles.menuGroupLabel}>{section.group.toUpperCase()}</Text>
+            <Card style={styles.menuCard}>
+              {section.rows.map((row, i) => {
+                const isLast = i === section.rows.length - 1;
+                const isSignOut = row.isSignOut;
+                return (
+                  <TouchableOpacity
+                    key={row.label}
+                    style={[
+                      styles.menuRow,
+                      !isLast && styles.menuRowBorder,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => handleMenuPress(row)}
+                  >
+                    <Icon
+                      name={row.icon}
+                      size={20}
+                      color={isSignOut ? theme.colors.error : theme.colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.menuRowLabel,
+                        isSignOut && styles.menuRowLabelDanger,
+                      ]}
+                    >
+                      {row.label}
+                    </Text>
+                    {!isSignOut && (
+                      <Icon name="chevron-right" size={16} color={theme.colors.textDim} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </Card>
+          </View>
+        ))}
 
-      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ProfileSubscription')}>
-        <Text style={styles.menuText}>Manage Subscription</Text>
-        <Text style={styles.menuArrow}>›</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Vision')}>
-        <Text style={styles.menuText}>Our Vision</Text>
-        <Text style={styles.menuArrow}>›</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function InfoRow({ label, value }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+        {/* Version */}
+        <Text style={styles.versionText}>Choosepure v1.4.2</Text>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, padding: theme.spacing.lg },
-  header: { alignItems: 'center', marginBottom: theme.spacing.lg },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+
+  /* Profile card */
+  profileCard: {
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: theme.spacing.md,
+  },
   avatar: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: theme.colors.primary,
-    justifyContent: 'center', alignItems: 'center', marginBottom: theme.spacing.sm,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  avatarText: { color: '#fff', fontFamily: theme.fonts.bold, fontSize: 28 },
-  name: { fontFamily: theme.fonts.semiBold, fontSize: 20, color: theme.colors.text },
-  email: { fontFamily: theme.fonts.regular, fontSize: 14, color: theme.colors.textSecondary, marginTop: 2 },
-  infoCard: {
-    backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, marginBottom: theme.spacing.md,
-    elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2,
+  avatarText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 24,
+    color: '#FFFFFF',
   },
-  infoRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm, borderBottomWidth: 0.5, borderBottomColor: theme.colors.border,
+  profileInfo: {
+    flex: 1,
   },
-  infoLabel: { fontFamily: theme.fonts.medium, fontSize: 14, color: theme.colors.textSecondary },
-  infoValue: { fontFamily: theme.fonts.regular, fontSize: 14, color: theme.colors.text },
-  menuItem: {
-    backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, marginBottom: theme.spacing.sm,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2,
+  profileName: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.xl,
+    color: theme.colors.text,
   },
-  menuText: { fontFamily: theme.fonts.medium, fontSize: 15, color: theme.colors.text },
-  menuArrow: { fontFamily: theme.fonts.regular, fontSize: 22, color: theme.colors.textSecondary },
-  signOutBtn: {
-    marginTop: theme.spacing.lg, borderWidth: 1.5, borderColor: theme.colors.error,
-    paddingVertical: theme.spacing.md, borderRadius: theme.borderRadius.md, alignItems: 'center',
+  profileEmail: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
-  signOutText: { color: theme.colors.error, fontFamily: theme.fonts.semiBold, fontSize: 15 },
+  subBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.green100,
+    borderRadius: theme.borderRadius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 4,
+  },
+  subBadgeText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xs'],
+    color: theme.colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+
+  /* Stats */
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  statCell: {
+    flex: 1,
+    padding: 12,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xl'],
+    color: theme.colors.primary,
+  },
+  statLabel: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xs'],
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+
+  /* Menu sections */
+  menuSection: {
+    marginBottom: theme.spacing.md,
+  },
+  menuGroupLabel: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xs'],
+    color: theme.colors.textSecondary,
+    letterSpacing: 4,
+    paddingHorizontal: 4,
+    marginBottom: 6,
+  },
+  menuCard: {
+    overflow: 'hidden',
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  menuRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderSoft,
+  },
+  menuRowLabel: {
+    flex: 1,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+  },
+  menuRowLabelDanger: {
+    color: theme.colors.error,
+  },
+
+  /* Version */
+  versionText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textDim,
+    textAlign: 'center',
+    marginTop: 4,
+  },
 });

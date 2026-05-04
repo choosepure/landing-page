@@ -40,9 +40,16 @@
           "android": {
             "kotlinVersion": "1.9.25",
             "newArchEnabled": false
+          },
+          "ios": {
+            "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/messaging",
+      "@react-native-firebase/crashlytics"
     ],
     "extra": {
       "eas": {

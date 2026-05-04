@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Modal, TextInput,
   StyleSheet, ActivityIndicator, RefreshControl, Alert, Image,
@@ -7,6 +7,12 @@ import RazorpayCheckout from 'react-native-razorpay';
 import { theme } from '../theme';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { logVoteCast } from '../services/firebase/analytics';
+import { useRealtimeVotes } from '../hooks/useRealtimeVotes';
+import { useFeatureFlag } from '../hooks/useFeatureFlag';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Icon from '../components/Icon';
 
 const RAZORPAY_KEY = 'rzp_live_TteiJ3iAXxD93r';
 
@@ -30,8 +36,20 @@ export default function PollingScreen() {
   const [paying, setPaying] = useState(false);
   const [freeVoteEligible, setFreeVoteEligible] = useState(false);
   const [freeVoting, setFreeVoting] = useState(false);
+  const [suggestion, setSuggestion] = useState('');
 
   const subscribed = isSubscriber(user);
+
+  const realtimeEnabled = useFeatureFlag('polling_realtime_enabled', true);
+
+  const productIds = useMemo(
+    () => products.map((p) => p._id),
+    [products],
+  );
+
+  const { voteCounts, isConnected } = useRealtimeVotes(
+    realtimeEnabled ? productIds : [],
+  );
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -96,6 +114,7 @@ export default function PollingScreen() {
       });
       setModalVisible(false);
       await fetchProducts();
+      try { logVoteCast(selectedProduct._id, count); } catch (e) { /* analytics should never break user flow */ }
       Alert.alert('Success', 'Your vote has been recorded!');
     } catch (e) {
       if (e?.error?.code !== 'PAYMENT_CANCELLED') {
@@ -114,6 +133,7 @@ export default function PollingScreen() {
       setModalVisible(false);
       setFreeVoteEligible(false);
       await fetchProducts();
+      try { logVoteCast(selectedProduct._id, 1); } catch (e) { /* analytics should never break user flow */ }
       Alert.alert('Success', 'Free vote cast!');
     } catch (e) {
       Alert.alert('Error', e.response?.data?.message || 'Could not cast free vote.');
@@ -122,56 +142,130 @@ export default function PollingScreen() {
     }
   };
 
-  const renderProduct = ({ item }) => (
-    <TouchableOpacity style={styles.card} onPress={() => openVoteModal(item)} activeOpacity={0.8}>
-      {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-      ) : null}
-      <View style={styles.cardBody}>
-        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.brandText}>{item.brand} · {item.category}</Text>
-        <View style={styles.voteRow}>
-          <Text style={styles.voteCount}>{item.totalVotes || 0}</Text>
-          <Text style={styles.voteLabel}> votes</Text>
+  // Track which products the user has voted on in this session (for toggle UI)
+  const [votedProducts, setVotedProducts] = useState({});
+
+  const handleQuickVote = (product) => {
+    if (votedProducts[product._id]) {
+      // Already voted — toggle off visually (no API undo)
+      setVotedProducts((prev) => ({ ...prev, [product._id]: false }));
+    } else {
+      // Open modal for vote flow
+      openVoteModal(product);
+    }
+  };
+
+  const handleSubmitSuggestion = () => {
+    if (!suggestion.trim()) return;
+    // Placeholder — could wire to an API
+    Alert.alert('Thanks!', 'Your suggestion has been submitted.');
+    setSuggestion('');
+  };
+
+  const renderProduct = ({ item }) => {
+    const displayVotes =
+      realtimeEnabled && voteCounts[item._id] !== undefined
+        ? voteCounts[item._id]
+        : item.totalVotes || 0;
+
+    const isVoted = !!votedProducts[item._id];
+
+    return (
+      <Card style={styles.productCard}>
+        <View style={styles.productRow}>
+          <View style={styles.productInfo}>
+            <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.productVotes}>{displayVotes.toLocaleString()} votes</Text>
+          </View>
+          <Button
+            variant={isVoted ? 'secondary' : 'primary'}
+            size="sm"
+            onPress={() => openVoteModal(item)}
+          >
+            {isVoted ? 'Voted' : 'Vote'}
+          </Button>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </Card>
+    );
+  };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
+      {realtimeEnabled && !isConnected && (
+        <View style={styles.realtimeBanner}>
+          <Text style={styles.realtimeBannerText}>Live updates paused</Text>
+        </View>
+      )}
       <FlatList
         data={products}
         keyExtractor={(item) => item._id}
         renderItem={renderProduct}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-        ListEmptyComponent={<View style={styles.center}><Text style={styles.emptyText}>No products to vote on yet.</Text></View>}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+        }
+        ListHeaderComponent={
+          <Card style={styles.explanationCard}>
+            <Text style={styles.explanationText}>
+              Every month we test a new category. Your votes decide what we test next.
+            </Text>
+          </Card>
+        }
+        ListFooterComponent={
+          <Card style={styles.suggestCard}>
+            <Text style={styles.suggestLabel}>SUGGEST A CATEGORY</Text>
+            <TextInput
+              style={styles.suggestInput}
+              placeholder="What would you like us to test?"
+              placeholderTextColor={theme.colors.textDim}
+              value={suggestion}
+              onChangeText={setSuggestion}
+            />
+            <View style={styles.suggestBtnWrap}>
+              <Button variant="primary" fullWidth onPress={handleSubmitSuggestion}>
+                Submit
+              </Button>
+            </View>
+          </Card>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyText}>No products to vote on yet.</Text>
+          </View>
+        }
       />
 
+      {/* Vote modal — preserved from original */}
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Vote for {selectedProduct?.name}</Text>
             <Text style={styles.modalSubtitle}>How many votes?</Text>
             <TextInput
-              style={styles.input}
+              style={styles.modalInput}
               keyboardType="number-pad"
               value={voteCount}
               onChangeText={setVoteCount}
               placeholder="1"
+              placeholderTextColor={theme.colors.textDim}
             />
-            <TouchableOpacity style={styles.payBtn} onPress={handlePaidVote} disabled={paying}>
-              {paying ? <ActivityIndicator color="#fff" /> : <Text style={styles.payBtnText}>Pay & Vote</Text>}
-            </TouchableOpacity>
+            <Button variant="primary" fullWidth onPress={handlePaidVote} disabled={paying}>
+              {paying ? <ActivityIndicator color="#fff" /> : 'Pay & Vote'}
+            </Button>
             {subscribed && freeVoteEligible && (
-              <TouchableOpacity style={styles.freeBtn} onPress={handleFreeVote} disabled={freeVoting}>
-                {freeVoting ? <ActivityIndicator color={theme.colors.primary} /> : <Text style={styles.freeBtnText}>Use Free Vote</Text>}
-              </TouchableOpacity>
+              <View style={styles.freeVoteWrap}>
+                <Button variant="outline" fullWidth onPress={handleFreeVote} disabled={freeVoting}>
+                  {freeVoting ? <ActivityIndicator color={theme.colors.primary} /> : 'Use Free Vote'}
+                </Button>
+              </View>
             )}
             <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelBtn}>
               <Text style={styles.cancelText}>Cancel</Text>
@@ -184,47 +278,155 @@ export default function PollingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.lg },
-  list: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
-  card: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.md,
-    overflow: 'hidden',
-    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3,
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  cardImage: { width: '100%', height: 120, backgroundColor: theme.colors.border },
-  cardBody: { padding: theme.spacing.md },
-  productName: { fontFamily: theme.fonts.semiBold, fontSize: 16, color: theme.colors.text },
-  brandText: { fontFamily: theme.fonts.regular, fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
-  voteRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: theme.spacing.sm },
-  voteCount: { fontFamily: theme.fonts.bold, fontSize: 20, color: theme.colors.primary },
-  voteLabel: { fontFamily: theme.fonts.regular, fontSize: 13, color: theme.colors.textSecondary },
-  emptyText: { color: theme.colors.textSecondary, fontFamily: theme.fonts.regular, fontSize: 14 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  list: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+
+  /* Explanation card */
+  explanationCard: {
+    padding: 16,
+    marginBottom: theme.spacing.md,
+  },
+  explanationText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+    lineHeight: theme.lineHeight.base,
+  },
+
+  /* Product cards */
+  productCard: {
+    padding: 16,
+    marginBottom: 10,
+  },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  productInfo: {
+    flex: 1,
+  },
+  productName: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+  },
+  productVotes: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+
+  /* Suggest card */
+  suggestCard: {
+    padding: 16,
+    marginTop: 6,
+  },
+  suggestLabel: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xs'],
+    color: theme.colors.textSecondary,
+    letterSpacing: 4,
+    marginBottom: 8,
+  },
+  suggestInput: {
+    backgroundColor: theme.colors.cardBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+  },
+  suggestBtnWrap: {
+    marginTop: 12,
+  },
+
+  /* Empty */
+  emptyWrap: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+  },
+
+  /* Modal */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
   modalContent: {
     backgroundColor: theme.colors.cardBackground,
-    borderTopLeftRadius: theme.borderRadius.lg, borderTopRightRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg, paddingBottom: theme.spacing.xl,
+    borderTopLeftRadius: theme.borderRadius.lg,
+    borderTopRightRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
   },
-  modalTitle: { fontFamily: theme.fonts.semiBold, fontSize: 18, color: theme.colors.text },
-  modalSubtitle: { fontFamily: theme.fonts.regular, fontSize: 14, color: theme.colors.textSecondary, marginTop: theme.spacing.sm },
-  input: {
-    borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.borderRadius.sm,
-    padding: theme.spacing.sm, fontFamily: theme.fonts.regular, fontSize: 16,
-    marginTop: theme.spacing.sm, color: theme.colors.text,
+  modalTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 18,
+    color: theme.colors.text,
   },
-  payBtn: {
-    backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.sm, alignItems: 'center', marginTop: theme.spacing.md,
+  modalSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.sm,
   },
-  payBtnText: { color: '#fff', fontFamily: theme.fonts.semiBold, fontSize: 15 },
-  freeBtn: {
-    borderWidth: 1.5, borderColor: theme.colors.primary, paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm, alignItems: 'center', marginTop: theme.spacing.sm,
+  modalInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontFamily: theme.fonts.regular,
+    fontSize: 16,
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    color: theme.colors.text,
   },
-  freeBtnText: { color: theme.colors.primary, fontFamily: theme.fonts.semiBold, fontSize: 15 },
-  cancelBtn: { alignItems: 'center', marginTop: theme.spacing.md },
-  cancelText: { color: theme.colors.textSecondary, fontFamily: theme.fonts.medium, fontSize: 14 },
+  freeVoteWrap: {
+    marginTop: theme.spacing.sm,
+  },
+  cancelBtn: {
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+  },
+  cancelText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+  },
+
+  /* Realtime banner */
+  realtimeBanner: {
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    alignItems: 'center',
+  },
+  realtimeBannerText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
 });

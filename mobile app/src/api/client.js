@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { recordAPIError } from '../services/firebase/crashlytics';
 
 const API_BASE = 'https://api.choosepure.in';
 
@@ -29,6 +30,16 @@ apiClient.interceptors.response.use(
       await AsyncStorage.removeItem('jwt_token');
       if (onAuthFailure) onAuthFailure();
     }
+
+    // Record server errors to Crashlytics for monitoring
+    if (error.response?.status >= 500) {
+      try {
+        recordAPIError(error.config?.url, error.response.status, error);
+      } catch (e) {
+        // Crashlytics should never break the error interceptor
+      }
+    }
+
     return Promise.reject(error);
   }
 );

@@ -1,11 +1,35 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, FlatList, Image, TouchableOpacity,
-  StyleSheet, ActivityIndicator, RefreshControl,
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { theme } from '../theme';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import Card from '../components/Card';
+import Icon from '../components/Icon';
+import ProductCard from '../components/ProductCard';
+import Dropdown from '../components/Dropdown';
+import NutriGradeBadge from '../components/NutriGradeBadge';
+
+/* ── Nutri-grade constants ─────────────────────────────────── */
+
+const NUTRI_GRADES = [
+  { grade: 'A', label: 'Excellent' },
+  { grade: 'B', label: 'Good' },
+  { grade: 'C', label: 'Fair' },
+  { grade: 'D', label: 'Poor' },
+  { grade: 'E', label: 'Avoid' },
+];
+
+/* ── Helpers ────────────────────────────────────────────────── */
 
 function isSubscriber(user) {
   if (!user) return false;
@@ -16,14 +40,58 @@ function isSubscriber(user) {
   return false;
 }
 
+function getTimeAgo(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return parts[0][0].toUpperCase();
+}
+
+/* ── Image color palette for report cards ──────────────────── */
+
+const REPORT_IMAGE_COLORS = [
+  ['#F4F0E8', '#B8A584'],
+  ['#FFFDF8', '#E89E92'],
+  ['#E5D5BE', '#6B4423'],
+  ['#D4E3D8', '#5DA47B'],
+  ['#F4D03F', '#D4A82A'],
+];
+
+/* ── Component ─────────────────────────────────────────────── */
+
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState('A');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [nutriProducts, setNutriProducts] = useState([]);
+  const [nutriLoading, setNutriLoading] = useState(false);
+  const [nutriCounts, setNutriCounts] = useState({});
 
   const subscribed = isSubscriber(user);
+
+  /* ── Data fetching ─────────────────────────────────────── */
 
   const fetchReports = useCallback(async () => {
     try {
@@ -39,11 +107,35 @@ export default function DashboardScreen({ navigation }) {
     fetchReports().finally(() => setLoading(false));
   }, [fetchReports]);
 
+  /* ── Nutri-score data fetching ─────────────────────────── */
+
+  const fetchNutriProducts = useCallback(async (grade) => {
+    setNutriLoading(true);
+    try {
+      const res = await apiClient.get(`/api/off/nutriscore?grade=${grade}&page_size=5`);
+      setNutriProducts(res.data.products || []);
+      setNutriCounts((prev) => ({
+        ...prev,
+        [grade]: res.data.totalCount || 0,
+      }));
+    } catch (e) {
+      setNutriProducts([]);
+    } finally {
+      setNutriLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNutriProducts(selectedGrade);
+  }, [selectedGrade, fetchNutriProducts]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchReports();
     setRefreshing(false);
   }, [fetchReports]);
+
+  /* ── Navigation handlers ───────────────────────────────── */
 
   const handleCardPress = (item, index) => {
     if (subscribed || index === 0) {
@@ -53,38 +145,21 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
-  const showScore = (index) => index === 0 || subscribed;
+  /* ── Derived data ──────────────────────────────────────── */
 
-  const renderCard = ({ item, index }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => handleCardPress(item, index)}
-      activeOpacity={0.8}
-    >
-      {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-      ) : (
-        <View style={[styles.cardImage, styles.imagePlaceholder]}>
-          <Text style={styles.placeholderText}>No Image</Text>
-        </View>
-      )}
-      <View style={styles.cardBody}>
-        <Text style={styles.productName} numberOfLines={1}>{item.productName}</Text>
-        <Text style={styles.brandName} numberOfLines={1}>{item.brandName}</Text>
-        {showScore(index) ? (
-          <View style={styles.scoreBadge}>
-            <Text style={styles.scoreText}>{item.purityScore ?? '—'}</Text>
-            <Text style={styles.scoreLabel}>Purity</Text>
-          </View>
-        ) : (
-          <View style={[styles.scoreBadge, styles.lockedBadge]}>
-            <Text style={styles.lockIcon}>🔒</Text>
-            <Text style={styles.lockedLabel}>Subscribe</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+  const dropdownOptions = useMemo(
+    () =>
+      NUTRI_GRADES.map((g) => ({
+        value: g.grade,
+        label: `Grade ${g.grade} · ${g.label}`,
+        meta: nutriCounts[g.grade] != null ? `${nutriCounts[g.grade]} products` : '',
+      })),
+    [nutriCounts],
   );
+
+  const displayName = user?.name || user?.displayName || 'there';
+
+  /* ── Loading state ─────────────────────────────────────── */
 
   if (loading) {
     return (
@@ -94,78 +169,301 @@ export default function DashboardScreen({ navigation }) {
     );
   }
 
+  /* ── Render helpers ────────────────────────────────────── */
+
+  const renderReportItem = ({ item, index }) => (
+    <ProductCard
+      name={item.productName}
+      brand={item.brandName}
+      meta={getTimeAgo(item.createdAt)}
+      score={item.purityScore}
+      imageColors={REPORT_IMAGE_COLORS[index % REPORT_IMAGE_COLORS.length]}
+      onPress={() => handleCardPress(item, index)}
+    />
+  );
+
+  const renderNutriItem = ({ item }) => (
+    <ProductCard
+      name={item.name || 'Unknown Product'}
+      brand={item.brand || ''}
+      meta={item.nutriScore ? `Nutri-Score ${item.nutriScore.toUpperCase()}` : ''}
+      grade={selectedGrade}
+      imageColors={item.imageUrl ? null : ['#E8DCC4', '#B89A6F']}
+      onPress={() => navigation.navigate('ProductDetail', { product: item })}
+    />
+  );
+
+  const reportKeyExtractor = (item) => item._id;
+  const nutriKeyExtractor = (item, index) => item.barcode || `${selectedGrade}-${index}`;
+
+  /* ── Main render ───────────────────────────────────────── */
+
   return (
     <View style={styles.container}>
-      <View style={styles.statusBanner}>
-        <Text style={styles.statusText}>
-          {subscribed ? '✅ Active Subscriber' : '🔓 Free Plan — Subscribe to unlock all reports'}
-        </Text>
-      </View>
-      {error ? (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
-      <FlatList
-        data={reports}
-        keyExtractor={(item) => item._id}
-        renderItem={renderCard}
-        contentContainerStyle={styles.list}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
         }
-        ListEmptyComponent={
-          <View style={styles.center}><Text style={styles.emptyText}>No reports available yet.</Text></View>
-        }
-      />
+      >
+        {/* ── Header ──────────────────────────────────────── */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.logoText}>ChoosePure</Text>
+            <Text style={styles.greeting}>
+              {getGreeting()}, {displayName}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => navigation.navigate('Profile')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Go to profile"
+          >
+            <Text style={styles.avatarText}>{getInitials(displayName)}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Search bar ──────────────────────────────────── */}
+        <Card style={styles.searchCard}>
+          <View style={styles.searchRow}>
+            <Icon name="search" size={18} color={theme.colors.textDim} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search products, brands, categories..."
+              placeholderTextColor={theme.colors.textDim}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ScannerHome')}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Scan barcode"
+            >
+              <Icon name="scan-corners" size={18} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+        </Card>
+
+        {/* ── Error banner ────────────────────────────────── */}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        {/* ── Latest Testing Reports ──────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Latest Testing Reports</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('History')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewAllText}>View All</Text>
+          </TouchableOpacity>
+        </View>
+
+        {reports.length > 0 ? (
+          <FlatList
+            data={reports}
+            keyExtractor={reportKeyExtractor}
+            renderItem={renderReportItem}
+            scrollEnabled={false}
+            contentContainerStyle={styles.productList}
+            ListEmptyComponent={null}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No reports available yet.</Text>
+          </View>
+        )}
+
+        {/* ── Check Nutri-score ───────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Check Nutri-score</Text>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('NutriGradeList', { grade: selectedGrade })
+            }
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewAllText}>View All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.dropdownContainer}>
+          <Dropdown
+            label="Filter by grade"
+            value={selectedGrade}
+            options={dropdownOptions}
+            onChange={setSelectedGrade}
+            renderLeft={(option) => (
+              <NutriGradeBadge grade={option.value} size={36} />
+            )}
+            renderOption={(option) => (
+              <NutriGradeBadge grade={option.value} size={32} />
+            )}
+          />
+        </View>
+
+        {nutriLoading ? (
+          <View style={styles.nutriLoadingContainer}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={nutriProducts}
+            keyExtractor={nutriKeyExtractor}
+            renderItem={renderNutriItem}
+            scrollEnabled={false}
+            contentContainerStyle={styles.productList}
+          />
+        )}
+      </ScrollView>
     </View>
   );
 }
 
+/* ── Styles ──────────────────────────────────────────────── */
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.lg },
-  statusBanner: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
-  statusText: { color: '#fff', fontFamily: theme.fonts.medium, fontSize: 13 },
-  list: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
-  card: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.md,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+
+  /* Header */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
-  cardImage: { width: '100%', height: 160, backgroundColor: theme.colors.border },
-  imagePlaceholder: { justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { color: theme.colors.textSecondary, fontFamily: theme.fonts.regular, fontSize: 13 },
-  cardBody: { padding: theme.spacing.md },
-  productName: { fontFamily: theme.fonts.semiBold, fontSize: 16, color: theme.colors.text },
-  brandName: { fontFamily: theme.fonts.regular, fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
-  scoreBadge: {
-    marginTop: theme.spacing.sm,
+  logoText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xl'],
+    color: theme.colors.primary,
+    marginBottom: 2,
+  },
+  greeting: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: theme.colors.primary,
-    alignSelf: 'flex-start',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.md,
+    color: '#FFFFFF',
+  },
+
+  /* Search */
+  searchCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 28,
+  },
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
-  scoreText: { color: '#fff', fontFamily: theme.fonts.bold, fontSize: 18 },
-  scoreLabel: { color: '#fff', fontFamily: theme.fonts.regular, fontSize: 12 },
-  lockedBadge: { backgroundColor: theme.colors.locked },
-  lockIcon: { fontSize: 14 },
-  lockedLabel: { color: '#fff', fontFamily: theme.fonts.medium, fontSize: 12 },
-  errorText: { color: theme.colors.error, fontFamily: theme.fonts.medium, fontSize: 14, textAlign: 'center' },
-  emptyText: { color: theme.colors.textSecondary, fontFamily: theme.fonts.regular, fontSize: 14 },
+  searchInput: {
+    flex: 1,
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+    padding: 0,
+  },
+
+  /* Section headers */
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.xl,
+    color: theme.colors.text,
+  },
+  viewAllText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+  },
+
+  /* Product lists */
+  productList: {
+    gap: 10,
+    marginBottom: 28,
+  },
+
+  /* Dropdown */
+  dropdownContainer: {
+    marginBottom: 16,
+  },
+
+  /* Nutri loading */
+  nutriLoadingContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+
+  /* Error */
+  errorContainer: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  errorText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.error,
+    textAlign: 'center',
+  },
+
+  /* Empty */
+  emptyContainer: {
+    paddingVertical: theme.spacing.lg,
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  emptyText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+  },
 });

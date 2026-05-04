@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "46652240387",
+    "project_id": "choosepure-priyank",
+    "storage_bucket": "choosepure-priyank.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:46652240387:android:2c3731a3cd74c2c0fa1436",
+        "android_client_info": {
+          "package_name": "com.choosepure"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8IcZIz3cw_FA_6vm9wP0O700LXKSGKKo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

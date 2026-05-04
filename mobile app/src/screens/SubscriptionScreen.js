@@ -1,13 +1,50 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert,
+  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView,
 } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
 import { theme } from '../theme';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { logPurchase } from '../services/firebase/analytics';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Icon from '../components/Icon';
 
 const RAZORPAY_KEY = 'rzp_live_TteiJ3iAXxD93r';
+
+const PLANS = [
+  {
+    id: 'monthly',
+    title: 'Monthly',
+    price: '$9.99',
+    period: '/month',
+    blurb: 'Cancel anytime',
+  },
+  {
+    id: 'yearly',
+    title: 'Yearly',
+    price: '$79.99',
+    period: '/year',
+    blurb: 'Save 33% · 2 months free',
+    featured: true,
+  },
+  {
+    id: 'family',
+    title: 'Family',
+    price: '$129.99',
+    period: '/year',
+    blurb: 'Up to 6 members',
+  },
+];
+
+const PERKS = [
+  'Unlimited scans & lookups',
+  'Full lab-grade reports for every product',
+  'Personalized recommendations',
+  'Early access to new tests & categories',
+  'Premium customer support',
+];
 
 function isSubscriber(user) {
   if (!user) return false;
@@ -21,6 +58,7 @@ function isSubscriber(user) {
 export default function SubscriptionScreen({ navigation }) {
   const { user, checkAuth } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [picked, setPicked] = useState('yearly');
   const subscribed = isSubscriber(user);
 
   const handleSubscribe = async () => {
@@ -46,6 +84,8 @@ export default function SubscriptionScreen({ navigation }) {
         razorpay_signature: paymentData.razorpay_signature,
       });
 
+      try { logPurchase(299, 'INR'); } catch (e) { /* analytics should never break user flow */ }
+
       await checkAuth();
       Alert.alert('Subscribed!', 'Welcome to ChoosePure Premium.', [
         { text: 'OK', onPress: () => navigation.goBack() },
@@ -62,65 +102,255 @@ export default function SubscriptionScreen({ navigation }) {
   if (subscribed) {
     return (
       <View style={styles.container}>
-        <View style={styles.statusCard}>
-          <Text style={styles.statusIcon}>✅</Text>
-          <Text style={styles.statusTitle}>Active Subscription</Text>
-          <Text style={styles.statusDetail}>Status: {user.subscriptionStatus}</Text>
-          {user.subscriptionExpiry && (
-            <Text style={styles.statusDetail}>
-              Expires: {new Date(user.subscriptionExpiry).toLocaleDateString()}
-            </Text>
-          )}
-          {user.freeMonthsEarned ? (
-            <Text style={styles.statusDetail}>Free months earned: {user.freeMonthsEarned}</Text>
-          ) : null}
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Card style={styles.activeCard}>
+            <View style={styles.iconCircle}>
+              <Icon name="star" size={28} color={theme.colors.primaryLight} />
+            </View>
+            <Text style={styles.activeTitle}>Active Subscription</Text>
+            <Text style={styles.activeDetail}>Status: {user.subscriptionStatus}</Text>
+            {user.subscriptionExpiry && (
+              <Text style={styles.activeDetail}>
+                Expires: {new Date(user.subscriptionExpiry).toLocaleDateString()}
+              </Text>
+            )}
+            {user.freeMonthsEarned ? (
+              <Text style={styles.activeDetail}>Free months earned: {user.freeMonthsEarned}</Text>
+            ) : null}
+          </Card>
+        </ScrollView>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.promoCard}>
-        <Text style={styles.promoTitle}>ChoosePure Premium</Text>
-        <Text style={styles.promoPrice}>₹299 / month</Text>
-        <Text style={styles.promoFeature}>✓ Unlock all purity scores</Text>
-        <Text style={styles.promoFeature}>✓ Full test report access</Text>
-        <Text style={styles.promoFeature}>✓ 1 free vote per month</Text>
-        <Text style={styles.promoFeature}>✓ Support independent testing</Text>
-      </View>
-      <TouchableOpacity style={styles.subscribeBtn} onPress={handleSubscribe} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.subscribeBtnText}>Subscribe Now</Text>
-        )}
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Hero */}
+        <Card style={styles.heroCard}>
+          <View style={styles.iconCircle}>
+            <Icon name="star" size={28} color={theme.colors.primaryLight} />
+          </View>
+          <Text style={styles.heroTitle}>Go Premium</Text>
+          <Text style={styles.heroSubtitle}>Unlock the full Choosepure experience</Text>
+        </Card>
+
+        {/* Plan cards */}
+        <View style={styles.plansContainer}>
+          {PLANS.map((p) => {
+            const sel = picked === p.id;
+            return (
+              <TouchableOpacity
+                key={p.id}
+                activeOpacity={0.8}
+                onPress={() => setPicked(p.id)}
+                style={[
+                  styles.planCard,
+                  sel && styles.planCardSelected,
+                ]}
+              >
+                {p.featured && (
+                  <View style={styles.bestValueBadge}>
+                    <Text style={styles.bestValueText}>Best value</Text>
+                  </View>
+                )}
+                <View style={styles.planRow}>
+                  <View style={styles.planInfo}>
+                    <Text style={styles.planTitle}>{p.title}</Text>
+                    <Text style={styles.planBlurb}>{p.blurb}</Text>
+                  </View>
+                  <View style={styles.planPriceCol}>
+                    <Text style={styles.planPrice}>{p.price}</Text>
+                    <Text style={styles.planPeriod}>{p.period}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Perks */}
+        <Card style={styles.perksCard}>
+          <Text style={styles.perksLabel}>INCLUDES</Text>
+          {PERKS.map((perk) => (
+            <View key={perk} style={styles.perkRow}>
+              <Icon name="check" size={18} color={theme.colors.primaryLight} strokeWidth={2.5} />
+              <Text style={styles.perkText}>{perk}</Text>
+            </View>
+          ))}
+        </Card>
+
+        {/* CTA */}
+        <Button variant="primary" size="lg" fullWidth onPress={handleSubscribe} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.ctaText}>Start Free Trial</Text>
+          )}
+        </Button>
+        <Text style={styles.trialNote}>7-day free trial · Cancel anytime</Text>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, padding: theme.spacing.lg, justifyContent: 'center' },
-  statusCard: {
-    backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg, alignItems: 'center',
-    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3,
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  statusIcon: { fontSize: 40, marginBottom: theme.spacing.sm },
-  statusTitle: { fontFamily: theme.fonts.semiBold, fontSize: 20, color: theme.colors.primary },
-  statusDetail: { fontFamily: theme.fonts.regular, fontSize: 14, color: theme.colors.textSecondary, marginTop: theme.spacing.xs },
-  promoCard: {
-    backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3,
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
   },
-  promoTitle: { fontFamily: theme.fonts.bold, fontSize: 22, color: theme.colors.text, textAlign: 'center' },
-  promoPrice: { fontFamily: theme.fonts.semiBold, fontSize: 28, color: theme.colors.primary, textAlign: 'center', marginVertical: theme.spacing.md },
-  promoFeature: { fontFamily: theme.fonts.regular, fontSize: 15, color: theme.colors.text, marginTop: theme.spacing.xs, paddingLeft: theme.spacing.sm },
-  subscribeBtn: {
-    backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md, alignItems: 'center', marginTop: theme.spacing.lg,
+
+  /* Hero */
+  heroCard: {
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
   },
-  subscribeBtnText: { color: '#fff', fontFamily: theme.fonts.bold, fontSize: 17 },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  heroTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xl'],
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+  },
+
+  /* Plans */
+  plansContainer: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  planCard: {
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 16,
+    ...theme.shadow.card,
+  },
+  planCardSelected: {
+    borderWidth: 2,
+    borderColor: theme.colors.primaryLight,
+    ...theme.shadow.elev,
+  },
+  bestValueBadge: {
+    position: 'absolute',
+    top: -10,
+    left: 16,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  bestValueText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xs'],
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  planInfo: {
+    flex: 1,
+  },
+  planTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+  },
+  planBlurb: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  planPriceCol: {
+    alignItems: 'flex-end',
+  },
+  planPrice: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xl'],
+    color: theme.colors.text,
+  },
+  planPeriod: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+
+  /* Perks */
+  perksCard: {
+    padding: 16,
+    marginBottom: 20,
+  },
+  perksLabel: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xs'],
+    color: theme.colors.textSecondary,
+    letterSpacing: 4,
+    marginBottom: 10,
+  },
+  perkRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 8,
+  },
+  perkText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+    flex: 1,
+  },
+
+  /* CTA */
+  ctaText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.base,
+    color: '#FFFFFF',
+  },
+  trialNote: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 12,
+  },
+
+  /* Active subscription */
+  activeCard: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  activeTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 20,
+    color: theme.colors.primary,
+  },
+  activeDetail: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
 });

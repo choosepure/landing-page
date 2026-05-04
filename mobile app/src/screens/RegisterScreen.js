@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { mapFirebaseAuthError } from '../services/firebase/auth';
 import { validateRegistrationForm } from '../utils/validation';
 import { theme } from '../theme';
+import Card from '../components/Card';
+import Input from '../components/Input';
+import Button from '../components/Button';
+import Icon from '../components/Icon';
 
 export default function RegisterScreen({ navigation, route }) {
   const { register } = useAuth();
@@ -17,6 +22,7 @@ export default function RegisterScreen({ navigation, route }) {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleRegister() {
     setServerError('');
@@ -32,69 +38,153 @@ export default function RegisterScreen({ navigation, route }) {
         setServerError(result.message || 'Registration failed');
       }
     } catch (e) {
-      setServerError(e.response?.data?.message || 'Something went wrong. Please try again.');
+      if (e.code) {
+        setServerError(mapFirebaseAuthError(e));
+      } else {
+        setServerError(e.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  function renderField(label, value, setter, placeholder, opts = {}) {
-    const fieldKey = opts.fieldKey || label.toLowerCase();
-    return (
-      <>
-        <Text style={styles.label}>{label}</Text>
-        <TextInput
-          style={[styles.input, errors[fieldKey] && styles.inputError]}
-          value={value}
-          onChangeText={(t) => { setter(t); setErrors((prev) => ({ ...prev, [fieldKey]: null })); }}
-          placeholder={placeholder}
-          placeholderTextColor={theme.colors.textSecondary}
-          keyboardType={opts.keyboardType || 'default'}
-          autoCapitalize={opts.autoCapitalize || 'none'}
-          secureTextEntry={opts.secure || false}
-          accessibilityLabel={`${label} input`}
-        />
-        {errors[fieldKey] ? <Text style={styles.fieldError}>{errors[fieldKey]}</Text> : null}
-      </>
-    );
+  function clearFieldError(fieldKey) {
+    setErrors((prev) => ({ ...prev, [fieldKey]: null }));
   }
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {serverError ? <Text style={styles.error}>{serverError}</Text> : null}
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Icon name="arrow-left" size={20} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Create Account</Text>
+          <View style={styles.headerSpacer} />
+        </View>
 
-        {renderField('Name', name, setName, 'Your full name', { fieldKey: 'name', autoCapitalize: 'words' })}
-        {renderField('Email', email, setEmail, 'you@example.com', { fieldKey: 'email', keyboardType: 'email-address' })}
-        {renderField('Phone', phone, setPhone, '10-digit phone number', { fieldKey: 'phone', keyboardType: 'phone-pad' })}
-        {renderField('Pincode', pincode, setPincode, '6-digit pincode', { fieldKey: 'pincode', keyboardType: 'number-pad' })}
-        {renderField('Password', password, setPassword, 'Minimum 8 characters', { fieldKey: 'password', secure: true })}
+        {/* Logo card */}
+        <Card style={styles.logoCard}>
+          <Text style={styles.logoText}>ChoosePure</Text>
+          <Text style={styles.logoSubtitle}>Start your journey to natural living</Text>
+        </Card>
 
-        <Text style={styles.label}>Referral Code (optional)</Text>
-        <TextInput
-          style={styles.input}
-          value={referralCode}
-          onChangeText={setReferralCode}
-          placeholder="e.g. CP-ABCDE"
-          placeholderTextColor={theme.colors.textSecondary}
-          autoCapitalize="characters"
-          accessibilityLabel="Referral code input"
-        />
+        {/* Form card */}
+        <Card style={styles.formCard}>
+          {serverError ? <Text style={styles.error}>{serverError}</Text> : null}
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          <Input
+            label="Full Name"
+            leftIcon="user"
+            value={name}
+            onChangeText={(t) => { setName(t); clearFieldError('name'); }}
+            placeholder="Sarah Johnson"
+            autoCapitalize="words"
+            error={errors.name}
+            accessibilityLabel="Full name input"
+          />
+
+          <View style={styles.fieldSpacer} />
+
+          <Input
+            label="Email Address"
+            leftIcon="mail"
+            value={email}
+            onChangeText={(t) => { setEmail(t); clearFieldError('email'); }}
+            placeholder="sarah@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            error={errors.email}
+            accessibilityLabel="Email input"
+          />
+
+          <View style={styles.fieldSpacer} />
+
+          <Input
+            label="Mobile Number"
+            leftIcon="phone"
+            value={phone}
+            onChangeText={(t) => { setPhone(t); clearFieldError('phone'); }}
+            placeholder="+1 555 0123"
+            keyboardType="phone-pad"
+            error={errors.phone}
+            accessibilityLabel="Mobile number input"
+          />
+
+          <View style={styles.fieldSpacer} />
+
+          <Input
+            label="Password"
+            leftIcon="lock"
+            rightIcon="eye"
+            onRightIconPress={() => setShowPassword(!showPassword)}
+            value={password}
+            onChangeText={(t) => { setPassword(t); clearFieldError('password'); }}
+            placeholder="At least 8 characters"
+            secureTextEntry={!showPassword}
+            error={errors.password}
+            accessibilityLabel="Password input"
+          />
+
+          <View style={styles.fieldSpacer} />
+
+          <Input
+            label="Pincode"
+            leftIcon="tag"
+            value={pincode}
+            onChangeText={(t) => { setPincode(t); clearFieldError('pincode'); }}
+            placeholder="6-digit pincode"
+            keyboardType="number-pad"
+            error={errors.pincode}
+            accessibilityLabel="Pincode input"
+          />
+
+          <View style={styles.fieldSpacer} />
+
+          <Input
+            label="Referral Code (optional)"
+            value={referralCode}
+            onChangeText={setReferralCode}
+            placeholder="e.g. CP-ABCDE"
+            autoCapitalize="characters"
+            accessibilityLabel="Referral code input"
+          />
+        </Card>
+
+        {/* Terms text */}
+        <Text style={styles.termsText}>
+          By creating an account, you agree to our{' '}
+          <Text style={styles.termsLink}>Terms</Text> and{' '}
+          <Text style={styles.termsLink}>Privacy Policy</Text>.
+        </Text>
+
+        {/* Create Account button */}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
           onPress={handleRegister}
           disabled={loading}
-          accessibilityRole="button"
-          accessibilityLabel="Create account"
         >
-          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Create Account</Text>}
-        </TouchableOpacity>
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            'Create Account'
+          )}
+        </Button>
 
-        <View style={styles.row}>
-          <Text style={styles.rowText}>Already have an account? </Text>
+        {/* Sign in link */}
+        <View style={styles.signInRow}>
+          <Text style={styles.signInText}>Already have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')} accessibilityRole="link">
-            <Text style={styles.linkBold}>Sign In</Text>
+            <Text style={styles.signInLink}>Sign in</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -103,17 +193,96 @@ export default function RegisterScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: theme.colors.background },
-  container: { flexGrow: 1, paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.md },
-  label: { fontFamily: theme.fonts.medium, fontSize: 14, color: theme.colors.text, marginBottom: theme.spacing.xs, marginTop: theme.spacing.sm },
-  input: { fontFamily: theme.fonts.regular, fontSize: 15, color: theme.colors.text, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.borderRadius.sm, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: theme.colors.cardBackground },
-  inputError: { borderColor: theme.colors.error },
-  fieldError: { fontFamily: theme.fonts.regular, fontSize: 12, color: theme.colors.error, marginTop: 2 },
-  error: { fontFamily: theme.fonts.regular, fontSize: 13, color: theme.colors.error, textAlign: 'center', marginBottom: theme.spacing.sm, backgroundColor: '#FDE8E8', padding: theme.spacing.sm, borderRadius: theme.borderRadius.sm },
-  button: { backgroundColor: theme.colors.primary, paddingVertical: 14, borderRadius: theme.borderRadius.sm, alignItems: 'center', marginTop: theme.spacing.lg },
-  buttonDisabled: { opacity: 0.7 },
-  buttonText: { fontFamily: theme.fonts.semiBold, fontSize: 16, color: '#FFFFFF' },
-  row: { flexDirection: 'row', justifyContent: 'center', marginTop: theme.spacing.md, marginBottom: theme.spacing.xl },
-  rowText: { fontFamily: theme.fonts.regular, fontSize: 14, color: theme.colors.textSecondary },
-  linkBold: { fontFamily: theme.fonts.semiBold, fontSize: 14, color: theme.colors.primary },
+  flex: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: theme.spacing.lg,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: theme.spacing.xs,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.primary,
+  },
+  headerSpacer: {
+    width: 36,
+  },
+
+  // Logo card
+  logoCard: {
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  logoText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 36,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.sm,
+  },
+  logoSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // Form card
+  formCard: {
+    padding: 20,
+    marginBottom: 20,
+  },
+  fieldSpacer: {
+    height: theme.spacing.md,
+  },
+  error: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.error,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+
+  // Terms text
+  termsText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  termsLink: {
+    fontFamily: theme.fonts.semiBold,
+    color: theme.colors.primary,
+  },
+
+  // Sign in link
+  signInRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  signInText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  signInLink: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+  },
 });

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Share,
+  View, Text, StyleSheet, ActivityIndicator, Alert, Share, ScrollView,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../theme';
 import apiClient from '../api/client';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Icon from '../components/Icon';
 
 export default function ReferralScreen() {
   const [stats, setStats] = useState(null);
@@ -39,81 +43,313 @@ export default function ReferralScreen() {
   };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
   }
 
   if (!stats) {
-    return <View style={styles.center}><Text style={styles.errorText}>Could not load referral data.</Text></View>;
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>Could not load referral data.</Text>
+      </View>
+    );
   }
+
+  const earnings = stats.earnings ?? '$0';
+  const friendCount = stats.completed ?? 0;
+  const recentActivity = stats.recent_activity ?? [];
+
+  const HOW_IT_WORKS = [
+    ['Share your code', 'Send your code to friends via any app.'],
+    ['They sign up', 'Friend creates an account using your code.'],
+    ['You both earn', 'You get credit, friend gets a discount on premium.'],
+  ];
 
   return (
     <View style={styles.container}>
-      {/* Referral Code */}
-      <View style={styles.codeCard}>
-        <Text style={styles.codeLabel}>Your Referral Code</Text>
-        <Text style={styles.codeValue}>{stats.referral_code}</Text>
-        <Text style={styles.linkText} numberOfLines={1}>{stats.referral_link}</Text>
-        <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-            <Text style={styles.shareBtnText}>Share Link</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.copyBtn} onPress={handleCopy}>
-            <Text style={styles.copyBtnText}>Copy Code</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Green gradient banner */}
+        <LinearGradient
+          colors={['#226342', '#2D7A52']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.banner}
+        >
+          <View style={styles.bannerIconCircle}>
+            <Icon name="gift" size={32} color="#FFFFFF" />
+          </View>
+          <Text style={styles.bannerLabel}>You've earned</Text>
+          <Text style={styles.bannerAmount}>{typeof earnings === 'number' ? `$${earnings}` : earnings}</Text>
+          <Text style={styles.bannerFriends}>
+            From {friendCount} friend{friendCount !== 1 ? 's' : ''} who joined
+          </Text>
+        </LinearGradient>
 
-      {/* Stats */}
-      <View style={styles.statsGrid}>
-        <StatCard label="Invited" value={stats.total_invited ?? 0} />
-        <StatCard label="Subscribed" value={stats.completed ?? 0} />
-        <StatCard label="Pending" value={stats.pending ?? 0} />
-        <StatCard label="Free Months" value={stats.free_months_earned ?? 0} />
-      </View>
-    </View>
-  );
-}
+        {/* Referral code box */}
+        <Card style={styles.codeCard}>
+          <Text style={styles.sectionLabel}>YOUR REFERRAL CODE</Text>
+          <View style={styles.codeRow}>
+            <View style={styles.codeBox}>
+              <Text style={styles.codeText}>{stats.referral_code}</Text>
+            </View>
+            <Button variant="secondary" size="md" onPress={handleCopy}>
+              Copy
+            </Button>
+          </View>
+        </Card>
 
-function StatCard({ label, value }) {
-  return (
-    <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+        {/* How it works */}
+        <Card style={styles.howCard}>
+          <Text style={styles.sectionLabel}>HOW IT WORKS</Text>
+          {HOW_IT_WORKS.map(([title, body], i) => (
+            <View key={title} style={styles.stepRow}>
+              <View style={styles.stepCircle}>
+                <Text style={styles.stepNumber}>{i + 1}</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>{title}</Text>
+                <Text style={styles.stepBody}>{body}</Text>
+              </View>
+            </View>
+          ))}
+        </Card>
+
+        {/* Recent activity */}
+        {recentActivity.length > 0 && (
+          <Card style={styles.activityCard}>
+            <Text style={[styles.sectionLabel, { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10 }]}>
+              RECENT ACTIVITY
+            </Text>
+            {recentActivity.map((item, i) => {
+              const name = item.name || 'Friend';
+              const initial = name.charAt(0).toUpperCase();
+              const when = item.date || '';
+              const amt = item.amount || '';
+              return (
+                <View
+                  key={`${name}-${i}`}
+                  style={[
+                    styles.activityRow,
+                    i < recentActivity.length - 1 && styles.activityRowBorder,
+                  ]}
+                >
+                  <View style={styles.activityAvatar}>
+                    <Text style={styles.activityInitial}>{initial}</Text>
+                  </View>
+                  <View style={styles.activityInfo}>
+                    <Text style={styles.activityName}>{name}</Text>
+                    <Text style={styles.activityDate}>{when}</Text>
+                  </View>
+                  <Text style={styles.activityAmount}>{amt}</Text>
+                </View>
+              );
+            })}
+          </Card>
+        )}
+
+        {/* Share button */}
+        <Button variant="primary" size="lg" fullWidth onPress={handleShare}>
+          <View style={styles.shareRow}>
+            <Icon name="share" size={18} color="#FFFFFF" />
+            <Text style={styles.shareText}>Share with friends</Text>
+          </View>
+        </Button>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, padding: theme.spacing.lg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.lg },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+  },
+
+  /* Banner */
+  banner: {
+    borderRadius: theme.borderRadius.xl,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  bannerIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  bannerLabel: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm,
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+    letterSpacing: 4,
+    opacity: 0.8,
+    marginBottom: 4,
+  },
+  bannerAmount: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['4xl'],
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  bannerFriends: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: '#FFFFFF',
+    opacity: 0.9,
+  },
+
+  /* Code box */
   codeCard: {
-    backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg, alignItems: 'center',
-    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3,
+    padding: 16,
+    marginBottom: theme.spacing.md,
   },
-  codeLabel: { fontFamily: theme.fonts.medium, fontSize: 13, color: theme.colors.textSecondary },
-  codeValue: { fontFamily: theme.fonts.bold, fontSize: 28, color: theme.colors.primary, marginTop: theme.spacing.xs },
-  linkText: { fontFamily: theme.fonts.regular, fontSize: 12, color: theme.colors.textSecondary, marginTop: theme.spacing.sm },
-  btnRow: { flexDirection: 'row', gap: 12, marginTop: theme.spacing.md },
-  shareBtn: {
-    backgroundColor: theme.colors.primary, paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
+  sectionLabel: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xs'],
+    color: theme.colors.textSecondary,
+    letterSpacing: 4,
+    marginBottom: 10,
   },
-  shareBtnText: { color: '#fff', fontFamily: theme.fonts.semiBold, fontSize: 14 },
-  copyBtn: {
-    borderWidth: 1.5, borderColor: theme.colors.primary, paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
+  codeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  copyBtnText: { color: theme.colors.primary, fontFamily: theme.fonts.semiBold, fontSize: 14 },
-  statsGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: theme.spacing.lg,
+  codeBox: {
+    flex: 1,
+    backgroundColor: theme.colors.green50,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.primaryLight,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
-  statCard: {
-    width: '48%', backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, alignItems: 'center', marginBottom: theme.spacing.sm,
-    elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2,
+  codeText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.xl,
+    color: theme.colors.primary,
+    letterSpacing: 3,
   },
-  statValue: { fontFamily: theme.fonts.bold, fontSize: 24, color: theme.colors.primary },
-  statLabel: { fontFamily: theme.fonts.regular, fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
-  errorText: { color: theme.colors.error, fontFamily: theme.fonts.medium, fontSize: 14 },
+
+  /* How it works */
+  howCard: {
+    padding: 16,
+    marginBottom: theme.spacing.md,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  stepCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: theme.colors.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumber: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+  },
+  stepBody: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+
+  /* Recent activity */
+  activityCard: {
+    marginBottom: theme.spacing.md,
+    overflow: 'hidden',
+  },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  activityRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderSoft,
+  },
+  activityAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityInitial: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+  },
+  activityInfo: {
+    flex: 1,
+  },
+  activityName: {
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+  },
+  activityDate: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+  activityAmount: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.primaryLight,
+  },
+
+  /* Share button */
+  shareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  shareText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.base,
+    color: '#FFFFFF',
+  },
 });

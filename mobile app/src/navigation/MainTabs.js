@@ -1,87 +1,161 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text } from 'react-native';
 import { theme } from '../theme';
+import CustomTabBar from '../components/CustomTabBar';
 
-// Placeholder screens — replaced once real screens are created
+// Existing screens
 import DashboardScreen from '../screens/DashboardScreen';
-import PollingScreen from '../screens/PollingScreen';
-import SuggestionScreen from '../screens/SuggestionScreen';
-import ReferralScreen from '../screens/ReferralScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import ReportDetailScreen from '../screens/ReportDetailScreen';
-import SubscriptionScreen from '../screens/SubscriptionScreen';
-import VisionScreen from '../screens/VisionScreen';
 import ScannerScreen from '../screens/ScannerScreen';
 import ResultCardScreen from '../screens/ResultCardScreen';
 import ScanHistoryScreen from '../screens/ScanHistoryScreen';
+import ReportDetailScreen from '../screens/ReportDetailScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import SubscriptionScreen from '../screens/SubscriptionScreen';
+import ReferralScreen from '../screens/ReferralScreen';
+import VisionScreen from '../screens/VisionScreen';
+import PollingScreen from '../screens/PollingScreen';
+
+// New placeholder screens (replaced in task 13)
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import LabReportScreen from '../screens/LabReportScreen';
+import DiscoverScreen from '../screens/DiscoverScreen';
+import NutriGradeListScreen from '../screens/NutriGradeListScreen';
 
 const Tab = createBottomTabNavigator();
-const DashStack = createStackNavigator();
-const ProfileStack = createStackNavigator();
+const HomeStack = createStackNavigator();
 const ScanStack = createStackNavigator();
+const HistoryStack = createStackNavigator();
+const ProfileStack = createStackNavigator();
 
 const stackScreenOptions = {
-  headerStyle: { backgroundColor: theme.colors.background, elevation: 0, shadowOpacity: 0 },
+  headerStyle: {
+    backgroundColor: theme.colors.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 0,
+  },
   headerTintColor: theme.colors.primary,
-  headerTitleStyle: { fontFamily: theme.fonts.semiBold, color: theme.colors.text },
+  headerTitleStyle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.text,
+  },
 };
 
-function DashboardStackScreen() {
+function HomeTabStack() {
   return (
-    <DashStack.Navigator screenOptions={stackScreenOptions}>
-      <DashStack.Screen name="DashboardHome" component={DashboardScreen} options={{ title: 'Purity Dashboard' }} />
-      <DashStack.Screen name="ReportDetail" component={ReportDetailScreen} options={{ title: 'Report' }} />
-      <DashStack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: 'Subscription' }} />
-    </DashStack.Navigator>
+    <HomeStack.Navigator screenOptions={stackScreenOptions}>
+      <HomeStack.Screen
+        name="DashboardHome"
+        component={DashboardScreen}
+        options={{ title: 'Home' }}
+      />
+      <HomeStack.Screen
+        name="ProductDetail"
+        component={ProductDetailScreen}
+        options={{ title: 'Product Detail' }}
+      />
+      <HomeStack.Screen
+        name="LabReport"
+        component={LabReportScreen}
+        options={{ title: 'Lab Report' }}
+      />
+      <HomeStack.Screen
+        name="Discover"
+        component={DiscoverScreen}
+        options={{ title: 'Discover' }}
+      />
+      <HomeStack.Screen
+        name="NutriGradeList"
+        component={NutriGradeListScreen}
+        options={{ title: 'Nutri-Score' }}
+      />
+      <HomeStack.Screen
+        name="Polling"
+        component={PollingScreen}
+        options={{ title: 'Vote' }}
+      />
+    </HomeStack.Navigator>
   );
 }
 
-function ProfileStackScreen() {
-  return (
-    <ProfileStack.Navigator screenOptions={stackScreenOptions}>
-      <ProfileStack.Screen name="ProfileHome" component={ProfileScreen} options={{ title: 'Profile' }} />
-      <ProfileStack.Screen name="Vision" component={VisionScreen} options={{ title: 'Our Vision' }} />
-      <ProfileStack.Screen name="ProfileSubscription" component={SubscriptionScreen} options={{ title: 'Subscription' }} />
-    </ProfileStack.Navigator>
-  );
-}
-
-function ScannerStackScreen() {
+function ScanTabStack() {
   return (
     <ScanStack.Navigator screenOptions={stackScreenOptions}>
-      <ScanStack.Screen name="ScannerHome" component={ScannerScreen} options={{ title: 'Scan Product' }} />
-      <ScanStack.Screen name="ResultCard" component={ResultCardScreen} options={{ title: 'Product Details' }} />
-      <ScanStack.Screen name="ScanHistory" component={ScanHistoryScreen} options={{ title: 'Scan History' }} />
-      <ScanStack.Screen name="ScanReportDetail" component={ReportDetailScreen} options={{ title: 'Lab Report' }} />
+      <ScanStack.Screen
+        name="ScannerHome"
+        component={ScannerScreen}
+        options={{ title: 'Scan Product' }}
+      />
+      <ScanStack.Screen
+        name="ResultCard"
+        component={ResultCardScreen}
+        options={{ title: 'Product Details' }}
+      />
+      <ScanStack.Screen
+        name="ScanHistory"
+        component={ScanHistoryScreen}
+        options={{ title: 'Scan History' }}
+      />
+      <ScanStack.Screen
+        name="ScanReportDetail"
+        component={ReportDetailScreen}
+        options={{ title: 'Lab Report' }}
+      />
     </ScanStack.Navigator>
   );
 }
 
-function TabIcon({ label, focused }) {
-  const icons = { Dashboard: '🏠', Scan: '📷', Polling: '🗳️', Suggestions: '💡', Referral: '🎁', Profile: '👤' };
-  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{icons[label] || '•'}</Text>;
+function HistoryTabStack() {
+  return (
+    <HistoryStack.Navigator screenOptions={stackScreenOptions}>
+      <HistoryStack.Screen
+        name="ScanHistoryHome"
+        component={ScanHistoryScreen}
+        options={{ title: 'History' }}
+      />
+    </HistoryStack.Navigator>
+  );
+}
+
+function ProfileTabStack() {
+  return (
+    <ProfileStack.Navigator screenOptions={stackScreenOptions}>
+      <ProfileStack.Screen
+        name="ProfileHome"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
+      />
+      <ProfileStack.Screen
+        name="Subscription"
+        component={SubscriptionScreen}
+        options={{ title: 'Subscription' }}
+      />
+      <ProfileStack.Screen
+        name="Referral"
+        component={ReferralScreen}
+        options={{ title: 'Referral' }}
+      />
+      <ProfileStack.Screen
+        name="Vision"
+        component={VisionScreen}
+        options={{ title: 'Our Vision' }}
+      />
+    </ProfileStack.Navigator>
+  );
 }
 
 export default function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
-        tabBarLabelStyle: { fontFamily: theme.fonts.medium, fontSize: 11 },
-        tabBarStyle: { backgroundColor: theme.colors.cardBackground, borderTopColor: theme.colors.border },
-        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
-      })}
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Dashboard" component={DashboardStackScreen} />
-      <Tab.Screen name="Scan" component={ScannerStackScreen} />
-      <Tab.Screen name="Polling" component={PollingScreen} />
-      <Tab.Screen name="Suggestions" component={SuggestionScreen} />
-      <Tab.Screen name="Referral" component={ReferralScreen} />
-      <Tab.Screen name="Profile" component={ProfileStackScreen} />
+      <Tab.Screen name="Home" component={HomeTabStack} />
+      <Tab.Screen name="Scan" component={ScanTabStack} />
+      <Tab.Screen name="History" component={HistoryTabStack} />
+      <Tab.Screen name="Profile" component={ProfileTabStack} />
     </Tab.Navigator>
   );
 }

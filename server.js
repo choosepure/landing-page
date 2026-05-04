@@ -10,7 +10,26 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
+const admin = require('firebase-admin');
 require('dotenv').config();
+
+// Initialize Firebase Admin SDK
+try {
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : null;
+
+    if (serviceAccount) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+        console.log('✅ Firebase Admin SDK initialized');
+    } else {
+        console.log('⚠️ FIREBASE_SERVICE_ACCOUNT not set — Firebase auth endpoints will be unavailable');
+    }
+} catch (error) {
+    console.error('❌ Firebase Admin SDK initialization failed:', error.message);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -617,6 +636,210 @@ app.post('/api/user/register', async (req, res) => {
             success: false, 
             message: 'Registration failed' 
         });
+    }
+});
+
+// Firebase Authentication — token exchange endpoint
+app.post('/api/user/firebase-auth', async (req, res) => {
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        if (!admin.apps.length) {
+            return res.status(503).json({ success: false, message: 'Firebase Admin SDK not configured' });
+        }
+
+        const { idToken, name, phone, pincode, referral_code } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({ success: false, message: 'Firebase ID token is required' });
+        }
+
+        // Verify the Firebase ID token
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (err) {
+            console.error('Firebase token verification failed:', err.message);
+            return res.status(401).json({ success: false, message: 'Invalid or expired Firebase token' });
+        }
+
+        const firebaseUid = decodedToken.uid;
+        const email = decodedToken.email || null;
+        const phoneNumber = decodedToken.phone_number || null;
+
+        // Look up user by firebaseUid first, then by email or phone
+        let user = await usersCollection.findOne({ firebaseUid });
+
+        if (!user && email) {
+            user = await usersCollection.findOne({ email });
+        }
+        if (!user && phoneNumber) {
+            // Normalize phone: Firebase sends +91XXXXXXXXXX, DB stores XXXXXXXXXX
+            const normalizedPhone = phoneNumber.replace(/^\+91/, '');
+            user = await usersCollection.findOne({ phone: normalizedPhone });
+        }
+
+        if (user) {
+            // Existing user — link Firebase UID if not already linked
+            if (!user.firebaseUid) {
+                await usersCollection.updateOne(
+                    { _id: user._id },
+                    { $set: { firebaseUid, updatedAt: new Date() } }
+                );
+            }
+
+            // Generate JWT
+            const token = jwt.sign(
+                { id: user._id.toString(), email: user.email, role: 'user' },
+                JWT_SECRET,
+                { expiresIn: '30d' }
+            );
+
+            const safeUser = {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                subscriptionStatus: user.subscriptionStatus || 'free',
+                subscriptionExpiry: user.subscriptionExpiry || null,
+                referral_code: user.referral_code || null,
+                freeMonthsEarned: user.freeMonthsEarned || 0,
+            };
+
+            return res.json({ success: true, token, user: safeUser });
+
+        } else {
+            // New user — create account
+            const normalizedPhone = phoneNumber
+                ? phoneNumber.replace(/^\+91/, '')
+                : (phone || '');
+
+            const newUserReferralCode = await generateReferralCode(usersCollection);
+
+            // Handle referral
+            let referrerUser = null;
+            if (referral_code) {
+                referrerUser = await usersCollection.findOne({ referral_code });
+                // Validate: no self-referral
+                if (referrerUser && (referrerUser.email === email || referrerUser.phone === normalizedPhone)) {
+                    referrerUser = null;
+                }
+            }
+
+            const result = await usersCollection.insertOne({
+                name: name || decodedToken.name || 'User',
+                email: email || '',
+                phone: normalizedPhone,
+                pincode: pincode || '',
+                firebaseUid,
+                auth_provider: email ? 'firebase_email' : 'firebase_phone',
+                role: 'user',
+                subscriptionStatus: 'free',
+                referral_code: newUserReferralCode,
+                referred_by: referrerUser ? referrerUser._id : null,
+                freeMonthsEarned: 0,
+                subscriptionExpiry: null,
+                createdAt: new Date(),
+            });
+
+            // Create referral record if applicable
+            if (referrerUser && referralsCollection) {
+                await referralsCollection.insertOne({
+                    referrer_user_id: referrerUser._id,
+                    referee_user_id: result.insertedId,
+                    status: 'registered',
+                    createdAt: new Date(),
+                });
+            }
+
+            const token = jwt.sign(
+                { id: result.insertedId.toString(), email: email || '', role: 'user' },
+                JWT_SECRET,
+                { expiresIn: '30d' }
+            );
+
+            const safeUser = {
+                _id: result.insertedId,
+                name: name || decodedToken.name || 'User',
+                email: email || '',
+                phone: normalizedPhone,
+                subscriptionStatus: 'free',
+                subscriptionExpiry: null,
+                referral_code: newUserReferralCode,
+                freeMonthsEarned: 0,
+            };
+
+            // Send welcome email (non-blocking)
+            if (email) {
+                sendUserEmail(email, name || 'User').catch(err =>
+                    console.error('Welcome email failed:', err.message)
+                );
+            }
+
+            return res.json({ success: true, token, user: safeUser });
+        }
+    } catch (error) {
+        console.error('❌ Firebase auth error:', error);
+        return res.status(500).json({ success: false, message: 'Authentication failed' });
+    }
+});
+
+// Store FCM device token
+app.post('/api/user/fcm-token', authenticateUser, async (req, res) => {
+    try {
+        const { token, platform } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Token is required' });
+        }
+
+        const { ObjectId } = require('mongodb');
+
+        // Remove any existing entry for this token, then add fresh
+        await usersCollection.updateOne(
+            { _id: new ObjectId(req.user.id) },
+            { $pull: { fcmTokens: { token } } }
+        );
+
+        await usersCollection.updateOne(
+            { _id: new ObjectId(req.user.id) },
+            {
+                $push: {
+                    fcmTokens: {
+                        token,
+                        platform: platform || 'unknown',
+                        updatedAt: new Date(),
+                    },
+                },
+            }
+        );
+
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('FCM token save error:', error);
+        return res.status(500).json({ success: false, message: 'Failed to save token' });
+    }
+});
+
+// Remove FCM token on logout
+app.delete('/api/user/fcm-token', authenticateUser, async (req, res) => {
+    try {
+        const { token } = req.body;
+        const { ObjectId } = require('mongodb');
+
+        if (token) {
+            await usersCollection.updateOne(
+                { _id: new ObjectId(req.user.id) },
+                { $pull: { fcmTokens: { token } } }
+            );
+        }
+
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('FCM token remove error:', error);
+        return res.status(500).json({ success: false, message: 'Failed to remove token' });
     }
 });
 
@@ -4208,6 +4431,82 @@ app.get('/api/off/product/:barcode', async (req, res) => {
             });
         }
         console.error('❌ OFF product fetch error:', err.message);
+        return res.status(502).json({
+            success: false,
+            message: 'Open Food Facts API error.'
+        });
+    }
+});
+
+// GET /api/off/nutriscore?grade=A&page=1&page_size=20 — fetch Indian products by nutri-score grade
+app.get('/api/off/nutriscore', async (req, res) => {
+    const grade = (req.query.grade || 'a').toLowerCase();
+    const page = parseInt(req.query.page, 10) || 1;
+    const pageSize = Math.min(parseInt(req.query.page_size, 10) || 20, 50);
+    const q = req.query.q || '';
+
+    if (!['a', 'b', 'c', 'd', 'e'].includes(grade)) {
+        return res.status(400).json({
+            success: false,
+            message: "Grade must be one of: a, b, c, d, e"
+        });
+    }
+
+    const cacheKey = `nutriscore:${grade}:${page}:${pageSize}:${q.trim().toLowerCase()}`;
+    const cached = offCacheGet(cacheKey);
+    if (cached !== null) {
+        return res.json(cached);
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    try {
+        // Open Food Facts API: filter by nutri-score grade + country India
+        let url = `https://world.openfoodfacts.org/cgi/search.pl?json=1&page=${page}&page_size=${pageSize}&tagtype_0=nutrition_grades&tag_contains_0=contains&tag_0=${grade}&tagtype_1=countries&tag_contains_1=contains&tag_1=India`;
+
+        if (q.trim()) {
+            url += `&search_terms=${encodeURIComponent(q.trim())}`;
+        }
+
+        // Sort by popularity (scans)
+        url += '&sort_by=unique_scans_n';
+
+        const offRes = await fetch(url, {
+            signal: controller.signal,
+            headers: { 'User-Agent': 'ChoosePure/1.0 (choosepure.in)' }
+        });
+        clearTimeout(timeout);
+
+        if (!offRes.ok) {
+            return res.status(502).json({
+                success: false,
+                message: 'Open Food Facts API error.'
+            });
+        }
+
+        const data = await offRes.json();
+        const products = normaliseSearchResults(data.products);
+        const totalCount = data.count || 0;
+
+        const result = {
+            products,
+            grade: grade.toUpperCase(),
+            totalCount,
+            page,
+            pageSize,
+        };
+        offCacheSet(cacheKey, result);
+        return res.json(result);
+    } catch (err) {
+        clearTimeout(timeout);
+        if (err.name === 'AbortError') {
+            return res.status(504).json({
+                success: false,
+                message: 'Open Food Facts API timed out.'
+            });
+        }
+        console.error('❌ OFF nutriscore fetch error:', err.message);
         return res.status(502).json({
             success: false,
             message: 'Open Food Facts API error.'
