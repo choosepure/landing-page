@@ -13,7 +13,8 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "in.choosepure.app"
+      "bundleIdentifier": "in.choosepure.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,6 +22,7 @@
         "backgroundColor": "#FAFAF7"
       },
       "package": "in.choosepure.app",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.CAMERA"
       ]
