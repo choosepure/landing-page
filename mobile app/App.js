@@ -21,6 +21,7 @@ import {
 import { getNavigationAction } from './src/utils/notificationHandler';
 import { initRemoteConfig } from './src/services/firebase/remoteConfig';
 import { logScreenView } from './src/services/firebase/analytics';
+import { configureGoogleSignIn } from './src/services/firebase/googleSignIn';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import apiClient from './src/api/client';
 
@@ -68,6 +69,9 @@ export default function App() {
       } catch (err) {
         console.warn('[RemoteConfig] Failed to initialize Remote Config:', err);
       }
+
+      // Configure Google Sign-In
+      configureGoogleSignIn();
 
       try {
         // Configure iOS foreground notification presentation (no-op on Android)

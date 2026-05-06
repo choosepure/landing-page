@@ -11,7 +11,7 @@ import Button from '../components/Button';
 import Icon from '../components/Icon';
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -20,6 +20,26 @@ export default function LoginScreen({ navigation }) {
   const [phoneLoading, setPhoneLoading] = useState(false);
   const [tab, setTab] = useState('email');
   const [showPassword, setShowPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function handleGoogleSignIn() {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const result = await loginWithGoogle();
+      if (!result.success) {
+        setError(result.message || 'Google sign-in failed');
+      }
+    } catch (e) {
+      if (e.code === 'SIGN_IN_CANCELLED') {
+        // User cancelled — do nothing
+        return;
+      }
+      setError(e.message || 'Something went wrong with Google Sign-In');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   async function handleLogin() {
     setError('');
@@ -187,8 +207,8 @@ export default function LoginScreen({ navigation }) {
 
         {/* Social login buttons */}
         <View style={styles.socialContainer}>
-          <Button variant="outline" fullWidth>
-            Continue with Google
+          <Button variant="outline" fullWidth onPress={handleGoogleSignIn} disabled={googleLoading}>
+            {googleLoading ? <ActivityIndicator color={theme.colors.primary} /> : 'Continue with Google'}
           </Button>
           <View style={styles.socialSpacer} />
           <Button variant="outline" fullWidth>

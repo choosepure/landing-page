@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient, { setAuthFailureHandler } from '../api/client';
 import { signInWithEmail, signUpWithEmail, signOut as firebaseSignOut, signInWithPhone, confirmOTP } from '../services/firebase/auth';
+import { signInWithGoogle } from '../services/firebase/googleSignIn';
 import { logLogin, logSignUp, setUserId } from '../services/firebase/analytics';
 import { setCrashlyticsUserId } from '../services/firebase/crashlytics';
 
@@ -144,8 +145,28 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  async function loginWithGoogle() {
+    const { idToken } = await signInWithGoogle();
+    const data = await exchangeFirebaseToken(idToken);
+    if (data.success) {
+      setUser(data.user);
+      try {
+        logLogin('google');
+        setUserId(data.user._id);
+      } catch (e) {
+        // Analytics should never break the auth flow
+      }
+      try {
+        setCrashlyticsUserId(data.user._id);
+      } catch (e) {
+        // Crashlytics should never break the auth flow
+      }
+    }
+    return data;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, register, logout, checkAuth, loginWithPhone, confirmPhoneOTP }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, register, logout, checkAuth, loginWithPhone, confirmPhoneOTP, loginWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );
