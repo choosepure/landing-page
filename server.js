@@ -4438,12 +4438,13 @@ app.get('/api/off/product/:barcode', async (req, res) => {
     }
 });
 
-// GET /api/off/nutriscore?grade=A&page=1&page_size=20 — fetch Indian products by nutri-score grade
+// GET /api/off/nutriscore?grade=A&page=1&page_size=20&category=Snacks — fetch Indian products by nutri-score grade
 app.get('/api/off/nutriscore', async (req, res) => {
     const grade = (req.query.grade || 'a').toLowerCase();
     const page = parseInt(req.query.page, 10) || 1;
     const pageSize = Math.min(parseInt(req.query.page_size, 10) || 20, 50);
     const q = req.query.q || '';
+    const category = req.query.category || '';
 
     if (!['a', 'b', 'c', 'd', 'e'].includes(grade)) {
         return res.status(400).json({
@@ -4452,7 +4453,7 @@ app.get('/api/off/nutriscore', async (req, res) => {
         });
     }
 
-    const cacheKey = `nutriscore:${grade}:${page}:${pageSize}:${q.trim().toLowerCase()}`;
+    const cacheKey = `nutriscore:${grade}:${page}:${pageSize}:${q.trim().toLowerCase()}:${category.trim().toLowerCase()}`;
     const cached = offCacheGet(cacheKey);
     if (cached !== null) {
         return res.json(cached);
@@ -4462,15 +4463,17 @@ app.get('/api/off/nutriscore', async (req, res) => {
     const timeout = setTimeout(() => controller.abort(), 15000);
 
     try {
-        // Open Food Facts API: filter by nutri-score grade + country India
-        let url = `https://world.openfoodfacts.org/cgi/search.pl?json=1&page=${page}&page_size=${pageSize}&tagtype_0=nutrition_grades&tag_contains_0=contains&tag_0=${grade}&tagtype_1=countries&tag_contains_1=contains&tag_1=India`;
+        // Open Food Facts v2 API — much faster with fields parameter
+        const fields = 'code,product_name,brands,nutrition_grades,nova_group,image_url,image_front_small_url,categories_tags_en';
+        let url = `https://world.openfoodfacts.org/api/v2/search?countries_tags_en=India&nutrition_grades_tags=${grade}&fields=${fields}&page_size=${pageSize}&page=${page}&sort_by=nutriscore_score`;
+
+        if (category.trim()) {
+            url += `&categories_tags_en=${encodeURIComponent(category.trim())}`;
+        }
 
         if (q.trim()) {
             url += `&search_terms=${encodeURIComponent(q.trim())}`;
         }
-
-        // Sort by completeness (more reliable than unique_scans_n which can return HTML)
-        url += '&sort_by=completeness';
 
         const offRes = await fetch(url, {
             signal: controller.signal,
@@ -4495,7 +4498,19 @@ app.get('/api/off/nutriscore', async (req, res) => {
         }
 
         const data = await offRes.json();
-        const products = normaliseSearchResults(data.products || []);
+        const rawProducts = data.products || [];
+
+        // Normalise the v2 response format
+        const products = rawProducts.map(p => ({
+            name: p.product_name || '',
+            brand: p.brands || '',
+            barcode: p.code || '',
+            nutriScore: p.nutrition_grades || null,
+            novaGroup: p.nova_group != null ? Number(p.nova_group) : null,
+            imageUrl: p.image_front_small_url || p.image_url || null,
+            categories: p.categories_tags_en || [],
+        }));
+
         const totalCount = data.count || 0;
 
         const result = {
