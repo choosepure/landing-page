@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../theme';
 import Card from './Card';
@@ -7,18 +7,9 @@ import ScoreBadge from './ScoreBadge';
 import NutriGradeBadge from './NutriGradeBadge';
 
 /**
- * Horizontal product list row — image placeholder, name/brand/meta, optional badge.
+ * Horizontal product list row — image, name/brand/meta, optional badge.
+ * Pass `imageUrl` for a real product image, or `imageColors` for a gradient placeholder.
  * Pass `score` (0-100) for a circular safety badge OR `grade` (A-E) for a square nutri badge.
- *
- * Usage:
- *   <ProductCard
- *     name="Organic Whole Milk"
- *     brand="Happy Valley Farms"
- *     meta="2 hours ago"
- *     score={87}
- *     imageColors={['#F4F0E8', '#B8A584']}
- *     onPress={() => navigation.navigate('ProductDetail', { product })}
- *   />
  */
 export default function ProductCard({
   name,
@@ -26,14 +17,21 @@ export default function ProductCard({
   meta,
   score,
   grade,
+  imageUrl,
   imageColors,
   onPress,
 }) {
   return (
     <Card onPress={onPress} style={styles.card}>
       <View style={styles.row}>
-        {/* Image placeholder */}
-        {imageColors && imageColors.length === 2 ? (
+        {/* Product image */}
+        {imageUrl ? (
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        ) : imageColors && imageColors.length === 2 ? (
           <LinearGradient
             colors={imageColors}
             start={{ x: 0, y: 0 }}

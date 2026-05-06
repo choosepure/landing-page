@@ -88,6 +88,9 @@ export default function DashboardScreen({ navigation }) {
   const [nutriProducts, setNutriProducts] = useState([]);
   const [nutriLoading, setNutriLoading] = useState(false);
   const [nutriCounts, setNutriCounts] = useState({});
+  const [nutriPage, setNutriPage] = useState(1);
+  const [nutriHasMore, setNutriHasMore] = useState(true);
+  const [nutriLoadingMore, setNutriLoadingMore] = useState(false);
 
   const subscribed = isSubscriber(user);
 
@@ -109,25 +112,48 @@ export default function DashboardScreen({ navigation }) {
 
   /* ── Nutri-score data fetching ─────────────────────────── */
 
-  const fetchNutriProducts = useCallback(async (grade) => {
-    setNutriLoading(true);
+  const fetchNutriProducts = useCallback(async (grade, page = 1) => {
+    if (page === 1) {
+      setNutriLoading(true);
+    } else {
+      setNutriLoadingMore(true);
+    }
     try {
-      const res = await apiClient.get(`/api/off/nutriscore?grade=${grade}&page_size=5`);
-      setNutriProducts(res.data.products || []);
+      const res = await apiClient.get(`/api/off/nutriscore?grade=${grade}&page=${page}&page_size=10`);
+      const newProducts = res.data.products || [];
+      const totalCount = res.data.totalCount || 0;
+
+      if (page === 1) {
+        setNutriProducts(newProducts);
+      } else {
+        setNutriProducts((prev) => [...prev, ...newProducts]);
+      }
+
       setNutriCounts((prev) => ({
         ...prev,
-        [grade]: res.data.totalCount || 0,
+        [grade]: totalCount,
       }));
+      setNutriHasMore(page * 10 < totalCount);
     } catch (e) {
-      setNutriProducts([]);
+      if (page === 1) setNutriProducts([]);
     } finally {
       setNutriLoading(false);
+      setNutriLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchNutriProducts(selectedGrade);
+    setNutriPage(1);
+    setNutriHasMore(true);
+    fetchNutriProducts(selectedGrade, 1);
   }, [selectedGrade, fetchNutriProducts]);
+
+  const loadMoreNutriProducts = useCallback(() => {
+    if (!nutriHasMore || nutriLoadingMore || nutriLoading) return;
+    const nextPage = nutriPage + 1;
+    setNutriPage(nextPage);
+    fetchNutriProducts(selectedGrade, nextPage);
+  }, [nutriHasMore, nutriLoadingMore, nutriLoading, nutriPage, selectedGrade, fetchNutriProducts]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -177,7 +203,8 @@ export default function DashboardScreen({ navigation }) {
       brand={item.brandName}
       meta={getTimeAgo(item.createdAt)}
       score={item.purityScore}
-      imageColors={REPORT_IMAGE_COLORS[index % REPORT_IMAGE_COLORS.length]}
+      imageUrl={item.imageUrl}
+      imageColors={!item.imageUrl ? REPORT_IMAGE_COLORS[index % REPORT_IMAGE_COLORS.length] : null}
       onPress={() => handleCardPress(item, index)}
     />
   );
@@ -188,7 +215,8 @@ export default function DashboardScreen({ navigation }) {
       brand={item.brand || ''}
       meta={item.nutriScore ? `Nutri-Score ${item.nutriScore.toUpperCase()}` : ''}
       grade={selectedGrade}
-      imageColors={item.imageUrl ? null : ['#E8DCC4', '#B89A6F']}
+      imageUrl={item.imageUrl}
+      imageColors={!item.imageUrl ? ['#E8DCC4', '#B89A6F'] : null}
       onPress={() => navigation.navigate('ProductDetail', { product: item })}
     />
   );
@@ -326,6 +354,17 @@ export default function DashboardScreen({ navigation }) {
             renderItem={renderNutriItem}
             scrollEnabled={false}
             contentContainerStyle={styles.productList}
+            ListFooterComponent={
+              nutriLoadingMore ? (
+                <View style={styles.nutriLoadingContainer}>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                </View>
+              ) : nutriHasMore && nutriProducts.length > 0 ? (
+                <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreNutriProducts}>
+                  <Text style={styles.loadMoreText}>Load more products</Text>
+                </TouchableOpacity>
+              ) : null
+            }
           />
         )}
       </ScrollView>
@@ -440,6 +479,18 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     alignItems: 'center',
     marginBottom: 28,
+  },
+
+  /* Load more */
+  loadMoreButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  loadMoreText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
   },
 
   /* Error */
