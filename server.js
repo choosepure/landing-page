@@ -4459,7 +4459,7 @@ app.get('/api/off/nutriscore', async (req, res) => {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     try {
         // Open Food Facts API: filter by nutri-score grade + country India
@@ -4469,8 +4469,8 @@ app.get('/api/off/nutriscore', async (req, res) => {
             url += `&search_terms=${encodeURIComponent(q.trim())}`;
         }
 
-        // Sort by popularity (scans)
-        url += '&sort_by=unique_scans_n';
+        // Sort by completeness (more reliable than unique_scans_n which can return HTML)
+        url += '&sort_by=completeness';
 
         const offRes = await fetch(url, {
             signal: controller.signal,
@@ -4485,8 +4485,17 @@ app.get('/api/off/nutriscore', async (req, res) => {
             });
         }
 
+        const contentType = offRes.headers.get('content-type') || '';
+        if (!contentType.includes('json')) {
+            console.error('❌ OFF nutriscore returned non-JSON response:', contentType);
+            return res.status(502).json({
+                success: false,
+                message: 'Open Food Facts API returned unexpected format.'
+            });
+        }
+
         const data = await offRes.json();
-        const products = normaliseSearchResults(data.products);
+        const products = normaliseSearchResults(data.products || []);
         const totalCount = data.count || 0;
 
         const result = {
