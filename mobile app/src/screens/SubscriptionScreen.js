@@ -17,33 +17,26 @@ const PLANS = [
   {
     id: 'monthly',
     title: 'Monthly',
-    price: '$9.99',
+    price: '₹299',
     period: '/month',
     blurb: 'Cancel anytime',
   },
   {
-    id: 'yearly',
-    title: 'Yearly',
-    price: '$79.99',
+    id: 'annual',
+    title: 'Annual',
+    price: '₹2,499',
     period: '/year',
-    blurb: 'Save 33% · 2 months free',
+    blurb: 'Save ~30% · Best value',
     featured: true,
-  },
-  {
-    id: 'family',
-    title: 'Family',
-    price: '$129.99',
-    period: '/year',
-    blurb: 'Up to 6 members',
   },
 ];
 
 const PERKS = [
-  'Unlimited scans & lookups',
-  'Full lab-grade reports for every product',
-  'Personalized recommendations',
-  'Early access to new tests & categories',
-  'Premium customer support',
+  'Access to all current & future lab reports',
+  '1 free vote every month to decide what gets tested',
+  'Option to buy additional votes for products you care about',
+  'Full detailed test results with expert commentary',
+  'Cancel anytime — no hassle, no hidden conditions',
 ];
 
 function isSubscriber(user) {
@@ -58,33 +51,52 @@ function isSubscriber(user) {
 export default function SubscriptionScreen({ navigation }) {
   const { user, checkAuth } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [picked, setPicked] = useState('yearly');
+  const [picked, setPicked] = useState('annual');
   const subscribed = isSubscriber(user);
 
   const handleSubscribe = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.post('/api/subscription/create-order');
-      const { subscriptionId } = res.data;
+      const res = await apiClient.post('/api/subscription/create-order', { plan: picked });
+      const { type, subscriptionId, orderId, key, amount } = res.data;
 
-      const options = {
-        key: RAZORPAY_KEY,
-        subscription_id: subscriptionId,
-        name: 'ChoosePure',
-        description: 'Monthly Subscription — ₹299',
-        prefill: { email: user?.email, contact: user?.phone },
-        theme: { color: theme.colors.primary },
-      };
+      let options;
+      if (type === 'subscription') {
+        // Monthly recurring subscription
+        options = {
+          key: key || RAZORPAY_KEY,
+          subscription_id: subscriptionId,
+          name: 'ChoosePure',
+          description: 'Monthly Subscription — ₹299/month',
+          prefill: { email: user?.email, contact: user?.phone },
+          theme: { color: theme.colors.primary },
+        };
+      } else {
+        // Annual one-time payment
+        options = {
+          key: key || RAZORPAY_KEY,
+          order_id: orderId,
+          amount: amount,
+          currency: 'INR',
+          name: 'ChoosePure',
+          description: 'Annual Plan — ₹2,499/year',
+          prefill: { email: user?.email, contact: user?.phone },
+          theme: { color: theme.colors.primary },
+        };
+      }
 
       const paymentData = await RazorpayCheckout.open(options);
 
       await apiClient.post('/api/subscription/verify-payment', {
         razorpay_subscription_id: paymentData.razorpay_subscription_id,
+        razorpay_order_id: paymentData.razorpay_order_id || orderId,
         razorpay_payment_id: paymentData.razorpay_payment_id,
         razorpay_signature: paymentData.razorpay_signature,
+        plan: picked,
       });
 
-      try { logPurchase(299, 'INR'); } catch (e) { /* analytics should never break user flow */ }
+      const purchaseAmount = picked === 'annual' ? 2499 : 299;
+      try { logPurchase(purchaseAmount, 'INR'); } catch (e) {}
 
       await checkAuth();
       Alert.alert('Subscribed!', 'Welcome to ChoosePure Premium.', [
@@ -92,7 +104,7 @@ export default function SubscriptionScreen({ navigation }) {
       ]);
     } catch (e) {
       if (e?.error?.code !== 'PAYMENT_CANCELLED') {
-        Alert.alert('Payment Failed', 'Something went wrong. Please try again.');
+        Alert.alert('Payment Failed', e?.response?.data?.message || 'Something went wrong. Please try again.');
       }
     } finally {
       setLoading(false);
