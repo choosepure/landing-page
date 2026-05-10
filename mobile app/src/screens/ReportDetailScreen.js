@@ -71,7 +71,7 @@ export default function ReportDetailScreen({ route, navigation }) {
           <Text style={styles.lockIcon}>🔒</Text>
           <Text style={styles.productName}>Subscription Required</Text>
           <Text style={styles.bodyText}>Subscribe to ChoosePure to access full test reports with detailed lab results.</Text>
-          <TouchableOpacity style={styles.downloadBtn} onPress={() => navigation.navigate('Subscription')}>
+          <TouchableOpacity style={styles.downloadBtn} onPress={() => navigation.navigate('Profile', { screen: 'Subscription' })}>
             <Text style={styles.downloadText}>Subscribe — ₹299/month</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
