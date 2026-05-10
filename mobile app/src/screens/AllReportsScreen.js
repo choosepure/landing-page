@@ -75,7 +75,7 @@ export default function AllReportsScreen({ navigation }) {
     if (subscribed || index === 0) {
       navigation.navigate('ReportDetail', { reportId: item._id });
     } else {
-      navigation.navigate('Subscription');
+      navigation.navigate('Profile', { screen: 'Subscription' });
     }
   };
 
