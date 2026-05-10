@@ -293,7 +293,7 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Latest Testing Reports</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('History')}
+            onPress={() => navigation.navigate('AllReports')}
             activeOpacity={0.7}
           >
             <Text style={styles.viewAllText}>View All</Text>

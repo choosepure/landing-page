@@ -18,6 +18,7 @@ import PollingScreen from '../screens/PollingScreen';
 
 // New placeholder screens (replaced in task 13)
 import ProductDetailScreen from '../screens/ProductDetailScreen';
+import AllReportsScreen from '../screens/AllReportsScreen';
 import LabReportScreen from '../screens/LabReportScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
 import NutriGradeListScreen from '../screens/NutriGradeListScreen';
@@ -55,6 +56,11 @@ function HomeTabStack() {
         name="ReportDetail"
         component={ReportDetailScreen}
         options={{ title: 'Test Report' }}
+      />
+      <HomeStack.Screen
+        name="AllReports"
+        component={AllReportsScreen}
+        options={{ title: 'All Reports' }}
       />
       <HomeStack.Screen
         name="ProductDetail"
