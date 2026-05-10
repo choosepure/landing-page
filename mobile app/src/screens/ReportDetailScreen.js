@@ -22,7 +22,13 @@ export default function ReportDetailScreen({ route }) {
       const res = await apiClient.get(`/api/reports/${reportId}`);
       setReport(res.data.report || res.data);
     } catch (e) {
-      setError('Failed to load report. Please try again.');
+      if (e.response?.status === 403) {
+        setError('subscription_required');
+      } else if (e.response?.status === 401) {
+        setError('login_required');
+      } else {
+        setError('Failed to load report. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -59,6 +65,33 @@ export default function ReportDetailScreen({ route }) {
   }
 
   if (error) {
+    if (error === 'subscription_required') {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.lockIcon}>🔒</Text>
+          <Text style={styles.productName}>Subscription Required</Text>
+          <Text style={styles.bodyText}>Subscribe to ChoosePure to access full test reports with detailed lab results.</Text>
+          <TouchableOpacity style={styles.downloadBtn} onPress={() => navigation.navigate('Subscription')}>
+            <Text style={styles.downloadText}>Subscribe — ₹299/month</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.retryText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    if (error === 'login_required') {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.lockIcon}>🔑</Text>
+          <Text style={styles.productName}>Login Required</Text>
+          <Text style={styles.bodyText}>Please log in to view test reports.</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.retryText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error}</Text>
@@ -149,6 +182,7 @@ const styles = StyleSheet.create({
   content: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xl * 2 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.lg },
   productName: { fontFamily: theme.fonts.bold, fontSize: 22, color: theme.colors.text },
+  lockIcon: { fontSize: 48, marginBottom: theme.spacing.md },
   brandName: { fontFamily: theme.fonts.regular, fontSize: 15, color: theme.colors.textSecondary, marginTop: 2 },
   scoreCircle: {
     width: 120, height: 120, borderRadius: 60,
