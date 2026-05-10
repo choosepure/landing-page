@@ -74,9 +74,6 @@ export default function ReportDetailScreen({ route, navigation }) {
           <TouchableOpacity style={styles.downloadBtn} onPress={() => navigation.navigate('Profile', { screen: 'Subscription' })}>
             <Text style={styles.downloadText}>Subscribe — ₹299/month</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.retryText}>Go Back</Text>
-          </TouchableOpacity>
         </View>
       );
     }
@@ -86,9 +83,6 @@ export default function ReportDetailScreen({ route, navigation }) {
           <Text style={styles.lockIcon}>🔑</Text>
           <Text style={styles.productName}>Login Required</Text>
           <Text style={styles.bodyText}>Please log in to view test reports.</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.retryText}>Go Back</Text>
-          </TouchableOpacity>
         </View>
       );
     }
