@@ -2397,12 +2397,33 @@ app.post('/api/admin/bulk-email', authenticateAdmin, async (req, res) => {
                 successCount++;
                 console.log(`✅ Email sent to ${recipient.email}`);
                 
-                // Small delay to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Delay between emails to avoid Mailgun rate limiting (1 email per 2 seconds)
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
             } catch (emailError) {
-                console.error(`❌ Failed to send email to ${recipient.email}:`, emailError.message);
-                failCount++;
+                // If rate limited, wait longer and retry once
+                if (emailError.status === 429 || emailError.status === 420 || emailError.message?.includes('Too Many Requests')) {
+                    console.log(`⏳ Rate limited on ${recipient.email}, waiting 10s and retrying...`);
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    try {
+                        const retryData = {
+                            from: 'ChoosePure <support@choosepure.in>',
+                            to: recipient.email,
+                            subject: subject,
+                            html: emailContent
+                        };
+                        await mg.messages.create(process.env.MAILGUN_DOMAIN || 'choosepure.in', retryData);
+                        successCount++;
+                        console.log(`✅ Email sent to ${recipient.email} (retry)`);
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    } catch (retryError) {
+                        console.error(`❌ Failed to send email to ${recipient.email} (retry failed):`, retryError.message);
+                        failCount++;
+                    }
+                } else {
+                    console.error(`❌ Failed to send email to ${recipient.email}:`, emailError.message);
+                    failCount++;
+                }
             }
         }
         
