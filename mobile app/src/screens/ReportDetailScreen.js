@@ -8,7 +8,7 @@ import * as Sharing from 'expo-sharing';
 import { theme } from '../theme';
 import apiClient from '../api/client';
 
-export default function ReportDetailScreen({ route }) {
+export default function ReportDetailScreen({ route, navigation }) {
   const { reportId } = route.params;
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
