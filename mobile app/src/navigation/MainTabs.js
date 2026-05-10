@@ -52,6 +52,11 @@ function HomeTabStack() {
         options={{ title: 'Home' }}
       />
       <HomeStack.Screen
+        name="ReportDetail"
+        component={ReportDetailScreen}
+        options={{ title: 'Test Report' }}
+      />
+      <HomeStack.Screen
         name="ProductDetail"
         component={ProductDetailScreen}
         options={{ title: 'Product Detail' }}
