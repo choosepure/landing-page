@@ -673,7 +673,11 @@ app.post('/api/user/firebase-auth', async (req, res) => {
         let user = await usersCollection.findOne({ firebaseUid });
 
         if (!user && email) {
-            user = await usersCollection.findOne({ email });
+            user = await usersCollection.findOne({ email: email.toLowerCase() });
+        }
+        if (!user && email) {
+            // Try case-insensitive email match
+            user = await usersCollection.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
         }
         if (!user && phoneNumber) {
             // Normalize phone: Firebase sends +91XXXXXXXXXX, DB stores XXXXXXXXXX
@@ -682,8 +686,8 @@ app.post('/api/user/firebase-auth', async (req, res) => {
         }
 
         if (user) {
-            // Existing user — link Firebase UID if not already linked
-            if (!user.firebaseUid) {
+            // Existing user — link or update Firebase UID
+            if (!user.firebaseUid || user.firebaseUid !== firebaseUid) {
                 await usersCollection.updateOne(
                     { _id: user._id },
                     { $set: { firebaseUid, updatedAt: new Date() } }
