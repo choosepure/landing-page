@@ -4465,16 +4465,16 @@ app.get('/api/off/product/:barcode', async (req, res) => {
 
 // GET /api/off/nutriscore?grade=A&page=1&page_size=20&category=Snacks — fetch Indian products by nutri-score grade
 app.get('/api/off/nutriscore', async (req, res) => {
-    const grade = (req.query.grade || 'a').toLowerCase();
+    const grade = (req.query.grade || 'all').toLowerCase();
     const page = parseInt(req.query.page, 10) || 1;
     const pageSize = Math.min(parseInt(req.query.page_size, 10) || 20, 50);
     const q = req.query.q || '';
     const category = req.query.category || '';
 
-    if (!['a', 'b', 'c', 'd', 'e'].includes(grade)) {
+    if (!['a', 'b', 'c', 'd', 'e', 'all'].includes(grade)) {
         return res.status(400).json({
             success: false,
-            message: "Grade must be one of: a, b, c, d, e"
+            message: "Grade must be one of: a, b, c, d, e, all"
         });
     }
 
@@ -4490,7 +4490,12 @@ app.get('/api/off/nutriscore', async (req, res) => {
     try {
         // Open Food Facts v2 API — much faster with fields parameter
         const fields = 'code,product_name,brands,nutrition_grades,nova_group,image_url,image_front_small_url,categories_tags_en';
-        let url = `https://world.openfoodfacts.org/api/v2/search?countries_tags_en=India&nutrition_grades_tags=${grade}&fields=${fields}&page_size=${pageSize}&page=${page}&sort_by=nutriscore_score`;
+        let url = `https://world.openfoodfacts.org/api/v2/search?countries_tags_en=India&fields=${fields}&page_size=${pageSize}&page=${page}&sort_by=nutriscore_score`;
+
+        // Add nutri-score filter only if not "all"
+        if (grade !== 'all') {
+            url += `&nutrition_grades_tags=${grade}`;
+        }
 
         if (category.trim()) {
             url += `&categories_tags_en=${encodeURIComponent(category.trim())}`;
