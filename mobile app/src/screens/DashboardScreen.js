@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   FlatList,
   TouchableOpacity,
@@ -84,7 +83,6 @@ export default function DashboardScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [selectedGrade, setSelectedGrade] = useState('A');
-  const [searchQuery, setSearchQuery] = useState('');
   const [nutriProducts, setNutriProducts] = useState([]);
   const [nutriLoading, setNutriLoading] = useState(false);
   const [nutriCounts, setNutriCounts] = useState({});
@@ -263,25 +261,24 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── Search bar ──────────────────────────────────── */}
         <Card style={styles.searchCard}>
-          <View style={styles.searchRow}>
+          <TouchableOpacity
+            style={styles.searchRow}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('NutriGradeList', { grade: 'all' })}
+          >
             <Icon name="search" size={18} color={theme.colors.textDim} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search products, brands, categories..."
-              placeholderTextColor={theme.colors.textDim}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-            />
+            <Text style={styles.searchPlaceholder}>
+              Search products, brands, categories...
+            </Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('ScannerHome')}
+              onPress={() => navigation.navigate('Scan')}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel="Scan barcode"
             >
               <Icon name="scan-corners" size={18} color={theme.colors.text} />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </Card>
 
         {/* ── Error banner ────────────────────────────────── */}
@@ -498,12 +495,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  searchInput: {
+  searchPlaceholder: {
     flex: 1,
     fontFamily: theme.fonts.regular,
     fontSize: theme.fontSize.base,
-    color: theme.colors.text,
-    padding: 0,
+    color: theme.colors.textDim,
   },
 
   /* Section headers */
