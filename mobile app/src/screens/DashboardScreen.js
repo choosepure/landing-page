@@ -91,6 +91,7 @@ export default function DashboardScreen({ navigation }) {
   const [nutriPage, setNutriPage] = useState(1);
   const [nutriHasMore, setNutriHasMore] = useState(true);
   const [nutriLoadingMore, setNutriLoadingMore] = useState(false);
+  const [showReportsInfo, setShowReportsInfo] = useState(false);
 
   const subscribed = isSubscriber(user);
 
@@ -291,7 +292,17 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── Latest Testing Reports ──────────────────────── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Latest Testing Reports</Text>
+          <View style={styles.sectionTitleRow}>
+            <Text style={styles.sectionTitle}>Latest Testing Reports</Text>
+            <TouchableOpacity
+              onPress={() => setShowReportsInfo(!showReportsInfo)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.infoButton}
+            >
+              <Icon name="info" size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             onPress={() => navigation.navigate('AllReports')}
             activeOpacity={0.7}
@@ -299,6 +310,21 @@ export default function DashboardScreen({ navigation }) {
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
+
+        {showReportsInfo && (
+          <Card style={styles.infoTooltip}>
+            <Text style={styles.infoTooltipText}>
+              Every report here is backed by actual lab testing, not guesswork. Our AI cross-checks each parameter against FSSAI, EU, and US food safety standards and shows you a clear pass or fail for every single one — so you know exactly what's in your food.
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowReportsInfo(false)}
+              style={styles.infoTooltipClose}
+              activeOpacity={0.7}
+            >
+              <Icon name="close" size={14} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </Card>
+        )}
 
         {reports.length > 0 ? (
           <FlatList
@@ -452,10 +478,45 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   sectionTitle: {
     fontFamily: theme.fonts.bold,
     fontSize: theme.fontSize.xl,
     color: theme.colors.text,
+  },
+  infoButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: theme.colors.green50 || '#F0F7F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoTooltip: {
+    padding: 14,
+    marginBottom: 12,
+    position: 'relative',
+  },
+  infoTooltipText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+    paddingRight: 24,
+  },
+  infoTooltipClose: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   viewAllText: {
     fontFamily: theme.fonts.semiBold,
