@@ -92,6 +92,7 @@ export default function DashboardScreen({ navigation }) {
   const [nutriHasMore, setNutriHasMore] = useState(true);
   const [nutriLoadingMore, setNutriLoadingMore] = useState(false);
   const [showReportsInfo, setShowReportsInfo] = useState(false);
+  const [showNutriInfo, setShowNutriInfo] = useState(false);
 
   const subscribed = isSubscriber(user);
 
@@ -343,7 +344,17 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── Check Nutri-score ───────────────────────────── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Check Nutri-score</Text>
+          <View style={styles.sectionTitleRow}>
+            <Text style={styles.sectionTitle}>Check Nutri-score</Text>
+            <TouchableOpacity
+              onPress={() => setShowNutriInfo(!showNutriInfo)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.infoButton}
+            >
+              <Icon name="info" size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             onPress={() =>
               navigation.navigate('NutriGradeList', { grade: selectedGrade })
@@ -353,6 +364,30 @@ export default function DashboardScreen({ navigation }) {
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
+
+        {showNutriInfo && (
+          <Card style={styles.infoTooltip}>
+            <TouchableOpacity
+              onPress={() => setShowNutriInfo(false)}
+              style={styles.infoTooltipClose}
+              activeOpacity={0.7}
+            >
+              <Icon name="close" size={14} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            <Text style={styles.infoTooltipHeading}>Nutri-Score</Text>
+            <Text style={styles.infoTooltipText}>
+              A simple A-to-E rating that scores a product's overall nutritional quality — factoring in sugar, salt, calories, fibre, protein, and more. A is the healthiest, E means think twice.
+            </Text>
+            <Text style={styles.infoTooltipHeading}>Nova Group</Text>
+            <Text style={styles.infoTooltipText}>
+              Tells you how processed your food really is, on a scale of 1 to 4. Group 1 means minimally processed whole foods. Group 4 means ultra-processed — the kind linked to long-term health risks.
+            </Text>
+            <Text style={styles.infoTooltipHeading}>Eco Score</Text>
+            <Text style={styles.infoTooltipText}>
+              Rates a product's environmental footprint from A to E — covering everything from farming practices and packaging to transport and carbon emissions. A means planet-friendly, E means high impact.
+            </Text>
+          </Card>
+        )}
 
         <View style={styles.dropdownContainer}>
           <Dropdown
@@ -507,6 +542,13 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     lineHeight: 20,
     paddingRight: 24,
+  },
+  infoTooltipHeading: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    marginTop: 10,
+    marginBottom: 2,
   },
   infoTooltipClose: {
     position: 'absolute',
