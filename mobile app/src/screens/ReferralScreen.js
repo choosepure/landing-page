@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator, Alert, Share, ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -114,12 +115,14 @@ export default function ReferralScreen() {
                 <Text style={styles.shareBtnText}>Share on WhatsApp</Text>
               </View>
             </Button>
-            <Button variant="outline" size="md" onPress={handleShareGeneric}>
-              <View style={styles.shareBtn}>
-                <Icon name="share" size={16} color={theme.colors.primary} />
-                <Text style={[styles.shareBtnText, { color: theme.colors.primary }]}>Share Link</Text>
-              </View>
-            </Button>
+            <TouchableOpacity
+              style={styles.shareOutlineBtn}
+              activeOpacity={0.8}
+              onPress={handleShareGeneric}
+            >
+              <Icon name="share" size={16} color="#FFFFFF" />
+              <Text style={styles.shareBtnText}>Share Link</Text>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
 
@@ -258,6 +261,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  shareOutlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   shareBtnText: {
     fontFamily: theme.fonts.semiBold,
