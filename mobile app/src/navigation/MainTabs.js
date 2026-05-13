@@ -130,6 +130,11 @@ function HistoryTabStack() {
         component={ScanHistoryScreen}
         options={{ title: 'History' }}
       />
+      <HistoryStack.Screen
+        name="ResultCard"
+        component={ResultCardScreen}
+        options={{ title: 'Product Details' }}
+      />
     </HistoryStack.Navigator>
   );
 }
