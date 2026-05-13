@@ -273,18 +273,21 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    padding: 18,
+    padding: 14,
     alignItems: 'center',
+    minHeight: 72,
+    justifyContent: 'center',
   },
   statNumber: {
     fontFamily: theme.fonts.bold,
-    fontSize: 28,
+    fontSize: 26,
   },
   statLabel: {
     fontFamily: theme.fonts.medium,
-    fontSize: 12,
+    fontSize: 11,
     color: theme.colors.textSecondary,
     marginTop: 4,
+    textAlign: 'center',
   },
 
   /* Empty state */
