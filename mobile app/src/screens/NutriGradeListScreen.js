@@ -26,16 +26,30 @@ const GRADE_OPTIONS = [
 ];
 
 const CATEGORIES = [
-  'All', 'Snacks', 'Dairy', 'Beverages', 'Cereals', 'Biscuits',
-  'Chocolates', 'Noodles', 'Sauces', 'Oils', 'Spices', 'Sweets',
-  'Baby foods', 'Breads', 'Juices', 'Tea', 'Coffee',
+  { label: 'All', value: '' },
+  { label: 'Snacks', value: 'snacks' },
+  { label: 'Dairy', value: 'dairies' },
+  { label: 'Beverages', value: 'beverages' },
+  { label: 'Cereals', value: 'cereals-and-potatoes' },
+  { label: 'Biscuits', value: 'biscuits-and-cakes' },
+  { label: 'Chocolates', value: 'chocolates' },
+  { label: 'Noodles', value: 'noodles' },
+  { label: 'Sauces', value: 'sauces' },
+  { label: 'Oils', value: 'fats' },
+  { label: 'Spices', value: 'spices' },
+  { label: 'Sweets', value: 'sweets' },
+  { label: 'Baby foods', value: 'baby-foods' },
+  { label: 'Breads', value: 'breads' },
+  { label: 'Juices', value: 'fruit-juices' },
+  { label: 'Tea', value: 'teas' },
+  { label: 'Coffee', value: 'coffees' },
 ];
 
 export default function NutriGradeListScreen({ route, navigation }) {
   const initialGrade = route?.params?.grade || 'all';
   const [grade, setGrade] = useState(initialGrade);
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('All');
+  const [category, setCategory] = useState('');
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -43,6 +57,7 @@ export default function NutriGradeListScreen({ route, navigation }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const searchTimer = useRef(null);
+  const isMounted = useRef(true);
 
   /* ── Fetch products ────────────────────────────────────── */
 
@@ -53,7 +68,7 @@ export default function NutriGradeListScreen({ route, navigation }) {
     try {
       let params = `grade=${g}&page=${pg}&page_size=20`;
       if (q) params += `&q=${encodeURIComponent(q)}`;
-      if (cat && cat !== 'All') params += `&category=${encodeURIComponent(cat)}`;
+      if (cat) params += `&category=${encodeURIComponent(cat)}`;
 
       const res = await apiClient.get(`/api/off/nutriscore?${params}`);
       const newProducts = res.data.products || [];
@@ -76,22 +91,16 @@ export default function NutriGradeListScreen({ route, navigation }) {
 
   /* ── Triggers ──────────────────────────────────────────── */
 
-  useEffect(() => {
-    setPage(1);
-    setHasMore(true);
-    fetchProducts(grade, query, category, 1, false);
-  }, [grade, category, fetchProducts]);
-
-  // Debounced search
+  // Single effect that handles grade, category, and debounced query changes
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
       setHasMore(true);
       fetchProducts(grade, query, category, 1, false);
-    }, 600);
+    }, query ? 400 : 0); // Immediate for grade/category changes, debounced for typing
     return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
-  }, [query]);
+  }, [grade, category, query, fetchProducts]);
 
   /* ── Load more ─────────────────────────────────────────── */
 
@@ -105,14 +114,14 @@ export default function NutriGradeListScreen({ route, navigation }) {
   /* ── Render helpers ────────────────────────────────────── */
 
   const renderCategoryPill = useCallback(({ item }) => {
-    const isActive = item === category;
+    const isActive = item.value === category;
     return (
       <TouchableOpacity
         style={[styles.catPill, isActive ? styles.catPillActive : styles.catPillInactive]}
-        onPress={() => { setCategory(item); setPage(1); }}
+        onPress={() => { setCategory(item.value); setPage(1); }}
       >
         <Text style={[styles.catPillText, isActive ? styles.catPillTextActive : styles.catPillTextInactive]}>
-          {item}
+          {item.label}
         </Text>
       </TouchableOpacity>
     );
@@ -208,7 +217,7 @@ export default function NutriGradeListScreen({ route, navigation }) {
             {/* Category pills */}
             <FlatList
               data={CATEGORIES}
-              keyExtractor={(item) => item}
+              keyExtractor={(item) => item.value || 'all'}
               renderItem={renderCategoryPill}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -221,9 +230,11 @@ export default function NutriGradeListScreen({ route, navigation }) {
               <Text style={styles.resultCount}>
                 {loading ? 'Searching...' : `${products.length} of ${totalCount.toLocaleString()} products`}
               </Text>
-              {category !== 'All' && (
-                <TouchableOpacity style={styles.filterChip} onPress={() => setCategory('All')}>
-                  <Text style={styles.filterChipText}>{category}</Text>
+              {category !== '' && (
+                <TouchableOpacity style={styles.filterChip} onPress={() => setCategory('')}>
+                  <Text style={styles.filterChipText}>
+                    {CATEGORIES.find(c => c.value === category)?.label || category}
+                  </Text>
                   <Icon name="close" size={12} color={theme.colors.primary} />
                 </TouchableOpacity>
               )}

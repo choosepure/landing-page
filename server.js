@@ -4620,6 +4620,7 @@ app.get('/api/off/nutriscore', async (req, res) => {
         }
 
         if (category.trim()) {
+            // Category value is already in OFF tag format (e.g. "snacks", "dairies")
             url += `&categories_tags_en=${encodeURIComponent(category.trim())}`;
         }
 
