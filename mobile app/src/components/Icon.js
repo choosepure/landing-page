@@ -128,6 +128,21 @@ function Icon({ name, size = 20, color = theme.colors.text, strokeWidth = 1.7 })
           <Circle cx="12" cy="12" r="3" />
         </Svg>
       );
+    case 'eye-off':
+      return (
+        <Svg {...svgProps}>
+          <Path d="M17.9 17.9A10.1 10.1 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2 2.7" />
+          <Path d="m14.1 14.1a3 3 0 1 1-4.2-4.2" />
+          <Path d="M2 2l20 20" />
+        </Svg>
+      );
+    case 'map-pin':
+      return (
+        <Svg {...svgProps}>
+          <Path d="M12 21c-4-4-7-7.3-7-10a7 7 0 1 1 14 0c0 2.7-3 6-7 10z" />
+          <Circle cx="12" cy="11" r="2" />
+        </Svg>
+      );
     case 'mail':
       return (
         <Svg {...svgProps}>

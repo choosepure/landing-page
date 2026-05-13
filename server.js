@@ -417,6 +417,8 @@ async function authenticateUser(req, res, next) {
             email: user.email, 
             name: user.name, 
             phone: user.phone,
+            pincode: user.pincode || null,
+            password: user.password || null,
             subscriptionStatus: user.subscriptionStatus || 'free',
             subscriptionPlan: user.subscriptionPlan || null,
             referral_code: user.referral_code || null,
@@ -1176,12 +1178,14 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
             name: req.user.name, 
             email: req.user.email, 
             phone: req.user.phone,
+            pincode: req.user.pincode,
             subscriptionStatus: req.user.subscriptionStatus,
             subscriptionPlan: req.user.subscriptionPlan,
             referral_code: req.user.referral_code,
             freeMonthsEarned: req.user.freeMonthsEarned,
             subscriptionExpiry: req.user.subscriptionExpiry,
-            auth_provider: req.user.auth_provider
+            auth_provider: req.user.auth_provider,
+            hasPassword: !!req.user.password
         } 
     });
 });
@@ -1196,43 +1200,72 @@ app.put('/api/user/profile', authenticateUser, async (req, res) => {
             });
         }
 
-        const { phone, pincode } = req.body;
+        const { name, phone, pincode } = req.body;
+
+        const updateFields = {};
+
+        // Validate name if provided
+        if (name !== undefined) {
+            if (!name || !name.trim()) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Name cannot be empty' 
+                });
+            }
+            updateFields.name = name.trim();
+        }
 
         // Validate phone (exactly 10 digits)
-        const phoneRegex = /^[0-9]{10}$/;
-        if (!phone || !phoneRegex.test(phone)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please enter a valid 10-digit phone number' 
-            });
+        if (phone !== undefined) {
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!phone || !phoneRegex.test(phone)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Please enter a valid 10-digit phone number' 
+                });
+            }
+            updateFields.phone = phone;
         }
 
         // Validate pincode (exactly 6 digits)
-        const pincodeRegex = /^[0-9]{6}$/;
-        if (!pincode || !pincodeRegex.test(pincode)) {
+        if (pincode !== undefined) {
+            const pincodeRegex = /^[0-9]{6}$/;
+            if (!pincode || !pincodeRegex.test(pincode)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Please enter a valid 6-digit pincode' 
+                });
+            }
+            updateFields.pincode = pincode;
+        }
+
+        if (Object.keys(updateFields).length === 0) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Please enter a valid 6-digit pincode' 
+                message: 'No fields to update' 
             });
         }
 
-        // Check phone uniqueness (exclude current user)
-        const { ObjectId } = require('mongodb');
-        const existingPhone = await usersCollection.findOne({ 
-            phone: phone, 
-            _id: { $ne: new ObjectId(req.user.id) } 
-        });
-        if (existingPhone) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'This phone number is already registered' 
+        // Check phone uniqueness (exclude current user) if phone is being updated
+        if (updateFields.phone) {
+            const { ObjectId } = require('mongodb');
+            const existingPhone = await usersCollection.findOne({ 
+                phone: updateFields.phone, 
+                _id: { $ne: new ObjectId(req.user.id) } 
             });
+            if (existingPhone) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'This phone number is already registered' 
+                });
+            }
         }
 
         // Update user document
+        const { ObjectId } = require('mongodb');
         await usersCollection.updateOne(
             { _id: new ObjectId(req.user.id) },
-            { $set: { phone, pincode } }
+            { $set: updateFields }
         );
 
         console.log('✅ Profile updated for user:', req.user.email);
@@ -1247,6 +1280,61 @@ app.put('/api/user/profile', authenticateUser, async (req, res) => {
             success: false, 
             message: 'Profile update failed' 
         });
+    }
+});
+
+// Change password endpoint (authenticated user)
+app.post('/api/user/change-password', authenticateUser, async (req, res) => {
+    try {
+        if (!isDbConnected || !usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { currentPassword, newPassword } = req.body;
+        const { ObjectId } = require('mongodb');
+        const bcrypt = require('bcrypt');
+
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'New password must be at least 6 characters' 
+            });
+        }
+
+        const userDoc = await usersCollection.findOne({ _id: new ObjectId(req.user.id) });
+        if (!userDoc) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // If user already has a password, require current password
+        if (userDoc.password) {
+            if (!currentPassword) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Current password is required' 
+                });
+            }
+            const isMatch = await bcrypt.compare(currentPassword, userDoc.password);
+            if (!isMatch) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Current password is incorrect' 
+                });
+            }
+        }
+
+        // Hash and save new password
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        await usersCollection.updateOne(
+            { _id: new ObjectId(req.user.id) },
+            { $set: { password: hashedPassword } }
+        );
+
+        console.log('✅ Password changed for user:', req.user.email);
+        res.json({ success: true, message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('❌ Change password error:', error);
+        res.status(500).json({ success: false, message: 'Failed to change password' });
     }
 });
 
@@ -3006,7 +3094,7 @@ app.post('/api/feedback', async (req, res) => {
             return res.status(500).json({ success: false, message: 'Database not connected' });
         }
 
-        const { name, email, phone, message } = req.body;
+        const { name, email, phone, message, source } = req.body;
 
         if (!name || !email || !message) {
             return res.status(400).json({ success: false, message: 'Name, email, and message are required' });
@@ -3022,12 +3110,46 @@ app.post('/api/feedback', async (req, res) => {
             email: email.trim().toLowerCase(),
             phone: (phone || '').trim(),
             message: message.trim(),
+            source: source || 'website',
             status: 'new',
             createdAt: new Date()
         });
 
-        console.log('📩 New feedback from:', name, email);
+        console.log('📩 New feedback from:', name, email, '(source:', source || 'website', ')');
         res.json({ success: true, message: 'Thank you for your feedback!' });
+    } catch (error) {
+        console.error('❌ Error submitting feedback:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit feedback' });
+    }
+});
+
+// Authenticated API: Submit feedback from logged-in user (mobile app)
+app.post('/api/user/feedback', authenticateUser, async (req, res) => {
+    try {
+        if (!feedbackCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { message, subject } = req.body;
+
+        if (!message || !message.trim()) {
+            return res.status(400).json({ success: false, message: 'Message is required' });
+        }
+
+        await feedbackCollection.insertOne({
+            name: req.user.name || 'User',
+            email: req.user.email,
+            phone: req.user.phone || '',
+            subject: (subject || '').trim(),
+            message: message.trim(),
+            source: 'mobile_app',
+            userId: req.user.id,
+            status: 'new',
+            createdAt: new Date()
+        });
+
+        console.log('📩 New feedback from mobile app user:', req.user.email);
+        res.json({ success: true, message: 'Thank you for your feedback! We\'ll get back to you soon.' });
     } catch (error) {
         console.error('❌ Error submitting feedback:', error);
         res.status(500).json({ success: false, message: 'Failed to submit feedback' });

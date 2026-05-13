@@ -11,6 +11,10 @@ import ResultCardScreen from '../screens/ResultCardScreen';
 import ScanHistoryScreen from '../screens/ScanHistoryScreen';
 import ReportDetailScreen from '../screens/ReportDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import HelpCenterScreen from '../screens/HelpCenterScreen';
+import LegalScreen from '../screens/LegalScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import SubscriptionScreen from '../screens/SubscriptionScreen';
 import ReferralScreen from '../screens/ReferralScreen';
 import VisionScreen from '../screens/VisionScreen';
@@ -139,7 +143,27 @@ function ProfileTabStack() {
         options={{ title: 'Profile' }}
       />
       <ProfileStack.Screen
-        name="Subscription"
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ title: 'Edit Profile' }}
+      />
+      <ProfileStack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: 'Notifications' }}
+      />
+      <ProfileStack.Screen
+        name="HelpCenter"
+        component={HelpCenterScreen}
+        options={{ title: 'Help Center' }}
+      />
+      <ProfileStack.Screen
+        name="Legal"
+        component={LegalScreen}
+        options={{ title: 'Legal' }}
+      />
+      <ProfileStack.Screen
+        name="ProfileSubscription"
         component={SubscriptionScreen}
         options={{ title: 'Subscription' }}
       />

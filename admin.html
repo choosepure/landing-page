@@ -780,6 +780,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
+                            <th>Source</th>
                             <th>Message</th>
                             <th>Date</th>
                             <th>Actions</th>
@@ -977,11 +978,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 tbody.innerHTML = messages.map(m => {
                     const date = m.createdAt ? new Date(m.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                     const msgPreview = (m.message || '').length > 80 ? m.message.substring(0, 80) + '...' : m.message;
+                    const source = m.source || 'website';
+                    const sourceLabel = source === 'mobile_app' ? '📱 Mobile App' : '🌐 Website';
+                    const sourceBg = source === 'mobile_app' ? '#E3F2FD' : '#F1F8E9';
+                    const sourceColor = source === 'mobile_app' ? '#1565C0' : '#2E7D32';
+                    const subjectLine = m.subject ? '<div style="font-size:11px;color:#888;margin-top:2px;">[' + m.subject + ']</div>' : '';
                     return '<tr>' +
                         '<td>' + (m.name || '-') + '</td>' +
                         '<td>' + (m.email || '-') + '</td>' +
                         '<td>' + (m.phone || '-') + '</td>' +
-                        '<td style="max-width:250px;white-space:pre-wrap;font-size:13px;" title="' + (m.message || '').replace(/"/g, '&quot;') + '">' + msgPreview + '</td>' +
+                        '<td><span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;background:' + sourceBg + ';color:' + sourceColor + ';">' + sourceLabel + '</span></td>' +
+                        '<td style="max-width:250px;white-space:pre-wrap;font-size:13px;" title="' + (m.message || '').replace(/"/g, '&quot;') + '">' + msgPreview + subjectLine + '</td>' +
                         '<td style="white-space:nowrap;font-size:12px;">' + date + '</td>' +
                         '<td><button class="btn btn-danger btn-small" onclick="deleteAdminFeedback(\'' + m._id + '\')">Delete</button></td>' +
                         '</tr>';

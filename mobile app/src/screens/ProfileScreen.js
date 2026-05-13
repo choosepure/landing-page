@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { getScanHistory } from '../utils/scanHistory';
+import apiClient from '../api/client';
 import Card from '../components/Card';
 import Icon from '../components/Icon';
 
@@ -10,9 +13,9 @@ const MENU_SECTIONS = [
   {
     group: 'Account',
     rows: [
-      { icon: 'user', label: 'Edit profile' },
-      { icon: 'bell', label: 'Notifications' },
-      { icon: 'lock', label: 'Privacy & security' },
+      { icon: 'user', label: 'Edit profile', route: 'EditProfile' },
+      { icon: 'bell', label: 'Notifications', route: 'Notifications' },
+      { icon: 'shield-check', label: 'Legal', route: 'Legal' },
     ],
   },
   {
@@ -25,7 +28,7 @@ const MENU_SECTIONS = [
   {
     group: 'Support',
     rows: [
-      { icon: 'help', label: 'Help center' },
+      { icon: 'help', label: 'Help center', route: 'HelpCenter' },
       { icon: 'info', label: 'About Choosepure' },
       { icon: 'logout', label: 'Sign out', isSignOut: true },
     ],
@@ -34,6 +37,38 @@ const MENU_SECTIONS = [
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
+  const [scanCount, setScanCount] = useState(0);
+  const [referralCount, setReferralCount] = useState(0);
+
+  // Refresh stats every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+
+      async function loadStats() {
+        // Scan count from local storage
+        try {
+          const history = await getScanHistory();
+          if (!cancelled) setScanCount(history.length);
+        } catch {
+          // Keep at 0
+        }
+
+        // Referral count from backend
+        try {
+          const res = await apiClient.get('/api/user/referral-stats');
+          if (!cancelled && res.data.success) {
+            setReferralCount(res.data.completed ?? res.data.total_invited ?? 0);
+          }
+        } catch {
+          // Keep at 0
+        }
+      }
+
+      loadStats();
+      return () => { cancelled = true; };
+    }, [])
+  );
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -82,9 +117,8 @@ export default function ProfileScreen({ navigation }) {
         {/* Stats row */}
         <View style={styles.statsRow}>
           {[
-            ['142', 'Scans'],
-            ['38', 'Saved'],
-            ['9', 'Referrals'],
+            [String(scanCount), 'Scans'],
+            [String(referralCount), 'Referrals'],
           ].map(([num, label]) => (
             <Card key={label} style={styles.statCell}>
               <Text style={styles.statNumber}>{num}</Text>

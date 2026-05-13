@@ -13,12 +13,17 @@ import Icon from '../components/Icon';
 export default function ReferralScreen() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await apiClient.get('/api/user/referral-stats');
-        setStats(res.data);
+        if (res.data.success) {
+          setStats(res.data);
+        } else {
+          Alert.alert('Error', 'Failed to load referral stats.');
+        }
       } catch (e) {
         Alert.alert('Error', 'Failed to load referral stats.');
       } finally {
@@ -27,16 +32,32 @@ export default function ReferralScreen() {
     })();
   }, []);
 
-  const handleShare = async () => {
+  const handleShareWhatsApp = async () => {
     if (!stats?.referral_link) return;
     try {
       await Share.share({
-        message: `Join ChoosePure and get access to independent food purity reports! Use my referral link: ${stats.referral_link}`,
+        message: `Join ChoosePure – independent lab-tested purity reports for everyday food! Sign up with my link and we both get a free month of Premium: ${stats.referral_link}`,
       });
     } catch (e) { /* user cancelled */ }
   };
 
-  const handleCopy = async () => {
+  const handleShareGeneric = async () => {
+    if (!stats?.referral_link) return;
+    try {
+      await Share.share({
+        message: `Join ChoosePure – independent lab-tested purity reports for everyday food! Sign up with my link and we both get a free month of Premium: ${stats.referral_link}`,
+      });
+    } catch (e) { /* user cancelled */ }
+  };
+
+  const handleCopyLink = async () => {
+    if (!stats?.referral_link) return;
+    await Clipboard.setStringAsync(stats.referral_link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyCode = async () => {
     if (!stats?.referral_code) return;
     await Clipboard.setStringAsync(stats.referral_code);
     Alert.alert('Copied!', 'Referral code copied to clipboard.');
@@ -58,48 +79,72 @@ export default function ReferralScreen() {
     );
   }
 
-  const earnings = stats.earnings ?? '$0';
-  const friendCount = stats.completed ?? 0;
-  const recentActivity = stats.recent_activity ?? [];
-
-  const HOW_IT_WORKS = [
-    ['Share your code', 'Send your code to friends via any app.'],
-    ['They sign up', 'Friend creates an account using your code.'],
-    ['You both earn', 'You get credit, friend gets a discount on premium.'],
-  ];
+  const signedUp = stats.total_invited ?? 0;
+  const subscribed = stats.completed ?? 0;
+  const freeMonths = stats.free_months_earned ?? 0;
+  const hasReferrals = signedUp > 0;
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Green gradient banner */}
+        {/* Green gradient banner with referral code */}
         <LinearGradient
-          colors={['#226342', '#2D7A52']}
+          colors={['#1A5C42', '#1F6B4E', '#267A59']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.banner}
         >
-          <View style={styles.bannerIconCircle}>
-            <Icon name="gift" size={32} color="#FFFFFF" />
-          </View>
-          <Text style={styles.bannerLabel}>You've earned</Text>
-          <Text style={styles.bannerAmount}>{typeof earnings === 'number' ? `$${earnings}` : earnings}</Text>
-          <Text style={styles.bannerFriends}>
-            From {friendCount} friend{friendCount !== 1 ? 's' : ''} who joined
-          </Text>
-        </LinearGradient>
+          <Text style={styles.bannerLabel}>YOUR REFERRAL CODE</Text>
+          <Text style={styles.bannerCode}>{stats.referral_code || 'CP-XXXXX'}</Text>
 
-        {/* Referral code box */}
-        <Card style={styles.codeCard}>
-          <Text style={styles.sectionLabel}>YOUR REFERRAL CODE</Text>
-          <View style={styles.codeRow}>
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>{stats.referral_code}</Text>
-            </View>
-            <Button variant="secondary" size="md" onPress={handleCopy}>
-              Copy
+          {/* Referral link with copy */}
+          <View style={styles.linkRow}>
+            <Text style={styles.linkText} numberOfLines={1}>
+              {stats.referral_link || ''}
+            </Text>
+            <Button variant="primary" size="sm" onPress={handleCopyLink}>
+              {copied ? 'Copied!' : 'Copy Link'}
             </Button>
           </View>
-        </Card>
+
+          {/* Share buttons */}
+          <View style={styles.shareRow}>
+            <Button variant="primary" size="md" onPress={handleShareWhatsApp}>
+              <View style={styles.shareBtn}>
+                <Text style={styles.shareBtnText}>Share on WhatsApp</Text>
+              </View>
+            </Button>
+            <Button variant="outline" size="md" onPress={handleShareGeneric}>
+              <View style={styles.shareBtn}>
+                <Icon name="share" size={16} color={theme.colors.primary} />
+                <Text style={[styles.shareBtnText, { color: theme.colors.primary }]}>Share Link</Text>
+              </View>
+            </Button>
+          </View>
+        </LinearGradient>
+
+        {/* Stats cards - matching website layout */}
+        <View style={styles.statsRow}>
+          <Card style={styles.statCard}>
+            <Text style={[styles.statNumber, { color: '#1565C0' }]}>{signedUp}</Text>
+            <Text style={styles.statLabel}>Signed Up</Text>
+          </Card>
+          <Card style={styles.statCard}>
+            <Text style={[styles.statNumber, { color: '#2E7D32' }]}>{subscribed}</Text>
+            <Text style={styles.statLabel}>Subscribed</Text>
+          </Card>
+          <Card style={styles.statCard}>
+            <Text style={[styles.statNumber, { color: theme.colors.primary }]}>{freeMonths}</Text>
+            <Text style={styles.statLabel}>Free Months</Text>
+          </Card>
+        </View>
+
+        {/* Empty state or encouragement */}
+        {!hasReferrals && (
+          <Text style={styles.emptyPrompt}>
+            Share your link with friends to start earning free months!
+          </Text>
+        )}
 
         {/* How it works */}
         <Card style={styles.howCard}>
@@ -117,50 +162,25 @@ export default function ReferralScreen() {
           ))}
         </Card>
 
-        {/* Recent activity */}
-        {recentActivity.length > 0 && (
-          <Card style={styles.activityCard}>
-            <Text style={[styles.sectionLabel, { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10 }]}>
-              RECENT ACTIVITY
+        {/* Copy code button */}
+        <Button variant="secondary" size="lg" fullWidth onPress={handleCopyCode}>
+          <View style={styles.shareBtn}>
+            <Text style={[styles.shareBtnText, { color: theme.colors.primary }]}>
+              Copy Referral Code: {stats.referral_code}
             </Text>
-            {recentActivity.map((item, i) => {
-              const name = item.name || 'Friend';
-              const initial = name.charAt(0).toUpperCase();
-              const when = item.date || '';
-              const amt = item.amount || '';
-              return (
-                <View
-                  key={`${name}-${i}`}
-                  style={[
-                    styles.activityRow,
-                    i < recentActivity.length - 1 && styles.activityRowBorder,
-                  ]}
-                >
-                  <View style={styles.activityAvatar}>
-                    <Text style={styles.activityInitial}>{initial}</Text>
-                  </View>
-                  <View style={styles.activityInfo}>
-                    <Text style={styles.activityName}>{name}</Text>
-                    <Text style={styles.activityDate}>{when}</Text>
-                  </View>
-                  <Text style={styles.activityAmount}>{amt}</Text>
-                </View>
-              );
-            })}
-          </Card>
-        )}
-
-        {/* Share button */}
-        <Button variant="primary" size="lg" fullWidth onPress={handleShare}>
-          <View style={styles.shareRow}>
-            <Icon name="share" size={18} color="#FFFFFF" />
-            <Text style={styles.shareText}>Share with friends</Text>
           </View>
         </Button>
       </ScrollView>
     </View>
   );
 }
+
+const HOW_IT_WORKS = [
+  ['Share your code', 'Send your referral link to friends via any app.'],
+  ['They sign up', 'Friend creates an account using your referral link.'],
+  ['They subscribe', 'When your friend subscribes to Premium, you both earn.'],
+  ['You both earn', 'You get 1 free month of Premium, and so does your friend.'],
+];
 
 const styles = StyleSheet.create({
   container: {
@@ -190,39 +210,94 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
   },
-  bannerIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
   bannerLabel: {
-    fontFamily: theme.fonts.semiBold,
-    fontSize: theme.fontSize.sm,
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
     color: '#FFFFFF',
     textTransform: 'uppercase',
-    letterSpacing: 4,
+    letterSpacing: 1,
     opacity: 0.8,
-    marginBottom: 4,
-  },
-  bannerAmount: {
-    fontFamily: theme.fonts.bold,
-    fontSize: theme.fontSize['4xl'],
-    color: '#FFFFFF',
     marginBottom: 8,
   },
-  bannerFriends: {
+  bannerCode: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 32,
+    color: '#FFFFFF',
+    letterSpacing: 2,
+    marginBottom: 16,
+  },
+
+  /* Link row */
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 10,
+    paddingLeft: 14,
+    paddingRight: 4,
+    paddingVertical: 4,
+    marginBottom: 20,
+    width: '100%',
+  },
+  linkText: {
+    flex: 1,
     fontFamily: theme.fonts.regular,
-    fontSize: theme.fontSize.base,
+    fontSize: 12,
     color: '#FFFFFF',
     opacity: 0.9,
   },
 
-  /* Code box */
-  codeCard: {
+  /* Share buttons */
+  shareRow: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  shareBtnText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.sm,
+    color: '#FFFFFF',
+  },
+
+  /* Stats */
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: theme.spacing.md,
+  },
+  statCard: {
+    flex: 1,
+    padding: 18,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 28,
+  },
+  statLabel: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+  },
+
+  /* Empty state */
+  emptyPrompt: {
+    textAlign: 'center',
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
+  },
+
+  /* How it works */
+  howCard: {
     padding: 16,
     marginBottom: theme.spacing.md,
   },
@@ -231,39 +306,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize['2xs'],
     color: theme.colors.textSecondary,
     letterSpacing: 4,
-    marginBottom: 10,
-  },
-  codeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  codeBox: {
-    flex: 1,
-    backgroundColor: theme.colors.green50,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.primaryLight,
-    borderRadius: theme.borderRadius.md,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  codeText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: theme.fontSize.xl,
-    color: theme.colors.primary,
-    letterSpacing: 3,
-  },
-
-  /* How it works */
-  howCard: {
-    padding: 16,
-    marginBottom: theme.spacing.md,
+    marginBottom: 12,
   },
   stepRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   stepCircle: {
     width: 28,
@@ -291,65 +339,5 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginTop: 2,
-  },
-
-  /* Recent activity */
-  activityCard: {
-    marginBottom: theme.spacing.md,
-    overflow: 'hidden',
-  },
-  activityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  activityRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderSoft,
-  },
-  activityAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.green100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activityInitial: {
-    fontFamily: theme.fonts.bold,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-  },
-  activityInfo: {
-    flex: 1,
-  },
-  activityName: {
-    fontFamily: theme.fonts.medium,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.text,
-  },
-  activityDate: {
-    fontFamily: theme.fonts.regular,
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-  },
-  activityAmount: {
-    fontFamily: theme.fonts.bold,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.primaryLight,
-  },
-
-  /* Share button */
-  shareRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  shareText: {
-    fontFamily: theme.fonts.semiBold,
-    fontSize: theme.fontSize.base,
-    color: '#FFFFFF',
   },
 });

@@ -127,7 +127,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 const res = await fetch(API_BASE + '/api/feedback', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone, message })
+                    body: JSON.stringify({ name, email, phone, message, source: 'website' })
                 });
                 const data = await res.json();
                 if (data.success) {
