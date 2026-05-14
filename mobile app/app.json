@@ -21,11 +21,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FAFAF7"
       },
-      "package": "in.choosepure.app",
+      "package": "in.choosepure",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.CAMERA"
-      ]
+      ],
+      "versionCode": 2
     },
     "plugins": [
       [
