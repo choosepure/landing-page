@@ -18,6 +18,13 @@
         "buildType": "apk"
       }
     },
+    "verification": {
+      "developmentClient": false,
+      "distribution": "store",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {
       "developmentClient": false,
       "ios": {
