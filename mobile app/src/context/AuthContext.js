@@ -60,28 +60,56 @@ export function AuthProvider({ children }) {
   }
 
   async function login(email, password) {
-    // 1. Authenticate with Firebase → get ID token
-    const { idToken } = await signInWithEmail(email, password);
+    // Try Firebase auth first, fall back to direct backend login
+    // (users registered on website don't have Firebase accounts)
+    try {
+      const { idToken } = await signInWithEmail(email, password);
+      const data = await exchangeFirebaseToken(idToken);
 
-    // 2. Exchange Firebase ID token with backend for JWT
-    const data = await exchangeFirebaseToken(idToken);
+      if (data.success) {
+        setUser(data.user);
+        try {
+          logLogin('email');
+          setUserId(data.user._id);
+        } catch (e) {
+          // Analytics should never break the auth flow
+        }
+        try {
+          setCrashlyticsUserId(data.user._id);
+        } catch (e) {
+          // Crashlytics should never break the auth flow
+        }
+      }
 
-    if (data.success) {
-      setUser(data.user);
-      try {
-        logLogin('email');
-        setUserId(data.user._id);
-      } catch (e) {
-        // Analytics should never break the auth flow
+      return data;
+    } catch (firebaseErr) {
+      // If Firebase auth fails (user not in Firebase), try direct backend login
+      const isUserNotFound =
+        firebaseErr.code === 'auth/user-not-found' ||
+        firebaseErr.code === 'auth/invalid-credential';
+
+      if (!isUserNotFound) {
+        throw firebaseErr; // Re-throw other errors (network, etc.)
       }
-      try {
-        setCrashlyticsUserId(data.user._id);
-      } catch (e) {
-        // Crashlytics should never break the auth flow
+
+      // Direct backend login (for users registered on website)
+      const res = await apiClient.post('/api/user/login', { email, password });
+      const data = res.data;
+
+      if (data.success && data.token) {
+        await AsyncStorage.setItem('jwt_token', data.token);
+        setUser(data.user);
+        try {
+          logLogin('email_direct');
+          setUserId(data.user._id);
+        } catch (e) {}
+        try {
+          setCrashlyticsUserId(data.user._id);
+        } catch (e) {}
       }
+
+      return data;
     }
-
-    return data;
   }
 
   async function register(name, email, phone, pincode, password, referralCode) {
