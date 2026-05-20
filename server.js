@@ -4607,7 +4607,7 @@ app.get('/api/off/nutriscore', async (req, res) => {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 60000);
 
     try {
         // Open Food Facts v2 API — much faster with fields parameter
