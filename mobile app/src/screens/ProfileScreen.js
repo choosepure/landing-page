@@ -169,7 +169,7 @@ export default function ProfileScreen({ navigation }) {
         ))}
 
         {/* Version */}
-        <Text style={styles.versionText}>Choosepure v1.4.2</Text>
+        <Text style={styles.versionText}>Choosepure v1.5.0</Text>
       </ScrollView>
     </View>
   );
