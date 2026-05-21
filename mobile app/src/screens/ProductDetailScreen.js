@@ -12,11 +12,11 @@ import apiClient from '../api/client';
 import Card from '../components/Card';
 
 const NUTRI_SCORE_IMAGES = {
-  A: 'https://choosepure.in/public/A.png',
-  B: 'https://choosepure.in/public/B.png',
-  C: 'https://choosepure.in/public/C.png',
-  D: 'https://choosepure.in/public/D.png',
-  E: 'https://choosepure.in/public/E.png',
+  A: require('../../assets/nutriscore-A.png'),
+  B: require('../../assets/nutriscore-B.png'),
+  C: require('../../assets/nutriscore-C.png'),
+  D: require('../../assets/nutriscore-D.png'),
+  E: require('../../assets/nutriscore-E.png'),
 };
 
 const NOVA_COLORS = {
@@ -63,7 +63,7 @@ export default function ProductDetailScreen({ route }) {
   const brand = product.brand || product.brandName || '';
   const nutriScore = (product.nutriScore || '').toUpperCase();
   const novaGroup = product.novaGroup != null ? String(product.novaGroup) : null;
-  const ecoScore = product.ecoScore ? product.ecoScore.toUpperCase() : null;
+  const ecoScore = product.ecoScore && ['A','B','C','D','E'].includes(product.ecoScore.toUpperCase()) ? product.ecoScore.toUpperCase() : null;
   const imageUrl = product.imageUrl || null;
   const categories = product.categories || [];
   const ingredients = product.ingredients || '';
@@ -91,7 +91,7 @@ export default function ProductDetailScreen({ route }) {
         <View style={styles.nutriScoreSection}>
           <Text style={styles.nutriScoreLabel}>NUTRI-SCORE</Text>
           <Image
-            source={{ uri: NUTRI_SCORE_IMAGES[nutriScore] }}
+            source={NUTRI_SCORE_IMAGES[nutriScore]}
             style={styles.nutriScoreImage}
             resizeMode="contain"
           />
