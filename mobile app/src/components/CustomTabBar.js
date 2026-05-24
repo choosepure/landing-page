@@ -6,6 +6,7 @@ import { theme } from '../theme';
 const TABS = [
   { route: 'Home', icon: 'home', label: 'Home' },
   { route: 'Scan', icon: 'scan', label: 'Scan' },
+  { route: 'Vote', icon: 'star', label: 'Vote' },
   { route: 'History', icon: 'clock', label: 'History' },
   { route: 'Profile', icon: 'user', label: 'Profile' },
 ];

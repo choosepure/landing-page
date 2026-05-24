@@ -30,6 +30,7 @@ import NutriGradeListScreen from '../screens/NutriGradeListScreen';
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
 const ScanStack = createStackNavigator();
+const VoteStack = createStackNavigator();
 const HistoryStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
@@ -122,6 +123,18 @@ function ScanTabStack() {
   );
 }
 
+function VoteTabStack() {
+  return (
+    <VoteStack.Navigator screenOptions={stackScreenOptions}>
+      <VoteStack.Screen
+        name="VoteHome"
+        component={PollingScreen}
+        options={{ title: 'Vote' }}
+      />
+    </VoteStack.Navigator>
+  );
+}
+
 function HistoryTabStack() {
   return (
     <HistoryStack.Navigator screenOptions={stackScreenOptions}>
@@ -194,6 +207,7 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeTabStack} />
       <Tab.Screen name="Scan" component={ScanTabStack} />
+      <Tab.Screen name="Vote" component={VoteTabStack} />
       <Tab.Screen name="History" component={HistoryTabStack} />
       <Tab.Screen name="Profile" component={ProfileTabStack} />
     </Tab.Navigator>
