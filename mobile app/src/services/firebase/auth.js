@@ -184,7 +184,7 @@ export async function signInWithPhone(phoneNumber) {
   ensureFirebase();
 
   const formattedNumber = formatPhoneToE164(phoneNumber);
-  const confirmation = await auth().verifyPhoneNumber(formattedNumber);
+  const confirmation = await auth().signInWithPhoneNumber(formattedNumber);
 
   return confirmation;
 }
@@ -201,7 +201,8 @@ export async function confirmOTP(confirmation, code) {
   ensureFirebase();
 
   const credential = await confirmation.confirm(code);
-  const idToken = await credential.user.getIdToken();
+  const user = credential.user;
+  const idToken = await user.getIdToken();
 
-  return { user: credential.user, idToken };
+  return { user, idToken };
 }
