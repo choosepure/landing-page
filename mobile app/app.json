@@ -26,7 +26,7 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "versionCode": 12
+      "versionCode": 20
     },
     "plugins": [
       [
