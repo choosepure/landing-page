@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:46652240387:android:b9e549480328022efa1436",
         "android_client_info": {
-          "package_name": "in.choosepure.app"
+          "package_name": "in.choosepure"
         }
       },
       "oauth_client": [
@@ -55,6 +55,14 @@
           "android_info": {
             "package_name": "in.choosepure.app",
             "certificate_hash": "d200703f948f61fb1b10b98da50f0cf81ea276af"
+          }
+        },
+        {
+          "client_id": "46652240387-uch7pn179348vnqj58o1hp20s9hbvsog.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.choosepure.app",
+            "certificate_hash": "69016e0db4229eac1c67b79b4f5415f2e8a7d277"
           }
         },
         {
