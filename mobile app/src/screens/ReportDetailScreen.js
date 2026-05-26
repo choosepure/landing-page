@@ -1,12 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { theme } from '../theme';
 import apiClient from '../api/client';
+import ScoreHero from '../components/report/ScoreHero';
+import MetadataGrid from '../components/report/MetadataGrid';
+import CategoryScoreCard from '../components/report/CategoryScoreCard';
+import StatsRow from '../components/report/StatsRow';
+import TestParameterSection from '../components/report/TestParameterSection';
+import ParentSummary from '../components/report/ParentSummary';
+import RecommendationCard from '../components/report/RecommendationCard';
+import ComparisonTable from '../components/report/ComparisonTable';
 
 export default function ReportDetailScreen({ route, navigation }) {
   const { reportId } = route.params;
@@ -34,7 +47,9 @@ export default function ReportDetailScreen({ route, navigation }) {
     }
   };
 
-  useEffect(() => { fetchReport(); }, [reportId]);
+  useEffect(() => {
+    fetchReport();
+  }, [reportId]);
 
   const handleDownloadPdf = async () => {
     try {
@@ -56,6 +71,7 @@ export default function ReportDetailScreen({ route, navigation }) {
     }
   };
 
+  // Loading state
   if (loading) {
     return (
       <View style={styles.center}>
@@ -64,15 +80,21 @@ export default function ReportDetailScreen({ route, navigation }) {
     );
   }
 
+  // Error states
   if (error) {
     if (error === 'subscription_required') {
       return (
         <View style={styles.center}>
           <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.productName}>Subscription Required</Text>
-          <Text style={styles.bodyText}>Subscribe to ChoosePure to access full test reports with detailed lab results.</Text>
-          <TouchableOpacity style={styles.downloadBtn} onPress={() => navigation.navigate('Profile', { screen: 'Subscription' })}>
-            <Text style={styles.downloadText}>Subscribe — ₹299/month</Text>
+          <Text style={styles.errorHeading}>Subscription Required</Text>
+          <Text style={styles.errorDescription}>
+            Subscribe to ChoosePure to access full test reports with detailed lab results.
+          </Text>
+          <TouchableOpacity
+            style={styles.subscribeBtn}
+            onPress={() => navigation.navigate('Profile', { screen: 'Subscription' })}
+          >
+            <Text style={styles.subscribeBtnText}>Subscribe — ₹299/month</Text>
           </TouchableOpacity>
         </View>
       );
@@ -81,16 +103,19 @@ export default function ReportDetailScreen({ route, navigation }) {
       return (
         <View style={styles.center}>
           <Text style={styles.lockIcon}>🔑</Text>
-          <Text style={styles.productName}>Login Required</Text>
-          <Text style={styles.bodyText}>Please log in to view test reports.</Text>
+          <Text style={styles.errorHeading}>Login Required</Text>
+          <Text style={styles.errorDescription}>
+            Please log in to view test reports.
+          </Text>
         </View>
       );
     }
+    // Generic error
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={fetchReport}>
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={styles.retryBtnText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -100,106 +125,217 @@ export default function ReportDetailScreen({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.productName}>{report.productName}</Text>
-      <Text style={styles.brandName}>{report.brandName}</Text>
+      {/* Score Hero - always shown */}
+      <ScoreHero
+        productName={report.productName}
+        brandName={report.brandName}
+        purityScore={report.purityScore}
+        scoreVerdict={report.scoreVerdict}
+      />
 
-      {/* Purity Score Circle */}
-      <View style={styles.scoreCircle}>
-        <Text style={styles.scoreValue}>{report.purityScore ?? '—'}</Text>
-        <Text style={styles.scoreLabel}>Purity Score</Text>
+      {/* Metadata Grid - always shown, handles null fields internally */}
+      <View style={styles.section}>
+        <MetadataGrid
+          labName={report.labName}
+          labReportNumber={report.labReportNumber}
+          reportDate={report.reportDate}
+          batchCode={report.batchCode}
+          sampleCondition={report.sampleCondition}
+          totalParametersTested={report.totalParametersTested}
+          origin={report.origin}
+          shelfLife={report.shelfLife}
+        />
       </View>
+
+      {/* Category Scores */}
+      {report.categoryScores && report.categoryScores.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Score by Category</Text>
+          {report.categoryScores.map((cat, index) => (
+            <CategoryScoreCard
+              key={index}
+              categoryName={cat.categoryName}
+              score={cat.score}
+              description={cat.description}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Stats Row */}
+      {report.stats && (
+        <View style={styles.section}>
+          <StatsRow
+            totalParameters={report.stats.totalParameters}
+            passCount={report.stats.passCount}
+            contextNotes={report.stats.contextNotes}
+            safetyConcerns={report.stats.safetyConcerns}
+          />
+        </View>
+      )}
+
+      {/* Parent Summary */}
+      {report.parentSummary && report.parentSummary.length > 0 && (
+        <View style={styles.section}>
+          <ParentSummary summary={report.parentSummary} />
+        </View>
+      )}
 
       {/* Test Parameters */}
       {report.testParameters && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Test Parameters</Text>
-          {Object.entries(report.testParameters).map(([key, value]) => (
-            <View key={key} style={styles.paramRow}>
-              <Text style={styles.paramKey}>{key}</Text>
-              <Text style={styles.paramValue}>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</Text>
-            </View>
+          {Object.entries(report.testParameters).map(([categoryName, parameters]) => (
+            <TestParameterSection
+              key={categoryName}
+              categoryName={categoryName}
+              parameters={parameters}
+            />
           ))}
         </View>
       )}
 
       {/* Expert Commentary */}
-      {report.expertCommentary ? (
+      {report.expertCommentary && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Expert Commentary</Text>
           <Text style={styles.bodyText}>{report.expertCommentary}</Text>
         </View>
-      ) : null}
+      )}
 
       {/* Methodology */}
-      {report.methodology ? (
+      {report.methodology && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Methodology</Text>
           <Text style={styles.bodyText}>{report.methodology}</Text>
         </View>
-      ) : null}
+      )}
 
-      {/* Details */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Details</Text>
-        {report.batchCode ? <DetailRow label="Batch Code" value={report.batchCode} /> : null}
-        {report.shelfLife ? <DetailRow label="Shelf Life" value={report.shelfLife} /> : null}
-        {report.testDate ? <DetailRow label="Test Date" value={report.testDate} /> : null}
-      </View>
+      {/* Recommendations */}
+      {report.recommendations && report.recommendations.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recommendations</Text>
+          {report.recommendations.map((rec, index) => (
+            <RecommendationCard
+              key={index}
+              severity={rec.severity}
+              title={rec.title}
+              description={rec.description}
+            />
+          ))}
+        </View>
+      )}
 
-      {/* PDF Download */}
-      <TouchableOpacity
-        style={styles.downloadBtn}
-        onPress={handleDownloadPdf}
-        disabled={downloading}
-      >
-        {downloading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={styles.downloadText}>📄 Download PDF Report</Text>
-        )}
-      </TouchableOpacity>
+      {/* Comparison Table */}
+      {report.comparisons && report.comparisons.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>How It Compares</Text>
+          <ComparisonTable
+            comparisons={report.comparisons}
+            currentProductName={report.productName}
+          />
+        </View>
+      )}
+
+      {/* PDF Download Button */}
+      {(report.pdfUrl || reportId) && (
+        <TouchableOpacity
+          style={styles.downloadBtn}
+          onPress={handleDownloadPdf}
+          disabled={downloading}
+        >
+          {downloading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.downloadBtnText}>📄 Download PDF Report</Text>
+          )}
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
 
-function DetailRow({ label, value }) {
-  return (
-    <View style={styles.paramRow}>
-      <Text style={styles.paramKey}>{label}</Text>
-      <Text style={styles.paramValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xl * 2 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.lg },
-  productName: { fontFamily: theme.fonts.bold, fontSize: 22, color: theme.colors.text },
-  lockIcon: { fontSize: 48, marginBottom: theme.spacing.md },
-  brandName: { fontFamily: theme.fonts.regular, fontSize: 15, color: theme.colors.textSecondary, marginTop: 2 },
-  scoreCircle: {
-    width: 120, height: 120, borderRadius: 60,
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center', alignItems: 'center',
-    alignSelf: 'center', marginVertical: theme.spacing.lg,
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  scoreValue: { color: '#fff', fontFamily: theme.fonts.bold, fontSize: 32 },
-  scoreLabel: { color: '#ffffffcc', fontFamily: theme.fonts.regular, fontSize: 12, marginTop: 2 },
+  content: {
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl * 2,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  lockIcon: {
+    fontSize: 48,
+    marginBottom: theme.spacing.md,
+  },
+  errorHeading: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xl'],
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  errorDescription: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  subscribeBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  subscribeBtnText: {
+    color: '#fff',
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.md,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  retryBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+  },
+  retryBtnText: {
+    color: '#fff',
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.base,
+  },
   section: {
     marginTop: theme.spacing.lg,
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
   },
-  sectionTitle: { fontFamily: theme.fonts.semiBold, fontSize: 16, color: theme.colors.primary, marginBottom: theme.spacing.sm },
-  bodyText: { fontFamily: theme.fonts.regular, fontSize: 14, color: theme.colors.text, lineHeight: 22 },
-  paramRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: theme.spacing.xs, borderBottomWidth: 0.5, borderBottomColor: theme.colors.border,
+  sectionTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.primary,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
   },
-  paramKey: { fontFamily: theme.fonts.medium, fontSize: 13, color: theme.colors.textSecondary, flex: 1 },
-  paramValue: { fontFamily: theme.fonts.regular, fontSize: 13, color: theme.colors.text, flex: 1, textAlign: 'right' },
+  bodyText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+    lineHeight: 22,
+  },
   downloadBtn: {
     marginTop: theme.spacing.xl,
     backgroundColor: theme.colors.primary,
@@ -207,12 +343,9 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
   },
-  downloadText: { color: '#fff', fontFamily: theme.fonts.semiBold, fontSize: 15 },
-  errorText: { color: theme.colors.error, fontFamily: theme.fonts.medium, fontSize: 14, textAlign: 'center', marginBottom: theme.spacing.md },
-  retryBtn: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
+  downloadBtnText: {
+    color: '#fff',
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.md,
   },
-  retryText: { color: '#fff', fontFamily: theme.fonts.semiBold, fontSize: 14 },
 });
