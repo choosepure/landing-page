@@ -132,6 +132,9 @@ async function connectToDatabase() {
         testReportsCollection = db.collection('test_reports');
         await testReportsCollection.createIndex({ published: 1, createdAt: -1 });
         await testReportsCollection.createIndex({ category: 1 });
+        await testReportsCollection.createIndex({ barcode: 1 }, { sparse: true });
+        await testReportsCollection.createIndex({ brandName: 1 });
+        await testReportsCollection.createIndex({ labReportNumber: 1 }, { unique: true, sparse: true });
         console.log('✅ Test reports collection initialized');
         
         // Initialize subscription_transactions collection
@@ -3650,7 +3653,10 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
         }
 
         const { productName, brandName, category, imageUrl, reportUrl, purityScore, testParameters,
-                expertCommentary, statusBadges, batchCode, shelfLife, testDate, methodology, barcode } = req.body;
+                expertCommentary, statusBadges, batchCode, shelfLife, testDate, methodology, barcode,
+                labName, labReportNumber, reportDate, sampleCondition, totalParametersTested,
+                origin, scoreVerdict, scoreFormula, categoryScores, parentSummary,
+                recommendations, stats, comparisons, isPremium, pdfUrl, published } = req.body;
 
         // Validate required fields
         const missingFields = [];
@@ -3702,7 +3708,22 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
             methodology: methodology || '',
             reportUrl: reportUrl || '',
             barcode: (barcode && /^\d{13}$/.test(barcode)) ? barcode : null,
-            published: true,
+            labName: labName || '',
+            labReportNumber: labReportNumber || null,
+            reportDate: reportDate ? new Date(reportDate) : null,
+            sampleCondition: sampleCondition || '',
+            totalParametersTested: totalParametersTested || null,
+            origin: origin || '',
+            scoreVerdict: scoreVerdict || '',
+            scoreFormula: scoreFormula || '',
+            categoryScores: categoryScores || [],
+            parentSummary: parentSummary || '',
+            recommendations: recommendations || [],
+            stats: stats || null,
+            comparisons: comparisons || [],
+            isPremium: isPremium || false,
+            pdfUrl: pdfUrl || '',
+            published: published !== undefined ? published : true,
             createdAt: now,
             updatedAt: now
         };
@@ -3716,6 +3737,12 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
             report: { ...report, _id: result.insertedId }
         });
     } catch (error) {
+        if (error.code === 11000 && error.keyPattern && error.keyPattern.labReportNumber) {
+            return res.status(409).json({
+                success: false,
+                message: 'A report with this lab report number already exists'
+            });
+        }
         console.error('❌ Error creating test report:', error);
         res.status(500).json({ 
             success: false, 
@@ -3775,7 +3802,7 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
         }
 
         // Validate purityScore range if provided
-        if (req.body.purityScore !== undefined && req.body.purityScore !== null) {
+        if (req.body.purityScore !== undefined) {
             if (typeof req.body.purityScore !== 'number' || req.body.purityScore < 0 || req.body.purityScore > 100) {
                 return res.status(400).json({ 
                     success: false, 
@@ -3798,7 +3825,10 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
         const updateFields = {};
         const allowedFields = ['productName', 'brandName', 'category', 'imageUrl', 'reportUrl', 'purityScore',
             'testParameters', 'expertCommentary', 'statusBadges', 'batchCode', 'shelfLife',
-            'testDate', 'methodology', 'published'];
+            'testDate', 'methodology', 'published',
+            'labName', 'labReportNumber', 'reportDate', 'sampleCondition', 'totalParametersTested', 'origin',
+            'scoreVerdict', 'scoreFormula', 'categoryScores', 'parentSummary', 'recommendations',
+            'stats', 'comparisons', 'isPremium', 'pdfUrl'];
 
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
@@ -3814,6 +3844,11 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
         // Convert testDate string to Date if provided
         if (updateFields.testDate && typeof updateFields.testDate === 'string') {
             updateFields.testDate = new Date(updateFields.testDate);
+        }
+
+        // Convert reportDate string to Date if provided
+        if (updateFields.reportDate && typeof updateFields.reportDate === 'string') {
+            updateFields.reportDate = new Date(updateFields.reportDate);
         }
 
         updateFields.updatedAt = new Date();
@@ -3832,6 +3867,12 @@ app.put('/api/admin/reports/:id', authenticateAdmin, async (req, res) => {
             report: updatedReport
         });
     } catch (error) {
+        if (error.code === 11000 && error.keyPattern && error.keyPattern.labReportNumber) {
+            return res.status(409).json({
+                success: false,
+                message: 'A report with this lab report number already exists'
+            });
+        }
         console.error('❌ Error updating test report:', error);
         res.status(500).json({ 
             success: false, 
@@ -3935,7 +3976,11 @@ app.get('/api/reports', async (req, res) => {
                 category: report.category,
                 imageUrl: report.imageUrl,
                 statusBadges: report.statusBadges || [],
-                reportUrl: report.reportUrl || ''
+                reportUrl: report.reportUrl || '',
+                labName: report.labName || '',
+                totalParametersTested: report.totalParametersTested || null,
+                scoreVerdict: report.scoreVerdict || '',
+                isPremium: report.isPremium || false
             };
 
             // Subscribed users get purityScore on all reports
