@@ -152,12 +152,13 @@ export default function ReportDetailScreen({ route, navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Score by Category</Text>
           {report.categoryScores.map((cat, index) => (
-            <CategoryScoreCard
-              key={index}
-              categoryName={cat.categoryName}
-              score={cat.score}
-              description={cat.description}
-            />
+            <View key={index} style={{ marginBottom: 8 }}>
+              <CategoryScoreCard
+                categoryName={cat.categoryName}
+                score={cat.score}
+                description={cat.description}
+              />
+            </View>
           ))}
         </View>
       )}
@@ -185,13 +186,30 @@ export default function ReportDetailScreen({ route, navigation }) {
       {report.testParameters && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Test Parameters</Text>
-          {Object.entries(report.testParameters).map(([categoryName, parameters]) => (
-            <TestParameterSection
-              key={categoryName}
-              categoryName={categoryName}
-              parameters={parameters}
-            />
-          ))}
+          {Array.isArray(report.testParameters)
+            ? report.testParameters.map((section, index) => (
+                <TestParameterSection
+                  key={index}
+                  categoryName={section.section || `Section ${index + 1}`}
+                  parameters={(section.parameters || []).map((p) => ({
+                    parameterName: p.name || p.parameterName || '',
+                    result: p.measuredValue || p.result || '',
+                    unit: p.unit || '',
+                    fssaiLimit: p.acceptableRange || p.fssaiLimit || '—',
+                    euLimit: p.euLimit || '—',
+                    usFdaLimit: p.usFdaLimit || '—',
+                    status: p.status === 'pass' ? 'Pass' : p.status === 'fail' ? 'Fail' : p.status || 'Pass',
+                  }))}
+                />
+              ))
+            : Object.entries(report.testParameters).map(([categoryName, parameters]) => (
+                <TestParameterSection
+                  key={categoryName}
+                  categoryName={categoryName}
+                  parameters={parameters}
+                />
+              ))
+          }
         </View>
       )}
 
