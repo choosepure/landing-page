@@ -112,6 +112,32 @@ export default function SubscriptionScreen({ navigation }) {
   };
 
   if (subscribed) {
+    const handleCancel = async () => {
+      Alert.alert(
+        'Cancel Subscription',
+        'Are you sure you want to cancel? You\'ll still have access until the end of your current billing cycle.',
+        [
+          { text: 'Keep Subscription', style: 'cancel' },
+          {
+            text: 'Yes, Cancel',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                setLoading(true);
+                await apiClient.post('/api/subscription/cancel');
+                await checkAuth();
+                Alert.alert('Cancelled', 'Your subscription has been cancelled. Access continues until the end of your billing cycle.');
+              } catch (e) {
+                Alert.alert('Error', e?.response?.data?.message || 'Failed to cancel subscription. Please try again.');
+              } finally {
+                setLoading(false);
+              }
+            },
+          },
+        ]
+      );
+    };
+
     return (
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -120,16 +146,30 @@ export default function SubscriptionScreen({ navigation }) {
               <Icon name="star" size={28} color={theme.colors.primaryLight} />
             </View>
             <Text style={styles.activeTitle}>Active Subscription</Text>
-            <Text style={styles.activeDetail}>Status: {user.subscriptionStatus}</Text>
+            <Text style={styles.activeDetail}>Status: {user.subscriptionStatus === 'cancelled' ? 'Cancelled (active until expiry)' : 'Active'}</Text>
             {user.subscriptionExpiry && (
               <Text style={styles.activeDetail}>
-                Expires: {new Date(user.subscriptionExpiry).toLocaleDateString()}
+                {user.subscriptionStatus === 'cancelled' ? 'Access until' : 'Renews'}: {new Date(user.subscriptionExpiry).toLocaleDateString()}
               </Text>
             )}
             {user.freeMonthsEarned ? (
               <Text style={styles.activeDetail}>Free months earned: {user.freeMonthsEarned}</Text>
             ) : null}
           </Card>
+
+          {user.subscriptionStatus === 'subscribed' && (
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={handleCancel}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={theme.colors.error} />
+              ) : (
+                <Text style={styles.cancelBtnText}>Cancel Subscription</Text>
+              )}
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </View>
     );
@@ -364,5 +404,18 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.base,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
+  },
+  cancelBtn: {
+    marginTop: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.error,
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.error,
   },
 });
