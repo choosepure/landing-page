@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { signInWithPhone, confirmOTP, mapFirebaseAuthError } from '../services/firebase/auth';
+import { getPhoneConfirmation, setPhoneConfirmation, clearPhoneConfirmation } from '../utils/phoneAuthState';
 import { theme } from '../theme';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -21,7 +22,7 @@ const OTP_LENGTH = 6;
 const COUNTDOWN_SECONDS = 60;
 
 export default function OTPScreen({ navigation, route }) {
-  const { phoneNumber, confirmation: initialConfirmation } = route.params;
+  const { phoneNumber } = route.params;
   const { confirmPhoneOTP } = useAuth();
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -29,7 +30,7 @@ export default function OTPScreen({ navigation, route }) {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-  const [confirmationObj, setConfirmationObj] = useState(initialConfirmation);
+  const [confirmationObj, setConfirmationObj] = useState(() => getPhoneConfirmation());
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const inputRefs = useRef([]);
@@ -122,6 +123,7 @@ export default function OTPScreen({ navigation, route }) {
     try {
       const newConfirmation = await signInWithPhone(phoneNumber);
       setConfirmationObj(newConfirmation);
+      setPhoneConfirmation(newConfirmation);
       startCountdown();
     } catch (e) {
       if (e.code) {

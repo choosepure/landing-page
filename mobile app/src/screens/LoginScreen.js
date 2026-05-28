@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { mapFirebaseAuthError, signInWithPhone } from '../services/firebase/auth';
+import { setPhoneConfirmation } from '../utils/phoneAuthState';
 import { theme } from '../theme';
 import Card from '../components/Card';
 import Input from '../components/Input';
@@ -74,7 +75,8 @@ export default function LoginScreen({ navigation }) {
     setPhoneLoading(true);
     try {
       const confirmation = await signInWithPhone(digits);
-      navigation.navigate('OTP', { phoneNumber: digits, confirmation });
+      setPhoneConfirmation(confirmation);
+      navigation.navigate('OTP', { phoneNumber: digits });
     } catch (e) {
       if (e.code) {
         setError(mapFirebaseAuthError(e));
