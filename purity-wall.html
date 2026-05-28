@@ -1872,7 +1872,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 if (unlocked && report.purityScore != null) {
                     html += '<div class="report-card-footer">';
                     const rLink = report.reportUrl || '/deep-dive?id=' + report._id;
-                    if (isSubscribed) {
+                    if (isSubscribed || isFirst) {
                         html += '<a href="' + rLink + '" class="report-link">Full Analysis →</a>';
                     } else {
                         html += '<a href="#" class="report-link" onclick="event.preventDefault();openSubModal()">Full Analysis →</a>';
