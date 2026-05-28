@@ -210,10 +210,14 @@ export default function LoginScreen({ navigation }) {
           <Button variant="outline" fullWidth onPress={handleGoogleSignIn} disabled={googleLoading}>
             {googleLoading ? <ActivityIndicator color={theme.colors.primary} /> : 'Continue with Google'}
           </Button>
-          <View style={styles.socialSpacer} />
-          <Button variant="outline" fullWidth>
-            Continue with Apple
-          </Button>
+          {Platform.OS === 'ios' && (
+            <>
+              <View style={styles.socialSpacer} />
+              <Button variant="outline" fullWidth>
+                Continue with Apple
+              </Button>
+            </>
+          )}
         </View>
 
         {/* Register link */}
