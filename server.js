@@ -4002,8 +4002,8 @@ app.get('/api/reports', async (req, res) => {
     }
 });
 
-// Public API: Get full test report for deep-dive (subscribed users only)
-app.get('/api/reports/:id', authenticateSubscribedUser, async (req, res) => {
+// Public API: Get full test report for deep-dive (free report accessible to all, others require subscription)
+app.get('/api/reports/:id', async (req, res) => {
     try {
         if (!testReportsCollection) {
             return res.status(500).json({ 
@@ -4032,6 +4032,41 @@ app.get('/api/reports/:id', authenticateSubscribedUser, async (req, res) => {
             return res.status(404).json({ 
                 success: false, 
                 message: 'Report not found' 
+            });
+        }
+
+        // Check if this is the free report (Akshayakalpa or first report)
+        const isFreeReport = (report.reportUrl || '').includes('akshayakalpa') || report.isPremium === false;
+
+        if (isFreeReport) {
+            // Free report — accessible to everyone without auth
+            return res.json({ success: true, report });
+        }
+
+        // For premium reports, check subscription
+        // Try to authenticate the user (optional — don't fail if no token)
+        let isSubscribed = false;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            try {
+                const token = authHeader.split(' ')[1];
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                if (decoded && decoded.id && usersCollection) {
+                    const user = await usersCollection.findOne({ _id: new ObjectId(decoded.id) });
+                    if (user && (user.subscriptionStatus === 'subscribed' || user.subscriptionStatus === 'cancelled')) {
+                        isSubscribed = true;
+                    }
+                }
+            } catch (e) {
+                // Token invalid or expired — treat as unauthenticated
+            }
+        }
+
+        if (!isSubscribed) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Subscription required' 
             });
         }
 
