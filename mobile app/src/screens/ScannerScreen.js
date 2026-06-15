@@ -240,24 +240,13 @@ export default function ScannerScreen({ navigation }) {
             ))}
           </View>
 
-          {/* Manual barcode entry link */}
-          <TouchableOpacity
-            style={styles.manualEntryLink}
-            onPress={() => setShowManualEntry(!showManualEntry)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.manualEntryLinkText}>
-              Can't scan? Enter barcode manually
-            </Text>
-            <Icon name="chevron-right" size={18} color={theme.colors.primary} />
-          </TouchableOpacity>
-
-          {/* Manual entry form (shown when link is tapped) */}
-          {showManualEntry ? (
-            <View style={styles.manualEntryForm}>
+          {/* Manual barcode entry — always visible */}
+          <View style={styles.manualEntrySection}>
+            <Text style={styles.manualEntryLabel}>Enter barcode manually</Text>
+            <View style={styles.manualEntryRow}>
               <TextInput
                 style={styles.input}
-                placeholder="Enter 13-digit barcode"
+                placeholder="13-digit barcode number"
                 placeholderTextColor={theme.colors.textDim}
                 value={manualBarcode}
                 onChangeText={(text) => {
@@ -269,9 +258,6 @@ export default function ScannerScreen({ navigation }) {
                 returnKeyType="done"
                 onSubmitEditing={handleManualSubmit}
               />
-              {manualError ? (
-                <Text style={styles.manualErrorText}>{manualError}</Text>
-              ) : null}
               <TouchableOpacity
                 style={[
                   styles.lookupButton,
@@ -281,10 +267,13 @@ export default function ScannerScreen({ navigation }) {
                 disabled={isOffline || loading}
                 activeOpacity={0.8}
               >
-                <Text style={styles.lookupButtonText}>Look Up</Text>
+                <Text style={styles.lookupButtonText}>Search</Text>
               </TouchableOpacity>
             </View>
-          ) : null}
+            {manualError ? (
+              <Text style={styles.manualErrorText}>{manualError}</Text>
+            ) : null}
+          </View>
         </View>
       </ScrollView>
 
@@ -513,27 +502,26 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
   },
 
-  // Manual entry link
-  manualEntryLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
+  // Manual entry — always visible
+  manualEntrySection: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
+    paddingTop: 14,
+    paddingBottom: 20,
   },
-  manualEntryLinkText: {
+  manualEntryLabel: {
     fontFamily: theme.fonts.semiBold,
     fontSize: theme.fontSize.base,
-    color: theme.colors.primary,
+    color: theme.colors.text,
+    marginBottom: 10,
   },
-
-  // Manual entry form (expandable)
-  manualEntryForm: {
-    paddingTop: 12,
-    paddingBottom: 16,
+  manualEntryRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
   },
   input: {
+    flex: 1,
     backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -554,9 +542,10 @@ const styles = StyleSheet.create({
   lookupButton: {
     backgroundColor: theme.colors.primary,
     paddingVertical: 12,
+    paddingHorizontal: 18,
     borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
-    marginTop: theme.spacing.sm,
+    justifyContent: 'center',
   },
   lookupButtonDisabled: {
     opacity: 0.5,
