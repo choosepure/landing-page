@@ -88,13 +88,17 @@ export default function ScannerScreen({ navigation }) {
         try { logScanProduct(barcode); } catch (e) { /* analytics should never break user flow */ }
         navigation.navigate('ResultCard', { product: res.data.product, barcode });
       } else {
-        setError('Product not found in Open Food Facts database');
+        setError(`No data found for barcode ${barcode}. This product isn't in our database yet. Try a different product or check if the barcode is correct.`);
       }
     } catch (e) {
       if (e.response?.status === 504) {
-        setError('Lookup timed out. Please try again.');
+        setError('Lookup timed out. The server took too long to respond. Please try again.');
+      } else if (e.response?.status === 404) {
+        setError(`Product not found for barcode ${barcode}. This product isn't in our database yet.`);
+      } else if (!e.response) {
+        setError('No internet connection. Please check your network and try again.');
       } else {
-        setError('Network error. Please check your connection.');
+        setError('Something went wrong. Please try again.');
       }
     } finally {
       setLoading(false);
