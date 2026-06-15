@@ -12,6 +12,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { theme } from '../theme';
 import apiClient from '../api/client';
+import { trackEvent } from '../services/analytics';
 import ScoreHero from '../components/report/ScoreHero';
 import MetadataGrid from '../components/report/MetadataGrid';
 import CategoryScoreCard from '../components/report/CategoryScoreCard';
@@ -34,6 +35,7 @@ export default function ReportDetailScreen({ route, navigation }) {
       setLoading(true);
       const res = await apiClient.get(`/api/reports/${reportId}`);
       setReport(res.data.report || res.data);
+      trackEvent('report_viewed', { report_id: reportId, product_name: (res.data.report || res.data).productName });
     } catch (e) {
       if (e.response?.status === 403) {
         setError('subscription_required');
@@ -54,6 +56,7 @@ export default function ReportDetailScreen({ route, navigation }) {
   const handleDownloadPdf = async () => {
     try {
       setDownloading(true);
+      trackEvent('report_pdf_downloaded', { report_id: reportId });
       const fileUri = FileSystem.cacheDirectory + `report-${reportId}.pdf`;
       const res = await FileSystem.downloadAsync(
         `https://api.choosepure.in/api/reports/${reportId}/pdf`,

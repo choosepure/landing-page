@@ -1799,6 +1799,29 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Analytics events endpoint — receives batched events from the mobile app
+app.post('/api/analytics/events', authenticateUser, (req, res) => {
+    const { pixelId, events } = req.body;
+
+    if (!pixelId || typeof pixelId !== 'string') {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing or invalid pixelId (string required)'
+        });
+    }
+
+    if (!events || !Array.isArray(events) || events.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing or invalid events (non-empty array required)'
+        });
+    }
+
+    console.log(`[Analytics] Received ${events.length} events for pixel ${pixelId} from user ${req.user.email}`);
+
+    res.json({ success: true, processed: events.length });
+});
+
 // Test database write
 app.get('/api/test-db-write', async (req, res) => {
     try {

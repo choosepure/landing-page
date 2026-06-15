@@ -5,6 +5,7 @@ import { signInWithEmail, signUpWithEmail, signOut as firebaseSignOut, signInWit
 import { signInWithGoogle } from '../services/firebase/googleSignIn';
 import { logLogin, logSignUp, setUserId } from '../services/firebase/analytics';
 import { setCrashlyticsUserId } from '../services/firebase/crashlytics';
+import { trackEvent, identify, reset } from '../services/analytics';
 
 const AuthContext = createContext(null);
 
@@ -75,6 +76,12 @@ export function AuthProvider({ children }) {
           // Analytics should never break the auth flow
         }
         try {
+          trackEvent('login', { method: 'email' });
+          identify(data.user._id, { email: data.user.email, name: data.user.name });
+        } catch (e) {
+          // Unified analytics should never break the auth flow
+        }
+        try {
           setCrashlyticsUserId(data.user._id);
         } catch (e) {
           // Crashlytics should never break the auth flow
@@ -104,6 +111,10 @@ export function AuthProvider({ children }) {
           setUserId(data.user._id);
         } catch (e) {}
         try {
+          trackEvent('login', { method: 'email' });
+          identify(data.user._id, { email: data.user.email, name: data.user.name });
+        } catch (e) {}
+        try {
           setCrashlyticsUserId(data.user._id);
         } catch (e) {}
       }
@@ -131,6 +142,12 @@ export function AuthProvider({ children }) {
         // Analytics should never break the auth flow
       }
       try {
+        trackEvent('sign_up', { method: 'email' });
+        identify(data.user._id, { email: data.user.email, name: data.user.name });
+      } catch (e) {
+        // Unified analytics should never break the auth flow
+      }
+      try {
         setCrashlyticsUserId(data.user._id);
       } catch (e) {
         // Crashlytics should never break the auth flow
@@ -141,6 +158,8 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    try { trackEvent('logout'); } catch (e) {}
+    try { reset(); } catch (e) {}
     try { await apiClient.post('/api/user/logout'); } catch (e) {}
     try { await firebaseSignOut(); } catch (e) {}
     try { setUserId(null); } catch (e) {}
@@ -165,6 +184,12 @@ export function AuthProvider({ children }) {
         // Analytics should never break the auth flow
       }
       try {
+        trackEvent('login', { method: 'phone' });
+        identify(data.user._id, { email: data.user.email });
+      } catch (e) {
+        // Unified analytics should never break the auth flow
+      }
+      try {
         setCrashlyticsUserId(data.user._id);
       } catch (e) {
         // Crashlytics should never break the auth flow
@@ -183,6 +208,12 @@ export function AuthProvider({ children }) {
         setUserId(data.user._id);
       } catch (e) {
         // Analytics should never break the auth flow
+      }
+      try {
+        trackEvent('login', { method: 'google' });
+        identify(data.user._id, { email: data.user.email });
+      } catch (e) {
+        // Unified analytics should never break the auth flow
       }
       try {
         setCrashlyticsUserId(data.user._id);

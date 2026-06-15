@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
+import { trackEvent } from '../services/analytics';
 
 const { width } = Dimensions.get('window');
 
@@ -44,6 +45,15 @@ export default function OnboardingScreen({ onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const hasTrackedStart = useRef(false);
+
+  // Track onboarding started on mount
+  React.useEffect(() => {
+    if (!hasTrackedStart.current) {
+      hasTrackedStart.current = true;
+      trackEvent('onboarding_started');
+    }
+  }, []);
 
   const handleNext = () => {
     if (currentIndex < ONBOARDING_SLIDES.length - 1) {
@@ -55,10 +65,12 @@ export default function OnboardingScreen({ onComplete }) {
   };
 
   const handleSkip = () => {
+    trackEvent('onboarding_skipped', { slide_index: currentIndex });
     handleFinish();
   };
 
   const handleFinish = async () => {
+    trackEvent('onboarding_completed', { slide_count: ONBOARDING_SLIDES.length });
     await AsyncStorage.setItem('onboarding_completed', 'true');
     onComplete();
   };

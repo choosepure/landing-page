@@ -6,6 +6,7 @@ import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { getScanHistory } from '../utils/scanHistory';
 import apiClient from '../api/client';
+import { trackEvent } from '../services/analytics';
 import Card from '../components/Card';
 import Icon from '../components/Icon';
 
@@ -87,6 +88,7 @@ export default function ProfileScreen({ navigation }) {
   const APP_STORE_URL = 'https://apps.apple.com/app/choosepure/id6742605262';
 
   const handleRateApp = () => {
+    trackEvent('rate_app_tapped');
     const url = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
     Linking.openURL(url).catch(() => {
       Alert.alert('Could not open store', 'Please search for "ChoosePure" in the ' + (Platform.OS === 'ios' ? 'App Store' : 'Play Store') + '.');

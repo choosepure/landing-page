@@ -7,6 +7,7 @@ import { theme } from '../theme';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { logPurchase } from '../services/firebase/analytics';
+import { trackEvent } from '../services/analytics';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
@@ -57,6 +58,7 @@ export default function SubscriptionScreen({ navigation }) {
   const handleSubscribe = async () => {
     try {
       setLoading(true);
+      trackEvent('subscribe_tapped', { screen: 'Subscription', plan: picked });
       const res = await apiClient.post('/api/subscription/create-order', { plan: picked });
       const { type, subscriptionId, orderId, key, amount } = res.data;
 
@@ -99,6 +101,7 @@ export default function SubscriptionScreen({ navigation }) {
       try { logPurchase(purchaseAmount, 'INR'); } catch (e) {}
 
       await checkAuth();
+      trackEvent('subscription_started', { plan: picked, amount: purchaseAmount });
       Alert.alert('Subscribed!', 'Welcome to ChoosePure Premium.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -126,6 +129,7 @@ export default function SubscriptionScreen({ navigation }) {
                 setLoading(true);
                 await apiClient.post('/api/subscription/cancel');
                 await checkAuth();
+                trackEvent('subscription_cancelled');
                 Alert.alert('Cancelled', 'Your subscription has been cancelled. Access continues until the end of your billing cycle.');
               } catch (e) {
                 Alert.alert('Error', e?.response?.data?.message || 'Failed to cancel subscription. Please try again.');

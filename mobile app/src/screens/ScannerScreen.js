@@ -19,6 +19,7 @@ import apiClient from '../api/client';
 import OfflineBanner from '../components/OfflineBanner';
 import Icon from '../components/Icon';
 import { logScanProduct } from '../services/firebase/analytics';
+import { trackEvent } from '../services/analytics';
 
 /**
  * Validate a barcode string for EAN-13 format.
@@ -71,6 +72,7 @@ export default function ScannerScreen({ navigation }) {
   function handleBarcodeScanned({ type, data }) {
     if (data.length !== 13 || !/^\d{13}$/.test(data)) return;
     setScanned(true);
+    trackEvent('product_scanned', { barcode: data });
     lookupProduct(data);
   }
 
@@ -105,6 +107,7 @@ export default function ScannerScreen({ navigation }) {
       setManualError(result.error);
       return;
     }
+    trackEvent('manual_barcode_entered', { barcode: manualBarcode.trim() });
     lookupProduct(manualBarcode.trim());
   }
 

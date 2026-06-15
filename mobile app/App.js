@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Platform, AppState } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { StatusBar } from 'expo-status-bar';
@@ -20,8 +20,9 @@ import {
 } from './src/services/firebase/messaging';
 import { getNavigationAction } from './src/utils/notificationHandler';
 import { initRemoteConfig } from './src/services/firebase/remoteConfig';
-import { logScreenView } from './src/services/firebase/analytics';
 import { configureGoogleSignIn } from './src/services/firebase/googleSignIn';
+import { initAnalytics, trackScreen, flushMetaQueue } from './src/services/analytics';
+import * as analyticsConfig from './src/config/analytics';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import apiClient from './src/api/client';
 
@@ -46,11 +47,7 @@ export default function App() {
     const previousRouteName = routeNameRef.current;
 
     if (currentRouteName && currentRouteName !== previousRouteName) {
-      try {
-        logScreenView(currentRouteName, currentRouteName);
-      } catch (e) {
-        // Analytics should never break navigation
-      }
+      trackScreen(currentRouteName, { previous_screen: previousRouteName });
     }
 
     routeNameRef.current = currentRouteName;
@@ -63,6 +60,19 @@ export default function App() {
     const unsubscribers = [];
 
     async function setupFCM() {
+      // Initialize unified analytics (Firebase + Mixpanel + Meta)
+      try {
+        await initAnalytics({
+          mixpanelToken: analyticsConfig.MIXPANEL_TOKEN,
+          metaPixelId: analyticsConfig.META_PIXEL_ID,
+          metaBatchSize: analyticsConfig.META_BATCH_SIZE,
+          metaFlushInterval: analyticsConfig.META_FLUSH_INTERVAL,
+          debug: analyticsConfig.DEBUG,
+        });
+      } catch (err) {
+        console.warn('[Analytics] Failed to initialize:', err);
+      }
+
       // Initialize Remote Config early so feature flags are available ASAP
       try {
         await initRemoteConfig();
@@ -160,8 +170,16 @@ export default function App() {
 
     setupFCM();
 
+    // Flush Meta analytics queue on app background
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'background') {
+        flushMetaQueue();
+      }
+    });
+
     // Cleanup all listeners on unmount
     return () => {
+      appStateSubscription.remove();
       unsubscribers.forEach((unsub) => {
         if (typeof unsub === 'function') {
           unsub();
