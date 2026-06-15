@@ -1,133 +1,153 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions,
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  FlatList,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
-import Button from '../components/Button';
 
 const { width } = Dimensions.get('window');
 
-const slides = [
+const ONBOARDING_SLIDES = [
   {
     id: '1',
-    title: 'Is it really clean?',
-    description: 'Discover products free from harmful additives, pesticides, and contaminants.',
+    emoji: '🔬',
+    title: 'Lab-Tested Transparency',
+    description: 'We independently test everyday packaged foods in FSSAI-accredited labs — so you know exactly what your family is eating.',
   },
   {
     id: '2',
-    title: 'Is it nutritious?',
-    description: 'Every product is scored on calories, sugars, sodium, and key micronutrients.',
+    emoji: '📊',
+    title: 'Purity Scores You Can Trust',
+    description: 'Every product gets a score from 0–100 based on real lab data — pesticides, antibiotics, heavy metals, and more.',
   },
   {
     id: '3',
-    title: 'Is it actually pure?',
-    description: 'Make confident decisions with transparent safety scores you can rely on.',
+    emoji: '🗳️',
+    title: 'You Decide What Gets Tested',
+    description: 'Vote for the products you want tested next. The community decides — and we deliver the results.',
+  },
+  {
+    id: '4',
+    emoji: '📱',
+    title: 'Scan. Compare. Choose Pure.',
+    description: 'Scan any product barcode to instantly check its safety profile. Make informed choices at the store shelf.',
   },
 ];
 
-export default function OnboardingScreen({ navigation }) {
+export default function OnboardingScreen({ onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    checkOnboarding();
-  }, []);
-
-  async function checkOnboarding() {
-    const done = await AsyncStorage.getItem('onboarding_done');
-    if (done === 'true') {
-      navigation.replace('Login');
+  const handleNext = () => {
+    if (currentIndex < ONBOARDING_SLIDES.length - 1) {
+      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      handleFinish();
     }
-  }
+  };
 
-  async function completeOnboarding() {
-    await AsyncStorage.setItem('onboarding_done', 'true');
-    navigation.replace('Login');
-  }
+  const handleSkip = () => {
+    handleFinish();
+  };
 
-  function onViewableItemsChanged({ viewableItems }) {
+  const handleFinish = async () => {
+    await AsyncStorage.setItem('onboarding_completed', 'true');
+    onComplete();
+  };
+
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index ?? 0);
+      setCurrentIndex(viewableItems[0].index || 0);
     }
-  }
+  }).current;
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-  const onViewRef = useRef(onViewableItemsChanged).current;
 
-  const isLastSlide = currentIndex === slides.length - 1;
+  const renderSlide = ({ item }) => (
+    <View style={styles.slide}>
+      <Text style={styles.emoji}>{item.emoji}</Text>
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.description}>{item.description}</Text>
+    </View>
+  );
 
-  function renderSlide({ item }) {
-    return (
-      <View style={styles.slide}>
-        {/* Logo circle */}
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoText}>ChoosePure</Text>
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>{item.title}</Text>
-
-        {/* Description */}
-        <Text style={styles.description}>{item.description}</Text>
-
-        {/* Dot indicators */}
-        <View style={styles.dotsContainer}>
-          {slides.map((_, idx) => (
-            <View
-              key={idx}
-              style={[
-                styles.dot,
-                idx === currentIndex ? styles.dotActive : styles.dotInactive,
-              ]}
-            />
-          ))}
-        </View>
-      </View>
-    );
-  }
+  const isLastSlide = currentIndex === ONBOARDING_SLIDES.length - 1;
 
   return (
     <View style={styles.container}>
-      {/* Skip button in top-right corner */}
-      <View style={styles.skipRow}>
-        <TouchableOpacity
-          onPress={completeOnboarding}
-          accessibilityRole="button"
-          accessibilityLabel="Skip onboarding"
-        >
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Skip button */}
+      <TouchableOpacity style={styles.skipButton} onPress={handleSkip} activeOpacity={0.7}>
+        <Text style={styles.skipText}>Skip</Text>
+      </TouchableOpacity>
 
+      {/* Slides */}
       <FlatList
         ref={flatListRef}
-        data={slides}
+        data={ONBOARDING_SLIDES}
         renderItem={renderSlide}
         keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewRef}
+        bounces={false}
+        onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
+        )}
       />
 
-      {/* Bottom button */}
-      <View style={styles.footer}>
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onPress={() => {
-            if (isLastSlide) {
-              completeOnboarding();
-            } else {
-              flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-            }
-          }}
+      {/* Bottom section */}
+      <View style={styles.bottomSection}>
+        {/* Pagination dots */}
+        <View style={styles.pagination}>
+          {ONBOARDING_SLIDES.map((_, index) => {
+            const inputRange = [
+              (index - 1) * width,
+              index * width,
+              (index + 1) * width,
+            ];
+            const dotWidth = scrollX.interpolate({
+              inputRange,
+              outputRange: [8, 24, 8],
+              extrapolate: 'clamp',
+            });
+            const opacity = scrollX.interpolate({
+              inputRange,
+              outputRange: [0.3, 1, 0.3],
+              extrapolate: 'clamp',
+            });
+            return (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.dot,
+                  { width: dotWidth, opacity },
+                ]}
+              />
+            );
+          })}
+        </View>
+
+        {/* Next / Get Started button */}
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={handleNext}
+          activeOpacity={0.8}
         >
-          {isLastSlide ? 'Get Started' : 'Continue'}
-        </Button>
+          <Text style={styles.nextButtonText}>
+            {isLastSlide ? 'Get Started' : 'Next'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -136,75 +156,74 @@ export default function OnboardingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.green50, // #EDF3EE
+    backgroundColor: theme.colors.background,
   },
-  skipRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: theme.spacing.lg, // 24
-    paddingTop: 12,
+  skipButton: {
+    position: 'absolute',
+    top: 56,
+    right: 24,
+    zIndex: 10,
+    padding: 8,
   },
   skipText: {
-    fontFamily: theme.fonts.semiBold,
-    fontSize: theme.fontSize.sm, // 13
-    color: theme.colors.textSecondary, // #6B7268
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
   },
   slide: {
     width,
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.xl, // 32
-    paddingTop: 40,
-  },
-  logoCircle: {
-    width: 176,
-    height: 176,
-    borderRadius: 88,
-    backgroundColor: theme.colors.green100, // #D4E3D8
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 48,
+    paddingHorizontal: 40,
+    paddingBottom: 100,
   },
-  logoText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: theme.fontSize.lg, // 17
-    color: theme.colors.text, // #1A201A
+  emoji: {
+    fontSize: 72,
+    marginBottom: 32,
   },
   title: {
-    fontFamily: theme.fonts.display, // Inter_700Bold
-    fontSize: theme.fontSize['3xl'], // 26
-    color: theme.colors.text, // #1A201A
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize['2xl'],
+    color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    letterSpacing: -0.5,
   },
   description: {
     fontFamily: theme.fonts.regular,
-    fontSize: theme.fontSize.md, // 15
-    color: theme.colors.textSecondary, // #6B7268
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: theme.lineHeight.md, // 22.5
-    maxWidth: 280,
-    marginBottom: theme.spacing.xl, // 32
+    lineHeight: 24,
   },
-  dotsContainer: {
+  bottomSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+    alignItems: 'center',
+  },
+  pagination: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm, // 8
-    marginBottom: 40,
+    marginBottom: 28,
+    gap: 6,
   },
   dot: {
     height: 8,
     borderRadius: 4,
+    backgroundColor: theme.colors.primary,
   },
-  dotActive: {
-    width: 24,
-    backgroundColor: theme.colors.primaryLight, // #2D7A52 (green-700)
+  nextButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 48,
+    borderRadius: theme.borderRadius.lg,
+    width: '100%',
+    alignItems: 'center',
   },
-  dotInactive: {
-    width: 8,
-    backgroundColor: theme.colors.green100, // #D4E3D8
-  },
-  footer: {
-    paddingHorizontal: theme.spacing.lg, // 24
-    paddingBottom: theme.spacing.xl, // 32
+  nextButtonText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.md,
+    color: '#FFFFFF',
   },
 });
