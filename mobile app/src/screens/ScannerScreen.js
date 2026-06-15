@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
   AppState,
+  Keyboard,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -49,6 +50,7 @@ export default function ScannerScreen({ navigation }) {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const netInfo = useNetInfo();
   const isOffline = netInfo.isConnected === false;
+  const scrollViewRef = useRef(null);
 
   // Re-check permission when app comes back from settings
   useEffect(() => {
@@ -155,6 +157,7 @@ export default function ScannerScreen({ navigation }) {
       </View>
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -255,6 +258,11 @@ export default function ScannerScreen({ navigation }) {
                 onChangeText={(text) => {
                   setManualBarcode(text);
                   if (manualError) setManualError(null);
+                }}
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 300);
                 }}
                 keyboardType="numeric"
                 maxLength={13}
