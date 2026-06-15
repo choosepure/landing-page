@@ -4050,8 +4050,7 @@ app.get('/api/reports/:id', async (req, res) => {
         if (authHeader && authHeader.startsWith('Bearer ')) {
             try {
                 const token = authHeader.split(' ')[1];
-                const jwt = require('jsonwebtoken');
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const decoded = jwt.verify(token, JWT_SECRET);
                 if (decoded && decoded.id && usersCollection) {
                     const user = await usersCollection.findOne({ _id: new ObjectId(decoded.id) });
                     if (user && (user.subscriptionStatus === 'subscribed' || user.subscriptionStatus === 'cancelled')) {
