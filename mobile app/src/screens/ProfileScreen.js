@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Platform, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme';
@@ -29,6 +29,7 @@ const MENU_SECTIONS = [
     group: 'Support',
     rows: [
       { icon: 'help', label: 'Help center', route: 'HelpCenter' },
+      { icon: 'star', label: 'Rate Choosepure', isRateApp: true },
       { icon: 'info', label: 'About Choosepure' },
       { icon: 'logout', label: 'Sign out', isSignOut: true },
     ],
@@ -82,9 +83,21 @@ export default function ProfileScreen({ navigation }) {
   const displayEmail = user?.email || '';
   const isSubscribed = user?.subscriptionStatus === 'subscribed';
 
+  const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=in.choosepure.app';
+  const APP_STORE_URL = 'https://apps.apple.com/app/choosepure/id6742605262';
+
+  const handleRateApp = () => {
+    const url = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Could not open store', 'Please search for "ChoosePure" in the ' + (Platform.OS === 'ios' ? 'App Store' : 'Play Store') + '.');
+    });
+  };
+
   const handleMenuPress = (row) => {
     if (row.isSignOut) {
       handleSignOut();
+    } else if (row.isRateApp) {
+      handleRateApp();
     } else if (row.route) {
       navigation.navigate(row.route);
     }
@@ -135,6 +148,7 @@ export default function ProfileScreen({ navigation }) {
               {section.rows.map((row, i) => {
                 const isLast = i === section.rows.length - 1;
                 const isSignOut = row.isSignOut;
+                const isRateApp = row.isRateApp;
                 return (
                   <TouchableOpacity
                     key={row.label}
@@ -148,7 +162,7 @@ export default function ProfileScreen({ navigation }) {
                     <Icon
                       name={row.icon}
                       size={20}
-                      color={isSignOut ? theme.colors.error : theme.colors.textSecondary}
+                      color={isSignOut ? theme.colors.error : isRateApp ? theme.colors.warning : theme.colors.textSecondary}
                     />
                     <Text
                       style={[
