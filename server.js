@@ -3315,6 +3315,27 @@ app.get('/api/admin/referrals', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Admin API: Get failed barcode lookups (products users searched but weren't found)
+app.get('/api/admin/failed-lookups', authenticateAdmin, async (req, res) => {
+    try {
+        if (!isDbConnected) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const db = client.db(process.env.DB_NAME || 'choosepure_db');
+        const failedLookups = db.collection('failed_barcode_lookups');
+        const lookups = await failedLookups
+            .find({})
+            .sort({ lookupCount: -1, lastLookedUp: -1 })
+            .limit(100)
+            .toArray();
+
+        res.json({ success: true, lookups, total: lookups.length });
+    } catch (error) {
+        console.error('❌ Error fetching failed lookups:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch failed lookups' });
+    }
+});
+
 // ==========================================
 // FREE VOTE FOR SUBSCRIBERS
 // ==========================================
@@ -4664,6 +4685,27 @@ app.get('/api/off/product/:barcode', async (req, res) => {
         if (data.status === 0 || !data.product) {
             const notFound = { found: false };
             offCacheSet(cacheKey, notFound);
+
+            // Log failed lookup for admin visibility
+            try {
+                if (isDbConnected) {
+                    const db = client.db(process.env.DB_NAME || 'choosepure_db');
+                    const failedLookups = db.collection('failed_barcode_lookups');
+                    await failedLookups.updateOne(
+                        { barcode },
+                        {
+                            $set: { barcode, lastLookedUp: new Date() },
+                            $inc: { lookupCount: 1 },
+                            $setOnInsert: { firstLookedUp: new Date() }
+                        },
+                        { upsert: true }
+                    );
+                }
+            } catch (logErr) {
+                // Logging should never break the user flow
+                console.warn('[FailedLookup] Failed to log:', logErr.message);
+            }
+
             return res.json(notFound);
         }
 

@@ -279,6 +279,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="admin-tab" onclick="switchTab('reports')">🧪 Reports</button>
             <button class="admin-tab" onclick="switchTab('referrals')">🎁 Referrals</button>
             <button class="admin-tab" onclick="switchTab('feedback')">💬 Feedback</button>
+            <button class="admin-tab" onclick="switchTab('failed-lookups')">🔍 Failed Lookups</button>
         </div>
 
         <!-- WAITLIST TAB -->
@@ -793,6 +794,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <!-- END FEEDBACK TAB -->
 
+        <!-- FAILED LOOKUPS TAB -->
+        <div class="tab-page" id="tab-failed-lookups">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="failed-lookup-count">-</div>
+                    <div class="stat-label">Unique Barcodes Not Found</div>
+                </div>
+            </div>
+            <div>
+                <h2 style="margin-bottom: 10px;">Failed Barcode Lookups</h2>
+                <p style="color:#666; margin-bottom:20px; font-size:14px;">Products users scanned or searched that weren't in the database. Sorted by most requested.</p>
+                <div id="failed-lookups-loading" class="loading">Loading...</div>
+                <table id="failed-lookups-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Times Searched</th>
+                            <th>First Searched</th>
+                            <th>Last Searched</th>
+                        </tr>
+                    </thead>
+                    <tbody id="failed-lookups-body"></tbody>
+                </table>
+                <div id="failed-lookups-empty" style="display:none; text-align:center; color:#666; padding:20px;">No failed lookups recorded yet.</div>
+            </div>
+        </div>
+        <!-- END FAILED LOOKUPS TAB -->
+
         <!-- Bulk Email Modal -->
         <div id="bulk-email-modal" class="modal">
             <div class="modal-content" style="max-width: 900px;">
@@ -859,6 +888,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             if (tabName === 'users' && !usersLoaded) { loadUsers(); }
             if (tabName === 'referrals' && !referralsLoaded) { loadAdminReferrals(); }
             if (tabName === 'feedback' && !feedbackLoaded) { loadAdminFeedback(); }
+            if (tabName === 'failed-lookups' && !failedLookupsLoaded) { loadFailedLookups(); }
         }
 
         let allUsers = [];
@@ -1006,6 +1036,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 if (data.success) loadAdminFeedback();
                 else alert('Failed to delete');
             } catch (e) { alert('Error deleting message'); }
+        }
+
+        let failedLookupsLoaded = false;
+        async function loadFailedLookups() {
+            const loading = document.getElementById('failed-lookups-loading');
+            const table = document.getElementById('failed-lookups-table');
+            const empty = document.getElementById('failed-lookups-empty');
+            loading.style.display = ''; table.style.display = 'none'; empty.style.display = 'none';
+            try {
+                const res = await fetch('/api/admin/failed-lookups', { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/admin/login'; return; }
+                const data = await res.json();
+                loading.style.display = 'none';
+                failedLookupsLoaded = true;
+                const lookups = data.lookups || [];
+                document.getElementById('failed-lookup-count').textContent = lookups.length;
+                if (lookups.length === 0) { empty.style.display = ''; return; }
+                table.style.display = '';
+                document.getElementById('failed-lookups-body').innerHTML = lookups.map(function(l) {
+                    return '<tr>' +
+                        '<td style="font-family:monospace;font-weight:600;">' + l.barcode + '</td>' +
+                        '<td style="font-weight:700;color:#1F6B4E;">' + l.lookupCount + '</td>' +
+                        '<td style="font-size:12px;">' + new Date(l.firstLookedUp).toLocaleDateString() + '</td>' +
+                        '<td style="font-size:12px;">' + new Date(l.lastLookedUp).toLocaleDateString() + '</td>' +
+                        '</tr>';
+                }).join('');
+            } catch (e) {
+                loading.textContent = 'Failed to load.';
+            }
         }
 
         async function loadMembers() {
