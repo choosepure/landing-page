@@ -74,6 +74,7 @@ let subscriptionTransactionsCollection;
 let referralsCollection;
 let rewardsCollection;
 let feedbackCollection;
+let curatedProductsCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -168,6 +169,13 @@ async function connectToDatabase() {
         feedbackCollection = db.collection('feedback');
         await feedbackCollection.createIndex({ createdAt: -1 });
         console.log('✅ Feedback collection initialized');
+
+        // Initialize curated_products collection
+        curatedProductsCollection = db.collection('curated_products');
+        await db.collection('curated_products').createIndex({ barcode: 1 }, { unique: true, sparse: true });
+        await db.collection('curated_products').createIndex({ isPopular: 1, displayOrder: 1 });
+        await db.collection('curated_products').createIndex({ createdAt: -1 });
+        console.log('✅ Curated products collection initialized');
 
         // Check if admin user exists
         const adminCount = await usersCollection.countDocuments({ role: 'admin' });
@@ -3209,6 +3217,153 @@ app.delete('/api/admin/feedback/:id', authenticateAdmin, async (req, res) => {
     } catch (error) {
         console.error('❌ Error deleting feedback:', error);
         res.status(500).json({ success: false, message: 'Failed to delete feedback' });
+    }
+});
+
+// ==========================================
+// CURATED PRODUCTS API
+// ==========================================
+
+// Admin API: Search Open Food Facts
+app.get('/api/admin/off-search', authenticateAdmin, async (req, res) => {
+    try {
+        const query = (req.query.q || '').trim();
+        if (!query) {
+            return res.status(400).json({ success: false, message: 'Search query required' });
+        }
+        const cacheKey = 'off-search:' + query.toLowerCase();
+        const cached = offCacheGet(cacheKey);
+        if (cached) return res.json({ success: true, products: cached });
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=20&fields=product_name,brands,code,image_url,image_front_url,nutriscore_grade,categories,ingredients_text`;
+        
+        const offRes = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'ChoosePure/1.0' } });
+        clearTimeout(timeout);
+        
+        if (!offRes.ok) {
+            return res.status(503).json({ success: false, message: 'Unable to search Open Food Facts. Please try again.' });
+        }
+        const data = await offRes.json();
+        const products = (data.products || []).map(p => ({
+            name: p.product_name || '',
+            brand: p.brands || '',
+            barcode: p.code || '',
+            imageUrl: p.image_front_url || p.image_url || null,
+            nutriscoreGrade: p.nutriscore_grade || null,
+            categories: p.categories || '',
+            ingredients: p.ingredients_text || ''
+        })).filter(p => p.name).slice(0, 20);
+        
+        offCacheSet(cacheKey, products);
+        res.json({ success: true, products });
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            return res.status(503).json({ success: false, message: 'Unable to search Open Food Facts. Please try again.' });
+        }
+        console.error('❌ OFF search error:', error);
+        res.status(503).json({ success: false, message: 'Unable to search Open Food Facts. Please try again.' });
+    }
+});
+
+// Admin API: Create curated product
+app.post('/api/admin/curated-products', authenticateAdmin, async (req, res) => {
+    try {
+        if (!curatedProductsCollection) return res.status(500).json({ success: false, message: 'Database not connected' });
+        const { productName, brand, imageUrl, barcode, category, description, nutriscoreGrade, ingredients, tags, source, offProductId, isPopular, displayOrder } = req.body;
+        if (!productName || !productName.trim()) return res.status(400).json({ success: false, message: 'Product name is required' });
+        if (!source || !['open_food_facts', 'manual'].includes(source)) return res.status(400).json({ success: false, message: 'Source must be open_food_facts or manual' });
+        if (nutriscoreGrade && !['A','B','C','D','E'].includes(nutriscoreGrade.toUpperCase())) return res.status(400).json({ success: false, message: 'Invalid nutriscore grade' });
+        if (barcode) {
+            const existing = await curatedProductsCollection.findOne({ barcode });
+            if (existing) return res.status(409).json({ success: false, message: 'A product with this barcode already exists' });
+        }
+        const now = new Date();
+        const doc = {
+            productName: productName.trim(), brand: brand || '', imageUrl: imageUrl || '', barcode: barcode || null,
+            category: category || '', description: description || '',
+            nutriscoreGrade: nutriscoreGrade ? nutriscoreGrade.toUpperCase() : null,
+            ingredients: ingredients || '', tags: Array.isArray(tags) ? tags : [],
+            source, offProductId: offProductId || null,
+            isPopular: isPopular !== false, displayOrder: typeof displayOrder === 'number' ? displayOrder : 0,
+            createdAt: now, updatedAt: now
+        };
+        const result = await curatedProductsCollection.insertOne(doc);
+        doc._id = result.insertedId;
+        res.status(201).json({ success: true, product: doc });
+    } catch (error) {
+        if (error.code === 11000) return res.status(409).json({ success: false, message: 'A product with this barcode already exists' });
+        console.error('❌ Error creating curated product:', error);
+        res.status(500).json({ success: false, message: 'Failed to create product' });
+    }
+});
+
+// Admin API: List curated products
+app.get('/api/admin/curated-products', authenticateAdmin, async (req, res) => {
+    try {
+        if (!curatedProductsCollection) return res.status(500).json({ success: false, message: 'Database not connected' });
+        const products = await curatedProductsCollection.find({}).sort({ createdAt: -1 }).toArray();
+        res.json({ success: true, products });
+    } catch (error) {
+        console.error('❌ Error listing curated products:', error);
+        res.status(500).json({ success: false, message: 'Failed to list products' });
+    }
+});
+
+// Admin API: Update curated product
+app.put('/api/admin/curated-products/:id', authenticateAdmin, async (req, res) => {
+    try {
+        if (!curatedProductsCollection) return res.status(500).json({ success: false, message: 'Database not connected' });
+        const { ObjectId } = require('mongodb');
+        if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: 'Invalid product ID' });
+        const updates = { ...req.body };
+        if (updates.nutriscoreGrade && !['A','B','C','D','E'].includes(updates.nutriscoreGrade.toUpperCase())) return res.status(400).json({ success: false, message: 'Invalid nutriscore grade' });
+        if (updates.barcode) {
+            const existing = await curatedProductsCollection.findOne({ barcode: updates.barcode, _id: { $ne: new ObjectId(req.params.id) } });
+            if (existing) return res.status(409).json({ success: false, message: 'A product with this barcode already exists' });
+        }
+        if (updates.nutriscoreGrade) updates.nutriscoreGrade = updates.nutriscoreGrade.toUpperCase();
+        updates.updatedAt = new Date();
+        delete updates._id;
+        const result = await curatedProductsCollection.findOneAndUpdate({ _id: new ObjectId(req.params.id) }, { $set: updates }, { returnDocument: 'after' });
+        if (!result.value && !result) return res.status(404).json({ success: false, message: 'Product not found' });
+        res.json({ success: true, product: result.value || result });
+    } catch (error) {
+        if (error.code === 11000) return res.status(409).json({ success: false, message: 'A product with this barcode already exists' });
+        console.error('❌ Error updating curated product:', error);
+        res.status(500).json({ success: false, message: 'Failed to update product' });
+    }
+});
+
+// Admin API: Delete curated product
+app.delete('/api/admin/curated-products/:id', authenticateAdmin, async (req, res) => {
+    try {
+        if (!curatedProductsCollection) return res.status(500).json({ success: false, message: 'Database not connected' });
+        const { ObjectId } = require('mongodb');
+        if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: 'Invalid product ID' });
+        const result = await curatedProductsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+        if (result.deletedCount === 0) return res.status(404).json({ success: false, message: 'Product not found' });
+        res.json({ success: true, message: 'Product deleted' });
+    } catch (error) {
+        console.error('❌ Error deleting curated product:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete product' });
+    }
+});
+
+// Public API: Get popular curated products for mobile app
+app.get('/api/products/popular', async (req, res) => {
+    try {
+        if (!curatedProductsCollection) return res.status(500).json({ success: false, message: 'Database not connected' });
+        const products = await curatedProductsCollection
+            .find({ isPopular: true })
+            .sort({ displayOrder: 1, createdAt: -1 })
+            .project({ productName: 1, brand: 1, imageUrl: 1, barcode: 1, category: 1, description: 1, nutriscoreGrade: 1, tags: 1 })
+            .toArray();
+        res.json({ success: true, products });
+    } catch (error) {
+        console.error('❌ Error fetching popular products:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch products' });
     }
 });
 
