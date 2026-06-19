@@ -860,7 +860,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </div>
                     <div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Image URL</label><input type="text" id="pf-image" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="https://..."></div>
                     <div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Description</label><textarea id="pf-description" rows="3" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;resize:vertical;"></textarea></div>
-                    <div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Ingredients</label><textarea id="pf-ingredients" rows="2" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;resize:vertical;"></textarea></div>
+                    <div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Ingredients</label><textarea id="pf-ingredients" rows="3" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;resize:vertical;"></textarea></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Labels</label><input type="text" id="pf-labels" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="Organic, Vegetarian..."></div>
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Origins</label><input type="text" id="pf-origins" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="India, Karnataka..."></div>
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Allergens</label><input type="text" id="pf-allergens" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="Milk, Gluten..."></div>
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Quantity</label><input type="text" id="pf-quantity" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="500 ml, 200 g..."></div>
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Serving Size</label><input type="text" id="pf-serving" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="30g"></div>
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Packaging</label><input type="text" id="pf-packaging" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="Plastic, Tetra Pak..."></div>
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">NOVA Group</label><select id="pf-nova" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;"><option value="">—</option><option value="1">1 - Unprocessed</option><option value="2">2 - Processed ingredients</option><option value="3">3 - Processed foods</option><option value="4">4 - Ultra-processed</option></select></div>
+                        <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Stores</label><input type="text" id="pf-stores" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="BigBasket, Zepto..."></div>
+                    </div>
                     <div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Tags (comma-separated)</label><input type="text" id="pf-tags" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="dairy, popular, organic"></div>
                     <div style="margin-bottom:20px;"><label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;"><input type="checkbox" id="pf-popular" checked> Mark as Popular</label></div>
                     <input type="hidden" id="pf-source" value="manual">
@@ -2245,12 +2255,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 loading.style.display = 'none';
                 if (!data.success || !data.products.length) { results.innerHTML = '<p style="color:#666;">No results found.</p>'; return; }
                 results.innerHTML = data.products.map(p => `
-                    <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:14px;display:flex;gap:12px;align-items:center;">
-                        <img src="${p.imageUrl || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/></svg>'}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;background:#f0f0f0;">
+                    <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+                        <img src="${p.imageUrl || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/></svg>'}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;background:#f0f0f0;">
                         <div style="flex:1;min-width:0;">
-                            <div style="font-weight:600;font-size:14px;color:#0F2419;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-                            <div style="font-size:12px;color:#666;">${p.brand || 'Unknown brand'} ${p.nutriscoreGrade ? '· NS: ' + p.nutriscoreGrade.toUpperCase() : ''}</div>
-                            <div style="font-size:11px;color:#999;font-family:monospace;">${p.barcode || ''}</div>
+                            <div style="font-weight:600;font-size:14px;color:#0F2419;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                            <div style="font-size:12px;color:#666;margin-top:2px;">${p.brand || 'Unknown brand'} · ${p.quantity || ''}</div>
+                            <div style="font-size:11px;color:#888;margin-top:2px;">${p.categories ? p.categories.split(',').slice(0,2).join(', ') : ''}</div>
+                            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+                                ${p.nutriscoreGrade ? '<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:#E8F5E9;color:#2E7D32;font-weight:700;">NS: ' + p.nutriscoreGrade.toUpperCase() + '</span>' : ''}
+                                ${p.novaGroup ? '<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:#FFF9E6;color:#F57C00;font-weight:700;">NOVA: ' + p.novaGroup + '</span>' : ''}
+                                <span style="font-size:10px;color:#999;font-family:monospace;">${p.barcode || ''}</span>
+                            </div>
                         </div>
                         <button onclick='addFromOFF(${JSON.stringify(p).replace(/'/g,"&#39;")})' style="padding:8px 14px;background:#1F6B4E;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Add</button>
                     </div>
@@ -2266,8 +2281,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('pf-nutriscore').value = product.nutriscoreGrade ? product.nutriscoreGrade.toUpperCase() : '';
             document.getElementById('pf-image').value = product.imageUrl || '';
             document.getElementById('pf-ingredients').value = product.ingredients || '';
+            document.getElementById('pf-labels').value = product.labels || '';
+            document.getElementById('pf-origins').value = product.origins || '';
+            document.getElementById('pf-allergens').value = product.allergens || '';
+            document.getElementById('pf-quantity').value = product.quantity || '';
+            document.getElementById('pf-serving').value = product.servingSize || '';
+            document.getElementById('pf-packaging').value = product.packaging || '';
+            document.getElementById('pf-nova').value = product.novaGroup || '';
+            document.getElementById('pf-stores').value = product.stores || '';
             document.getElementById('pf-description').value = '';
-            document.getElementById('pf-tags').value = '';
+            document.getElementById('pf-tags').value = (product.categoriesTags || []).slice(0, 5).map(t => t.replace('en:', '')).join(', ');
             document.getElementById('pf-order').value = '0';
             document.getElementById('pf-popular').checked = true;
             document.getElementById('pf-source').value = 'open_food_facts';
@@ -2321,6 +2344,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 imageUrl: document.getElementById('pf-image').value,
                 description: document.getElementById('pf-description').value,
                 ingredients: document.getElementById('pf-ingredients').value,
+                labels: document.getElementById('pf-labels').value,
+                origins: document.getElementById('pf-origins').value,
+                allergens: document.getElementById('pf-allergens').value,
+                quantity: document.getElementById('pf-quantity').value,
+                servingSize: document.getElementById('pf-serving').value,
+                packaging: document.getElementById('pf-packaging').value,
+                novaGroup: document.getElementById('pf-nova').value ? parseInt(document.getElementById('pf-nova').value) : null,
+                stores: document.getElementById('pf-stores').value,
                 tags: document.getElementById('pf-tags').value.split(',').map(t => t.trim()).filter(Boolean),
                 displayOrder: parseInt(document.getElementById('pf-order').value) || 0,
                 isPopular: document.getElementById('pf-popular').checked,

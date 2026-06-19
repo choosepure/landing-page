@@ -3231,13 +3231,14 @@ app.get('/api/admin/off-search', authenticateAdmin, async (req, res) => {
         if (!query) {
             return res.status(400).json({ success: false, message: 'Search query required' });
         }
-        const cacheKey = 'off-search:' + query.toLowerCase();
+        const cacheKey = 'off-search-full:' + query.toLowerCase();
         const cached = offCacheGet(cacheKey);
         if (cached) return res.json({ success: true, products: cached });
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=20&fields=product_name,brands,code,image_url,image_front_url,nutriscore_grade,categories,ingredients_text`;
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        // Fetch ALL available fields from OFF (no fields filter)
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=20`;
         
         const offRes = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'ChoosePure/1.0' } });
         clearTimeout(timeout);
@@ -3247,13 +3248,48 @@ app.get('/api/admin/off-search', authenticateAdmin, async (req, res) => {
         }
         const data = await offRes.json();
         const products = (data.products || []).map(p => ({
-            name: p.product_name || '',
+            // Core identity
+            name: p.product_name || p.product_name_en || '',
             brand: p.brands || '',
             barcode: p.code || '',
+            // Images
             imageUrl: p.image_front_url || p.image_url || null,
-            nutriscoreGrade: p.nutriscore_grade || null,
+            imageSmallUrl: p.image_front_small_url || null,
+            imageIngredientsUrl: p.image_ingredients_url || null,
+            imageNutritionUrl: p.image_nutrition_url || null,
+            // Classification
             categories: p.categories || '',
-            ingredients: p.ingredients_text || ''
+            categoriesTags: p.categories_tags || [],
+            labels: p.labels || '',
+            labelsTags: p.labels_tags || [],
+            origins: p.origins || '',
+            manufacturingPlaces: p.manufacturing_places || '',
+            stores: p.stores || '',
+            countries: p.countries || '',
+            // Nutrition
+            nutriscoreGrade: p.nutriscore_grade || null,
+            nutriscoreScore: p.nutriscore_score || null,
+            novaGroup: p.nova_group || null,
+            nutriments: p.nutriments || {},
+            nutritionGrades: p.nutrition_grades || null,
+            // Ingredients
+            ingredients: p.ingredients_text || p.ingredients_text_en || '',
+            ingredientsTags: p.ingredients_tags || [],
+            allergens: p.allergens || '',
+            allergensTags: p.allergens_tags || [],
+            traces: p.traces || '',
+            additivesTags: p.additives_tags || [],
+            // Packaging
+            packaging: p.packaging || '',
+            packagingTags: p.packaging_tags || [],
+            quantity: p.quantity || '',
+            servingSize: p.serving_size || '',
+            // Eco
+            ecoscoreGrade: p.ecoscore_grade || null,
+            ecoscoreScore: p.ecoscore_score || null,
+            // Quality
+            completeness: p.completeness || 0,
+            lastModified: p.last_modified_t || null,
         })).filter(p => p.name).slice(0, 20);
         
         offCacheSet(cacheKey, products);
