@@ -17,6 +17,7 @@ import Icon from '../components/Icon';
 import ProductCard from '../components/ProductCard';
 import Dropdown from '../components/Dropdown';
 import NutriGradeBadge from '../components/NutriGradeBadge';
+import PopularProductsSection from '../components/PopularProductsSection';
 
 /* ── Nutri-grade constants ─────────────────────────────────── */
 
@@ -425,6 +426,15 @@ export default function DashboardScreen({ navigation }) {
             }
           />
         )}
+
+        {/* Popular Products Section */}
+        <PopularProductsSection
+          onProductPress={(product) => {
+            if (product.barcode) {
+              navigation.navigate('ProductDetail', { barcode: product.barcode, product });
+            }
+          }}
+        />
       </ScrollView>
     </View>
   );
