@@ -2,7 +2,7 @@
   "expo": {
     "name": "ChoosePure",
     "slug": "choosepure",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "orientation": "portrait",
     "scheme": "choosepure",
     "icon": "./assets/icon.png",
@@ -26,7 +26,7 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "versionCode": 22
+      "versionCode": 28
     },
     "plugins": [
       [
