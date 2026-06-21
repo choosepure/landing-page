@@ -3231,12 +3231,12 @@ app.get('/api/admin/off-search', authenticateAdmin, async (req, res) => {
         if (!query) {
             return res.status(400).json({ success: false, message: 'Search query required' });
         }
-        const cacheKey = 'off-search-full:' + query.toLowerCase();
+        const cacheKey = 'off-search-v2:' + query.toLowerCase();
         const cached = offCacheGet(cacheKey);
         if (cached) return res.json({ success: true, products: cached });
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
+        const timeout = setTimeout(() => controller.abort(), 15000);
         // Fetch ALL available fields from OFF (no fields filter)
         const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=20`;
         
