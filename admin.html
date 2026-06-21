@@ -871,6 +871,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">NOVA Group</label><select id="pf-nova" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;"><option value="">—</option><option value="1">1 - Unprocessed</option><option value="2">2 - Processed ingredients</option><option value="3">3 - Processed foods</option><option value="4">4 - Ultra-processed</option></select></div>
                         <div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Stores</label><input type="text" id="pf-stores" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="BigBasket, Zepto..."></div>
                     </div>
+                    <!-- Nutrition Section -->
+                    <div style="margin-bottom:12px;background:#F5FAF7;border:1px solid #C8E6C9;border-radius:8px;padding:14px;">
+                        <label style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#1F6B4E;">Nutrition (per 100g)</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
+                            <div><label style="font-size:11px;color:#666;">Energy (kcal)</label><input type="text" id="pf-energy" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;color:#666;">Fat (g)</label><input type="text" id="pf-fat" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;color:#666;">Sat. Fat (g)</label><input type="text" id="pf-satfat" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;color:#666;">Carbs (g)</label><input type="text" id="pf-carbs" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;color:#666;">Sugars (g)</label><input type="text" id="pf-sugars" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;color:#666;">Protein (g)</label><input type="text" id="pf-protein" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;color:#666;">Salt (g)</label><input type="text" id="pf-salt" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;color:#666;">Fiber (g)</label><input type="text" id="pf-fiber" style="width:100%;padding:6px;border:1px solid #D1D1D1;border-radius:4px;font-size:12px;"></div>
+                        </div>
+                    </div>
                     <div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Tags (comma-separated)</label><input type="text" id="pf-tags" style="width:100%;padding:10px;border:1px solid #D1D1D1;border-radius:6px;" placeholder="dairy, popular, organic"></div>
                     <div style="margin-bottom:20px;"><label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;"><input type="checkbox" id="pf-popular" checked> Mark as Popular</label></div>
                     <input type="hidden" id="pf-source" value="manual">
@@ -2289,6 +2303,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('pf-packaging').value = product.packaging || '';
             document.getElementById('pf-nova').value = product.novaGroup || '';
             document.getElementById('pf-stores').value = product.stores || '';
+            // Populate nutrition fields from nutriments
+            const n = product.nutriments || {};
+            document.getElementById('pf-energy').value = n['energy-kcal_100g'] || n['energy-kcal'] || '';
+            document.getElementById('pf-fat').value = n.fat_100g || n.fat || '';
+            document.getElementById('pf-satfat').value = n['saturated-fat_100g'] || n['saturated-fat'] || '';
+            document.getElementById('pf-carbs').value = n.carbohydrates_100g || n.carbohydrates || '';
+            document.getElementById('pf-sugars').value = n.sugars_100g || n.sugars || '';
+            document.getElementById('pf-protein').value = n.proteins_100g || n.proteins || '';
+            document.getElementById('pf-salt').value = n.salt_100g || n.salt || '';
+            document.getElementById('pf-fiber').value = n.fiber_100g || n.fiber || '';
             document.getElementById('pf-description').value = '';
             document.getElementById('pf-tags').value = (product.categoriesTags || []).slice(0, 5).map(t => t.replace('en:', '')).join(', ');
             document.getElementById('pf-order').value = '0';
@@ -2352,6 +2376,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 packaging: document.getElementById('pf-packaging').value,
                 novaGroup: document.getElementById('pf-nova').value ? parseInt(document.getElementById('pf-nova').value) : null,
                 stores: document.getElementById('pf-stores').value,
+                nutrition: {
+                    energy_kcal: parseFloat(document.getElementById('pf-energy').value) || null,
+                    fat: parseFloat(document.getElementById('pf-fat').value) || null,
+                    saturated_fat: parseFloat(document.getElementById('pf-satfat').value) || null,
+                    carbohydrates: parseFloat(document.getElementById('pf-carbs').value) || null,
+                    sugars: parseFloat(document.getElementById('pf-sugars').value) || null,
+                    proteins: parseFloat(document.getElementById('pf-protein').value) || null,
+                    salt: parseFloat(document.getElementById('pf-salt').value) || null,
+                    fiber: parseFloat(document.getElementById('pf-fiber').value) || null,
+                },
                 tags: document.getElementById('pf-tags').value.split(',').map(t => t.trim()).filter(Boolean),
                 displayOrder: parseInt(document.getElementById('pf-order').value) || 0,
                 isPopular: document.getElementById('pf-popular').checked,
