@@ -3236,7 +3236,7 @@ app.get('/api/admin/off-search', authenticateAdmin, async (req, res) => {
         if (cached) return res.json({ success: true, products: cached });
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000);
+        const timeout = setTimeout(() => controller.abort(), 120000);
         // Fetch ALL available fields from OFF (no fields filter)
         const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=20`;
         
