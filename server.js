@@ -3387,6 +3387,49 @@ app.delete('/api/admin/curated-products/:id', authenticateAdmin, async (req, res
     }
 });
 
+// Admin API: Seed test reports with comprehensive parameter data
+app.post('/api/admin/seed-reports', authenticateAdmin, async (req, res) => {
+    try {
+        if (!testReportsCollection) return res.status(500).json({ success: false, message: 'Database not connected' });
+        const { ObjectId } = require('mongodb');
+        const reports = req.body.reports || [];
+        if (!reports.length) return res.status(400).json({ success: false, message: 'No reports provided' });
+        const results = [];
+        for (const report of reports) {
+            let filter;
+            if (report._id) {
+                filter = { _id: new ObjectId(report._id) };
+            } else if (report.findBy) {
+                // Convert regex strings to actual RegExp
+                const processedFilter = {};
+                for (const [key, val] of Object.entries(report.findBy)) {
+                    if (typeof val === 'string' && val.startsWith('/') && val.lastIndexOf('/') > 0) {
+                        const lastSlash = val.lastIndexOf('/');
+                        processedFilter[key] = new RegExp(val.slice(1, lastSlash), val.slice(lastSlash + 1));
+                    } else {
+                        processedFilter[key] = val;
+                    }
+                }
+                filter = processedFilter;
+            } else {
+                results.push({ name: report.update?.productName || 'Unknown', status: 'skipped', reason: 'no _id or findBy' });
+                continue;
+            }
+            const updateResult = await testReportsCollection.updateOne(filter, { $set: { ...report.update, updatedAt: new Date() } });
+            if (updateResult.matchedCount === 0) {
+                await testReportsCollection.insertOne({ ...report.update, published: true, createdAt: new Date(), updatedAt: new Date() });
+                results.push({ name: report.update.productName, status: 'inserted' });
+            } else {
+                results.push({ name: report.update.productName, status: 'updated', modified: updateResult.modifiedCount });
+            }
+        }
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('❌ Error seeding reports:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Public API: Get popular curated products for mobile app
 app.get('/api/products/popular', async (req, res) => {
     try {

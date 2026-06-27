@@ -701,7 +701,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 
                 <!-- Reports List Table -->
-                <h3 style="margin-bottom: 15px; color: #333;">Existing Reports</h3>
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:15px;">
+                    <h3 style="color: #333; margin:0;">Existing Reports</h3>
+                    <button onclick="seedReportData()" id="seed-btn" style="padding:8px 16px;background:#FF8F00;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">🌱 Seed Comprehensive Data</button>
+                    <span id="seed-status" style="font-size:12px;color:#666;"></span>
+                </div>
                 <div id="reports-loading" class="loading">Loading reports...</div>
                 <table id="reports-table" style="display: none;">
                     <thead>
@@ -2254,6 +2258,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // Load reports on page load
         loadReports();
 
+        // Seed comprehensive report data
+        async function seedReportData() {
+            if (!confirm('This will update all test reports with comprehensive parameter data (scores, test parameters, regulatory limits, etc). Continue?')) return;
+            const btn = document.getElementById('seed-btn');
+            const status = document.getElementById('seed-status');
+            btn.disabled = true; btn.textContent = '⏳ Seeding...';
+            status.textContent = '';
+            try {
+                const reports = [
+                    { _id: '69e518677b9ef6b45470dc86', update: { productName: 'Akshayakalpa Organic Cow Pasteurised Milk', brandName: 'Akshayakalpa Farms & Foods Pvt Ltd', category: 'Milk · Organic', labName: 'Bangalore Analytical Research Center (NABL)', labReportNumber: 'BARC/25/09/0826', totalParametersTested: 290, purityScore: 96, scoreVerdict: 'Outstanding', categoryScores: [{categoryName:'Pesticide Residues',score:100,description:'232 pesticides tested, all BLQ'},{categoryName:'Antibiotics & Vet Drug Residues',score:100,description:'36 compounds tested, all BLQ'},{categoryName:'Heavy Metals & Mycotoxins',score:100,description:'All BLQ'},{categoryName:'Adulterants & Additives',score:100,description:'All 13 adulterant checks absent'},{categoryName:'Nutrition Quality',score:78,description:'Good profile'},{categoryName:'Processing Level',score:100,description:'Raw & unprocessed'}], stats: {totalParameters:290,passCount:288,contextNotes:2,safetyConcerns:0}, parentSummary: 'Akshayakalpa Organic Raw Milk scores 96/100. Zero pesticides, zero antibiotics, zero heavy metals, zero adulterants.', isPremium: false, reportUrl: '/akshayakalpa-report.html' }},
+                    { _id: '6a2aff48d90eac2653bc4bf6', update: { productName: 'Happy Hens Free Range Omega-3 Brown Eggs', brandName: 'Sai Happy Farms Pvt. Ltd.', category: 'Eggs · Free Range', labName: 'Eurofins Analytical Services India (NABL TC-13580)', labReportNumber: 'AR-258-2025-20114811', totalParametersTested: 40, purityScore: 88, scoreVerdict: 'Good', categoryScores: [{categoryName:'Nitrofurans & Nitroimidazoles',score:100,description:'13 NABL-accredited parameters — all not detected'},{categoryName:'Chloramphenicol',score:100,description:'NABL accredited — not detected'},{categoryName:'Reproductive Hormones',score:100,description:'6 hormones — all not detected'},{categoryName:'Regulated Antibiotics',score:100,description:'20 compounds — all BLQ'}], stats: {totalParameters:40,passCount:40,contextNotes:0,safetyConcerns:0}, parentSummary: 'Happy Hens Free Range Omega-3 Brown Eggs score 88/100. All 40 parameters are clean.', isPremium: true, reportUrl: '/happy-hens-eggs-report.html' }},
+                    { _id: '69ff3dae7570e7a0a513a7d1', update: { productName: 'Farm Made Free Range Brown Eggs', brandName: 'Farm Made Foods (U and V Agro Pvt. Ltd.)', category: 'Eggs · Free Range', labName: 'SGS India Pvt. Ltd. (NABL Accredited), Chennai', labReportNumber: 'SGS/CHE/2025/FT-001', totalParametersTested: 190, purityScore: 91, scoreVerdict: 'Excellent', categoryScores: [{categoryName:'Pesticide Residues',score:100,description:'140+ pesticides tested, all BLQ'},{categoryName:'Antibiotics & Vet Drugs',score:100,description:'35+ compounds, all ND/BLQ'},{categoryName:'Heavy Metals',score:100,description:'All BLQ'},{categoryName:'Microbiology',score:82,description:'9 clean, 2 context notes'},{categoryName:'Nutritional Quality',score:100,description:'Excellent protein, balanced fat'}], stats: {totalParameters:190,passCount:188,contextNotes:2,safetyConcerns:0}, parentSummary: 'Farm Made Foods Free Range Brown Eggs score 91/100. Zero antibiotics, zero pesticides, zero heavy metals.', isPremium: true, reportUrl: '/farmmade-eggs-report.html' }},
+                    { findBy: {productName: '/Heritage/i'}, update: { productName: 'Heritage Toned Milk', brandName: 'Heritage Foods Ltd.', category: 'Milk · Toned', labName: 'NABL Accredited Laboratory', labReportNumber: 'HER/NABL/2025/TM-001', totalParametersTested: 127, purityScore: 82, scoreVerdict: 'Good (Grade A-)', categoryScores: [{categoryName:'Antibiotics',score:100,description:'30+ drugs screened, all not detected'},{categoryName:'Pesticide Residues',score:100,description:'54 compounds, all not detected'},{categoryName:'Heavy Metals',score:100,description:'All not detected'},{categoryName:'Adulteration',score:100,description:'18 checks clean'},{categoryName:'Nutritional Composition',score:100,description:'Meets FSSAI minimums'},{categoryName:'Mycotoxins',score:45,description:'Aflatoxin M1 FAILS EU'}], stats: {totalParameters:127,passCount:125,contextNotes:2,safetyConcerns:0}, parentSummary: 'Heritage Toned Milk scores 82/100. 125 of 127 parameters clear. Watchpoints: Aflatoxin M1 above EU limit, unusual Sodium reading.', isPremium: true, reportUrl: '/heritage-report.html' }},
+                    { findBy: {productName: '/Namdhari/i'}, update: { productName: 'Namdhari Dairy Tales – Toned Milk', brandName: 'Namdhari Fresh Pvt. Ltd.', category: 'Milk · Toned', labName: 'Intertek India Pvt. Ltd. (NABL Accredited – TC-5160)', labReportNumber: 'IFSH-251217094', totalParametersTested: 300, purityScore: 97, scoreVerdict: 'Excellent', categoryScores: [{categoryName:'Microbiology',score:96,description:'Very low counts, excellent pasteurization'},{categoryName:'Contaminants',score:95,description:'40+ antibiotics, 250+ pesticides — all BLQ'},{categoryName:'Adulteration',score:100,description:'All preservatives and adulterants absent'},{categoryName:'Transparency',score:100,description:'Comprehensive panel, NABL lab'}], stats: {totalParameters:300,passCount:300,contextNotes:0,safetyConcerns:0}, parentSummary: 'Namdhari Dairy Tales Toned Milk scores 97/100. Zero antibiotics, zero pesticides, zero heavy metals, zero mycotoxins, zero adulterants.', isPremium: true, reportUrl: '/namdhari-report.html' }},
+                ];
+                const res = await fetch('/api/admin/seed-reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reports }) });
+                const data = await res.json();
+                if (data.success) {
+                    status.textContent = '✅ ' + data.results.map(r => r.name + ': ' + r.status).join(' | ');
+                    status.style.color = '#2E7D32';
+                    loadReports();
+                } else { status.textContent = '❌ ' + data.message; status.style.color = '#C62828'; }
+            } catch (e) { status.textContent = '❌ Failed: ' + e.message; status.style.color = '#C62828'; }
+            btn.disabled = false; btn.textContent = '🌱 Seed Comprehensive Data';
+        }
+
         // ── CURATED PRODUCTS ──
         let curatedProductsLoaded = false;
 
@@ -2268,7 +2298,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 const data = await res.json();
                 loading.style.display = 'none';
                 if (!data.success || !data.products.length) { results.innerHTML = '<p style="color:#666;">No results found.</p>'; return; }
-                results.innerHTML = data.products.map(p => `
+                results.innerHTML = data.products.map(p => {
+                    const n = p.nutriments || {};
+                    const nutritionHtml = (n['energy-kcal_100g'] || n.fat_100g || n.proteins_100g) ? `
+                        <div style="font-size:10px;color:#555;margin-top:4px;background:#F5FAF7;padding:3px 6px;border-radius:4px;">
+                            ${n['energy-kcal_100g'] ? '<span>⚡' + Math.round(n['energy-kcal_100g']) + 'kcal</span> ' : ''}
+                            ${n.fat_100g ? '<span>🧈' + n.fat_100g + 'g fat</span> ' : ''}
+                            ${n.proteins_100g ? '<span>💪' + n.proteins_100g + 'g protein</span> ' : ''}
+                            ${n.sugars_100g ? '<span>🍬' + n.sugars_100g + 'g sugar</span>' : ''}
+                        </div>` : '';
+                    return `
                     <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
                         <img src="${p.imageUrl || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/></svg>'}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;background:#f0f0f0;">
                         <div style="flex:1;min-width:0;">
@@ -2280,10 +2319,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 ${p.novaGroup ? '<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:#FFF9E6;color:#F57C00;font-weight:700;">NOVA: ' + p.novaGroup + '</span>' : ''}
                                 <span style="font-size:10px;color:#999;font-family:monospace;">${p.barcode || ''}</span>
                             </div>
+                            ${nutritionHtml}
                         </div>
                         <button onclick='addFromOFF(${JSON.stringify(p).replace(/'/g,"&#39;")})' style="padding:8px 14px;background:#1F6B4E;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Add</button>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             } catch (e) { loading.style.display = 'none'; results.innerHTML = '<p style="color:#C62828;">Search failed. Try again.</p>'; }
         }
 
