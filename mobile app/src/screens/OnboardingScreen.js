@@ -65,13 +65,25 @@ export default function OnboardingScreen({ onComplete }) {
   };
 
   const handleSkip = () => {
-    trackEvent('onboarding_skipped', { slide_index: currentIndex });
+    try {
+      trackEvent('onboarding_skipped', { slide_index: currentIndex });
+    } catch (e) {
+      // Analytics failure should not block navigation
+    }
     handleFinish();
   };
 
   const handleFinish = async () => {
-    trackEvent('onboarding_completed', { slide_count: ONBOARDING_SLIDES.length });
-    await AsyncStorage.setItem('onboarding_completed', 'true');
+    try {
+      trackEvent('onboarding_completed', { slide_count: ONBOARDING_SLIDES.length });
+    } catch (e) {
+      // Analytics failure should not block navigation
+    }
+    try {
+      await AsyncStorage.setItem('onboarding_completed', 'true');
+    } catch (e) {
+      // Storage failure should not block navigation
+    }
     onComplete();
   };
 
@@ -101,22 +113,24 @@ export default function OnboardingScreen({ onComplete }) {
       </TouchableOpacity>
 
       {/* Slides */}
-      <FlatList
-        ref={flatListRef}
-        data={ONBOARDING_SLIDES}
-        renderItem={renderSlide}
-        keyExtractor={(item) => item.id}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        bounces={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-      />
+      <View style={{ flex: 1 }}>
+        <FlatList
+          ref={flatListRef}
+          data={ONBOARDING_SLIDES}
+          renderItem={renderSlide}
+          keyExtractor={(item) => item.id}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false }
+          )}
+        />
+      </View>
 
       {/* Bottom section */}
       <View style={styles.bottomSection}>
@@ -174,8 +188,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 56,
     right: 24,
-    zIndex: 10,
-    padding: 8,
+    zIndex: 100,
+    padding: 12,
   },
   skipText: {
     fontFamily: theme.fonts.medium,
@@ -184,11 +198,11 @@ const styles = StyleSheet.create({
   },
   slide: {
     width,
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingBottom: 100,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   emoji: {
     fontSize: 72,
