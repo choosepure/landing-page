@@ -5,12 +5,11 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  FlatList,
-  Animated,
+  ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
-import { trackEvent } from '../services/analytics';
 
 const { width } = Dimensions.get('window');
 
@@ -43,139 +42,102 @@ const ONBOARDING_SLIDES = [
 
 export default function OnboardingScreen({ onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const hasTrackedStart = useRef(false);
-
-  // Track onboarding started on mount
-  React.useEffect(() => {
-    if (!hasTrackedStart.current) {
-      hasTrackedStart.current = true;
-      trackEvent('onboarding_started');
-    }
-  }, []);
+  const scrollViewRef = useRef(null);
 
   const handleNext = () => {
     if (currentIndex < ONBOARDING_SLIDES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-      setCurrentIndex(currentIndex + 1);
+      const nextIndex = currentIndex + 1;
+      scrollViewRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+      setCurrentIndex(nextIndex);
     } else {
       handleFinish();
     }
   };
 
   const handleSkip = () => {
-    try {
-      trackEvent('onboarding_skipped', { slide_index: currentIndex });
-    } catch (e) {
-      // Analytics failure should not block navigation
-    }
     handleFinish();
   };
 
   const handleFinish = async () => {
     try {
-      trackEvent('onboarding_completed', { slide_count: ONBOARDING_SLIDES.length });
-    } catch (e) {
-      // Analytics failure should not block navigation
-    }
-    try {
       await AsyncStorage.setItem('onboarding_completed', 'true');
     } catch (e) {
-      // Storage failure should not block navigation
+      // Continue even if storage fails
     }
-    onComplete();
+    if (onComplete) onComplete();
   };
 
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index || 0);
+  const handleScroll = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / width);
+    if (index !== currentIndex && index >= 0 && index < ONBOARDING_SLIDES.length) {
+      setCurrentIndex(index);
     }
-  }).current;
-
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
-  const renderSlide = ({ item }) => (
-    <View style={styles.slide}>
-      <Text style={styles.emoji}>{item.emoji}</Text>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
-    </View>
-  );
+  };
 
   const isLastSlide = currentIndex === ONBOARDING_SLIDES.length - 1;
 
   return (
-    <View style={styles.container}>
-      {/* Skip button */}
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip} activeOpacity={0.7}>
+    <SafeAreaView style={styles.container}>
+      {/* Skip button - always on top */}
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={handleSkip}
+        activeOpacity={0.6}
+        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+      >
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
 
-      {/* Slides */}
-      <View style={{ flex: 1 }}>
-        <FlatList
-          ref={flatListRef}
-          data={ONBOARDING_SLIDES}
-          renderItem={renderSlide}
-          keyExtractor={(item) => item.id}
+      {/* Slides area */}
+      <View style={styles.slidesContainer}>
+        <ScrollView
+          ref={scrollViewRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           bounces={false}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false }
-          )}
-        />
+          onMomentumScrollEnd={handleScroll}
+          scrollEventThrottle={16}
+        >
+          {ONBOARDING_SLIDES.map((slide) => (
+            <View key={slide.id} style={styles.slide}>
+              <Text style={styles.emoji}>{slide.emoji}</Text>
+              <Text style={styles.title}>{slide.title}</Text>
+              <Text style={styles.description}>{slide.description}</Text>
+            </View>
+          ))}
+        </ScrollView>
       </View>
 
-      {/* Bottom section */}
+      {/* Bottom section - dots + button */}
       <View style={styles.bottomSection}>
         {/* Pagination dots */}
         <View style={styles.pagination}>
-          {ONBOARDING_SLIDES.map((_, index) => {
-            const inputRange = [
-              (index - 1) * width,
-              index * width,
-              (index + 1) * width,
-            ];
-            const dotWidth = scrollX.interpolate({
-              inputRange,
-              outputRange: [8, 24, 8],
-              extrapolate: 'clamp',
-            });
-            const opacity = scrollX.interpolate({
-              inputRange,
-              outputRange: [0.3, 1, 0.3],
-              extrapolate: 'clamp',
-            });
-            return (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.dot,
-                  { width: dotWidth, opacity },
-                ]}
-              />
-            );
-          })}
+          {ONBOARDING_SLIDES.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                index === currentIndex ? styles.dotActive : styles.dotInactive,
+              ]}
+            />
+          ))}
         </View>
 
         {/* Next / Get Started button */}
         <TouchableOpacity
           style={styles.nextButton}
           onPress={handleNext}
-          activeOpacity={0.8}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Text style={styles.nextButtonText}>
             {isLastSlide ? 'Get Started' : 'Next'}
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -186,23 +148,25 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     position: 'absolute',
-    top: 56,
-    right: 24,
-    zIndex: 100,
-    padding: 12,
+    top: 50,
+    right: 20,
+    zIndex: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   skipText: {
     fontFamily: theme.fonts.medium,
-    fontSize: theme.fontSize.base,
+    fontSize: 16,
     color: theme.colors.textSecondary,
   },
+  slidesContainer: {
+    flex: 1,
+  },
   slide: {
-    width,
+    width: width,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingTop: 60,
-    paddingBottom: 40,
   },
   emoji: {
     fontSize: 72,
@@ -210,7 +174,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: theme.fonts.bold,
-    fontSize: theme.fontSize['2xl'],
+    fontSize: 26,
     color: theme.colors.text,
     textAlign: 'center',
     marginBottom: 16,
@@ -218,38 +182,46 @@ const styles = StyleSheet.create({
   },
   description: {
     fontFamily: theme.fonts.regular,
-    fontSize: theme.fontSize.md,
+    fontSize: 16,
     color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
   bottomSection: {
     paddingHorizontal: 24,
-    paddingBottom: 48,
+    paddingBottom: 40,
+    paddingTop: 16,
     alignItems: 'center',
   },
   pagination: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 28,
-    gap: 6,
+    marginBottom: 24,
   },
   dot: {
     height: 8,
     borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  dotActive: {
+    width: 24,
     backgroundColor: theme.colors.primary,
+  },
+  dotInactive: {
+    width: 8,
+    backgroundColor: theme.colors.primary,
+    opacity: 0.3,
   },
   nextButton: {
     backgroundColor: theme.colors.primary,
     paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: 14,
     width: '100%',
     alignItems: 'center',
   },
   nextButtonText: {
     fontFamily: theme.fonts.semiBold,
-    fontSize: theme.fontSize.md,
+    fontSize: 17,
     color: '#FFFFFF',
   },
 });
