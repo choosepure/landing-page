@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser');
 const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
 const admin = require('firebase-admin');
+const multer = require('multer');
 require('dotenv').config();
 
 // Initialize Firebase Admin SDK
@@ -182,6 +183,19 @@ async function connectToDatabase() {
         console.log('👤 Admin users found:', adminCount);
         
         isDbConnected = true;
+
+        // Initialize label scanner indexes
+        const scanModel = require('./models/scan');
+        const productModel = require('./models/product');
+        await scanModel.ensureIndexes(db);
+        await productModel.ensureIndexes(db);
+        console.log('✅ Label scanner indexes initialized');
+
+        // Mount label scanner API routes
+        const createLabelScannerRouter = require('./routes/labelScanner');
+        const labelScannerRouter = createLabelScannerRouter(db, authenticateUser);
+        app.use('/api/v1', labelScannerRouter);
+        console.log('✅ Label scanner routes mounted');
     } catch (error) {
         console.error('❌ MongoDB connection error:', error.message);
         console.error('Full error:', error);

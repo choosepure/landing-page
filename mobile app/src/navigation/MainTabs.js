@@ -27,6 +27,10 @@ import LabReportScreen from '../screens/LabReportScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
 import NutriGradeListScreen from '../screens/NutriGradeListScreen';
 
+// Label scanner screens
+import LabelScannerScreen from '../screens/LabelScannerScreen';
+import LabelResultScreen from '../screens/LabelResultScreen';
+
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
 const ScanStack = createStackNavigator();
@@ -118,6 +122,16 @@ function ScanTabStack() {
         name="ScanReportDetail"
         component={ReportDetailScreen}
         options={{ title: 'Lab Report' }}
+      />
+      <ScanStack.Screen
+        name="LabelScanner"
+        component={LabelScannerScreen}
+        options={{ title: 'Scan Label' }}
+      />
+      <ScanStack.Screen
+        name="LabelResult"
+        component={LabelResultScreen}
+        options={{ title: 'Label Analysis' }}
       />
     </ScanStack.Navigator>
   );

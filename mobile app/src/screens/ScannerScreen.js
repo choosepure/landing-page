@@ -237,6 +237,15 @@ export default function ScannerScreen({ navigation }) {
 
         {/* Bottom white section */}
         <View style={styles.bottomSection}>
+          {/* Scan Label button */}
+          <TouchableOpacity
+            style={styles.scanLabelButton}
+            onPress={() => navigation.navigate('LabelScanner')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.scanLabelButtonText}>📷 Scan Label</Text>
+          </TouchableOpacity>
+
           {/* Recent Scans */}
           <Text style={styles.recentScansLabel}>Recent Scans</Text>
           <View style={styles.recentScansRow}>
@@ -515,6 +524,22 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: theme.borderRadius.md,
+  },
+
+  // Scan Label button
+  scanLabelButton: {
+    backgroundColor: '#1F6B4E',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  scanLabelButtonText: {
+    color: '#FFFFFF',
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.base,
   },
 
   // Manual entry — always visible
