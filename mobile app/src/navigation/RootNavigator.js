@@ -17,12 +17,8 @@ export default function RootNavigator() {
   }, []);
 
   async function checkOnboarding() {
-    try {
-      const completed = await AsyncStorage.getItem('onboarding_completed');
-      setShowOnboarding(completed !== 'true');
-    } catch {
-      setShowOnboarding(false);
-    }
+    // Onboarding disabled temporarily — skip directly to auth flow
+    setShowOnboarding(false);
   }
 
   if (isLoading || showOnboarding === null) {
