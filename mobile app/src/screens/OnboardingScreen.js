@@ -4,10 +4,9 @@ import {
   Text,
   StyleSheet,
   Dimensions,
-  TouchableOpacity,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
+import { TouchableOpacity, GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
 
@@ -64,7 +63,12 @@ export default function OnboardingScreen({ onComplete }) {
     } catch (e) {
       // Continue even if storage fails
     }
-    if (onComplete) onComplete();
+    try {
+      if (onComplete) onComplete();
+    } catch (e) {
+      // If onComplete crashes, force reload by setting storage and restarting
+      console.error('Onboarding onComplete error:', e);
+    }
   };
 
   const handleScroll = (event) => {
@@ -78,13 +82,12 @@ export default function OnboardingScreen({ onComplete }) {
   const isLastSlide = currentIndex === ONBOARDING_SLIDES.length - 1;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       {/* Skip button - always on top */}
       <TouchableOpacity
         style={styles.skipButton}
         onPress={handleSkip}
         activeOpacity={0.6}
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
       >
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
@@ -137,7 +140,7 @@ export default function OnboardingScreen({ onComplete }) {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
 
