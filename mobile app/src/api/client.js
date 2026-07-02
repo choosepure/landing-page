@@ -6,7 +6,7 @@ const API_BASE = 'https://api.choosepure.in';
 
 const apiClient = axios.create({
   baseURL: API_BASE,
-  timeout: 60000,
+  timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
 

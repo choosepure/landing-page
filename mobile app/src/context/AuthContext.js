@@ -47,7 +47,11 @@ export function AuthProvider({ children }) {
     try {
       const token = await AsyncStorage.getItem('jwt_token');
       if (!token) { setIsLoading(false); return; }
-      const res = await apiClient.get('/api/user/me');
+      // Use a 10-second timeout to prevent hanging on slow/cold Render starts
+      const res = await Promise.race([
+        apiClient.get('/api/user/me'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
+      ]);
       if (res.data.success && res.data.user) {
         setUser(res.data.user);
       } else {
