@@ -27,8 +27,13 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await AsyncStorage.removeItem('jwt_token');
-      if (onAuthFailure) onAuthFailure();
+      // Don't trigger auth failure for FCM token endpoint —
+      // it's expected to fail with 401 when user is not logged in
+      const url = error.config?.url || '';
+      if (!url.includes('/api/user/fcm-token')) {
+        await AsyncStorage.removeItem('jwt_token');
+        if (onAuthFailure) onAuthFailure();
+      }
     }
 
     // Record server errors to Crashlytics for monitoring
