@@ -44,22 +44,27 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function checkAuth() {
+    console.log('[AuthContext] checkAuth started');
     try {
       const token = await AsyncStorage.getItem('jwt_token');
+      console.log('[AuthContext] token found:', !!token);
       if (!token) { setIsLoading(false); return; }
       // Use a 10-second timeout to prevent hanging on slow/cold Render starts
       const res = await Promise.race([
         apiClient.get('/api/user/me'),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
       ]);
+      console.log('[AuthContext] /api/user/me response:', res.data?.success);
       if (res.data.success && res.data.user) {
         setUser(res.data.user);
       } else {
         await AsyncStorage.removeItem('jwt_token');
       }
     } catch (e) {
+      console.log('[AuthContext] checkAuth error:', e.message);
       await AsyncStorage.removeItem('jwt_token');
     } finally {
+      console.log('[AuthContext] checkAuth done, setIsLoading(false)');
       setIsLoading(false);
     }
   }
