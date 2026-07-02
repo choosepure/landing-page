@@ -13,10 +13,6 @@ export default function RootNavigator() {
   const [showOnboarding, setShowOnboarding] = useState(null); // null = checking
 
   useEffect(() => {
-    console.log('[RootNavigator] isLoading:', isLoading, 'showOnboarding:', showOnboarding);
-  }, [isLoading, showOnboarding]);
-
-  useEffect(() => {
     checkOnboarding();
   }, []);
 
