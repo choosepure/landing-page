@@ -88,13 +88,21 @@ export default function ScannerScreen({ navigation }) {
         try { logScanProduct(barcode); } catch (e) { /* analytics should never break user flow */ }
         navigation.navigate('ResultCard', { product: res.data.product, barcode });
       } else {
-        setError(`No data found for barcode ${barcode}. This product isn't in our database yet. Try a different product or check if the barcode is correct.`);
+        // Product not found — prompt user to scan the label
+        navigation.navigate('LabelScanner', {
+          barcode,
+          promptReason: 'not_found',
+        });
       }
     } catch (e) {
       if (e.response?.status === 504) {
         setError('Lookup timed out. The server took too long to respond. Please try again.');
       } else if (e.response?.status === 404) {
-        setError(`Product not found for barcode ${barcode}. This product isn't in our database yet.`);
+        // Product not found — prompt user to scan the label
+        navigation.navigate('LabelScanner', {
+          barcode: barcode,
+          promptReason: 'not_found',
+        });
       } else if (!e.response) {
         setError('No internet connection. Please check your network and try again.');
       } else {

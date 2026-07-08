@@ -21,7 +21,11 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const UPLOAD_TIMEOUT_MS = 15000; // 15 seconds
 const ACCEPTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
-export default function LabelScannerScreen({ navigation }) {
+export default function LabelScannerScreen({ navigation, route }) {
+  const barcode = route?.params?.barcode || null;
+  const promptReason = route?.params?.promptReason || null;
+  const isNotFoundFlow = promptReason === 'not_found';
+
   const [images, setImages] = useState([]);
   const [cameraPermission, setCameraPermission] = useState(null); // null, 'granted', 'denied'
   const [loading, setLoading] = useState(false);
@@ -140,6 +144,10 @@ export default function LabelScannerScreen({ navigation }) {
         name: `label_${i}.${getExtension(img.mimeType || 'image/jpeg')}`,
       });
     });
+    // Include barcode if coming from barcode-not-found flow
+    if (barcode) {
+      formData.append('barcode', barcode);
+    }
 
     // Create an AbortController for timeout
     const controller = new AbortController();
@@ -220,9 +228,20 @@ export default function LabelScannerScreen({ navigation }) {
         >
           <Icon name="arrow-left" size={20} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Scan Label</Text>
+        <Text style={styles.headerTitle}>{isNotFoundFlow ? 'Add Product' : 'Scan Label'}</Text>
         <View style={{ width: 20 }} />
       </View>
+
+      {/* Not-found prompt banner */}
+      {isNotFoundFlow && (
+        <View style={styles.notFoundBanner}>
+          <Text style={styles.notFoundTitle}>Product not in our database</Text>
+          <Text style={styles.notFoundText}>
+            Take photos of the nutrition label and ingredient list. We'll calculate the Nutri-Score and NOVA rating for you.
+          </Text>
+          {barcode && <Text style={styles.notFoundBarcode}>Barcode: {barcode}</Text>}
+        </View>
+      )}
 
       {/* Camera permission denied message */}
       {cameraPermission === 'denied' && (
@@ -363,6 +382,36 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
+  },
+
+  // Not-found prompt banner
+  notFoundBanner: {
+    backgroundColor: 'rgba(31, 107, 78, 0.15)',
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: theme.borderRadius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1F6B4E',
+  },
+  notFoundTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.md,
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  notFoundText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.base,
+    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: 20,
+  },
+  notFoundBarcode: {
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.sm,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 8,
+    fontVariant: ['tabular-nums'],
   },
   permissionText: {
     fontFamily: theme.fonts.medium,
