@@ -25,6 +25,8 @@ export default function LabelScannerScreen({ navigation, route }) {
   const barcode = route?.params?.barcode || null;
   const promptReason = route?.params?.promptReason || null;
   const isNotFoundFlow = promptReason === 'not_found';
+  const isIncorrectDataFlow = promptReason === 'incorrect_data';
+  const showPromptBanner = isNotFoundFlow || isIncorrectDataFlow;
 
   const [images, setImages] = useState([]);
   const [cameraPermission, setCameraPermission] = useState(null); // null, 'granted', 'denied'
@@ -228,7 +230,7 @@ export default function LabelScannerScreen({ navigation, route }) {
         >
           <Icon name="arrow-left" size={20} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isNotFoundFlow ? 'Add Product' : 'Scan Label'}</Text>
+        <Text style={styles.headerTitle}>{(isNotFoundFlow || isIncorrectDataFlow) ? 'Add Product' : 'Scan Label'}</Text>
         <View style={{ width: 20 }} />
       </View>
 
@@ -238,6 +240,17 @@ export default function LabelScannerScreen({ navigation, route }) {
           <Text style={styles.notFoundTitle}>Product not in our database</Text>
           <Text style={styles.notFoundText}>
             Take photos of the nutrition label and ingredient list. We'll calculate the Nutri-Score and NOVA rating for you.
+          </Text>
+          {barcode && <Text style={styles.notFoundBarcode}>Barcode: {barcode}</Text>}
+        </View>
+      )}
+
+      {/* Incorrect data prompt banner */}
+      {isIncorrectDataFlow && (
+        <View style={[styles.notFoundBanner, { borderLeftColor: '#F57C00' }]}>
+          <Text style={styles.notFoundTitle}>Update product data</Text>
+          <Text style={styles.notFoundText}>
+            Take photos of the nutrition label and ingredient list. We'll recalculate the scores using the actual label data.
           </Text>
           {barcode && <Text style={styles.notFoundBarcode}>Barcode: {barcode}</Text>}
         </View>

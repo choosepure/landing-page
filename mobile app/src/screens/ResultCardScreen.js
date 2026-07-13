@@ -205,6 +205,22 @@ export default function ResultCardScreen({ route, navigation }) {
         <NutritionTable nutritionPer100g={product.nutritionPer100g} />
       ) : null}
 
+      {/* Report Incorrect Data */}
+      <TouchableOpacity
+        style={styles.reportIncorrectButton}
+        onPress={() => navigation.navigate('LabelScanner', {
+          barcode,
+          promptReason: 'incorrect_data',
+        })}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.reportIncorrectIcon}>⚠️</Text>
+        <View style={styles.reportIncorrectContent}>
+          <Text style={styles.reportIncorrectTitle}>Data looks incorrect?</Text>
+          <Text style={styles.reportIncorrectSubtitle}>Scan the label to update with accurate data</Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Attribution */}
       <Text style={styles.attribution}>
         Data from Open Food Facts (openfoodfacts.org) under ODbL licence
@@ -406,5 +422,35 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.md,
+  },
+
+  /* Report Incorrect Data */
+  reportIncorrectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    borderWidth: 1,
+    borderColor: '#FFE082',
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    gap: 12,
+  },
+  reportIncorrectIcon: {
+    fontSize: 24,
+  },
+  reportIncorrectContent: {
+    flex: 1,
+  },
+  reportIncorrectTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 14,
+    color: '#F57C00',
+  },
+  reportIncorrectSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
 });
