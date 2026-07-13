@@ -18,7 +18,7 @@ import Icon from '../components/Icon';
 
 const MAX_IMAGES = 3;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-const UPLOAD_TIMEOUT_MS = 15000; // 15 seconds
+const UPLOAD_TIMEOUT_MS = 60000; // 60 seconds (Vision API + R2 upload takes time)
 const ACCEPTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
 export default function LabelScannerScreen({ navigation, route }) {
@@ -286,8 +286,8 @@ export default function LabelScannerScreen({ navigation, route }) {
         </View>
       )}
 
-      {/* Spacer when camera is denied */}
-      {cameraPermission === 'denied' && <View style={styles.spacer} />}
+      {/* Spacer when camera is denied — minimal */}
+      {cameraPermission === 'denied' && <View style={{ height: 40 }} />}
 
       {/* Action buttons: Camera + Gallery */}
       <View style={styles.actionRow}>
@@ -347,15 +347,17 @@ export default function LabelScannerScreen({ navigation, route }) {
         </View>
       )}
 
-      {/* Scan Label submission button */}
-      {images.length > 0 && !error && (
+      {/* Scan Label submission button — always visible when images selected */}
+      {images.length > 0 && (
         <View style={styles.submitContainer}>
           <TouchableOpacity
             style={styles.scanButton}
             onPress={handleScanLabel}
             activeOpacity={0.8}
           >
-            <Text style={styles.scanButtonText}>Scan Label</Text>
+            <Text style={styles.scanButtonText}>
+              {images.length === 1 ? 'Scan 1 Image' : `Scan ${images.length} Images`}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -447,14 +449,13 @@ const styles = StyleSheet.create({
 
   // Camera viewfinder area
   viewfinderArea: {
-    flex: 1,
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 16,
+    height: 180,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: theme.borderRadius.xl,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 260,
   },
   overlayGuide: {
     width: 280,
