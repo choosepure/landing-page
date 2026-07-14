@@ -81,7 +81,7 @@ async function extractFromSingleImage(client, imageUrl) {
 
       const response = await client.messages.create(
         {
-          model: 'claude-sonnet-4-5-20241022',
+          model: 'claude-sonnet-5',
           max_tokens: 4096,
           messages: [
             {
