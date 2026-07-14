@@ -157,6 +157,7 @@ function createLabelScannerRouter(db, authenticateUser) {
     upload.array('images', 3),
     async (req, res) => {
       try {
+        console.log(`📸 POST /api/v1/scans — ${req.files?.length || 0} files from user ${req.user?.id}`);
         // 1. Validate: reject if no images uploaded
         if (!req.files || req.files.length === 0) {
           return res.status(400).json(
@@ -178,20 +179,23 @@ function createLabelScannerRouter(db, authenticateUser) {
         try {
           imageResults = await uploadImages(req.files);
         } catch (uploadErr) {
+          console.error('❌ R2 upload failed:', uploadErr.message, uploadErr.stack);
           return res.status(500).json(
-            errorResponse('STORAGE_ERROR', 'Image upload to storage failed')
+            errorResponse('STORAGE_ERROR', 'Image upload to storage failed: ' + uploadErr.message)
           );
         }
 
         const imageUrls = imageResults.map((r) => r.url);
+        console.log('✅ Images uploaded to R2:', imageUrls);
 
         // 4. Extract from images via Vision Service
         let extractionResult;
         try {
           extractionResult = await extractFromImages(imageUrls);
         } catch (visionErr) {
+          console.error('❌ Vision service failed:', visionErr.message, visionErr.stack);
           return res.status(503).json(
-            errorResponse('SERVICE_UNAVAILABLE', 'Vision service temporarily unavailable')
+            errorResponse('SERVICE_UNAVAILABLE', 'Vision service temporarily unavailable: ' + visionErr.message)
           );
         }
 
