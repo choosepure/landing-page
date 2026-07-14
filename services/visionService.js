@@ -17,24 +17,27 @@ const EXTRACTION_PROMPT = `You are a food label OCR system. Analyse the provided
 Extract:
 1. product_name: The product name as written on the front of the pack
 2. brand: The brand/manufacturer name
-3. serving_size: { value: number, unit: "g"|"ml"|"piece" }
+3. serving_size: { value: number, unit: "g"|"ml"|"piece" } — the serving size stated on the label
 4. servings_per_container: number or null
-5. nutrition_per_100g: Extract per-100g values. If only per-serving is available, I will compute per-100g separately.
+5. nutrition_per_100g: ONLY fill this if the label explicitly shows a "per 100g" or "per 100ml" column. Do NOT calculate it yourself. Set to null if only per-serving values are shown.
    - energy_kcal, energy_kj, total_fat_g, saturated_fat_g, trans_fat_g, 
    - carbohydrates_g, sugars_g, added_sugars_g, fibre_g, protein_g, 
    - sodium_mg, cholesterol_mg
-6. nutrition_per_serving: Same fields as above but per-serving values
+6. nutrition_per_serving: Fill this with per-serving values if shown on label.
+   Same fields as above.
 7. ingredients_raw: The complete ingredient list text exactly as printed
 8. confidence: Your confidence score (0.0-1.0) in the overall extraction accuracy
 9. field_confidences: An object mapping each extracted field name to a confidence score (0.0-1.0)
 
-Rules:
+CRITICAL Rules:
+- Do NOT guess or calculate per-100g values from per-serving. Only use values explicitly printed on the label.
+- If the label shows ONLY per-serving (common in Indian FSSAI labels), put values in nutrition_per_serving and set nutrition_per_100g to null.
+- If the label shows BOTH per-serving and per-100g columns, extract BOTH separately.
 - If a field is not visible or legible, set it to null
 - For Indian FSSAI labels: prefer the English text, extract trans fat, cholesterol, added sugars
-- If the label has both per-serving and per-100g columns, extract BOTH
-- Sodium: if listed in mg keep as-is; if in g multiply by 1000
-- For Hindi-English bilingual labels: extract the English text values, ignore Hindi text
-- Return valid JSON only, no markdown fencing`;
+- Sodium: if listed in mg keep as-is; if listed in g multiply by 1000 to convert to mg
+- For Hindi-English bilingual labels: extract the English text values
+- Return valid JSON only, no markdown fencing, no explanation`;
 
 // Timeout per image in milliseconds
 const IMAGE_TIMEOUT_MS = 30000;
