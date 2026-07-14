@@ -242,7 +242,9 @@ function computeNutriScore(input) {
     category === 'beverages' ? BEVERAGE_THRESHOLDS : SOLID_THRESHOLDS;
 
   // ── Compute negative points (0–40) ──
-  const energy_pts = lookupPoints(input.energy_kcal, thresholds.energy);
+  // Energy thresholds are in kJ — convert kcal to kJ (1 kcal = 4.184 kJ)
+  const energy_kj = input.energy_kcal * 4.184;
+  const energy_pts = lookupPoints(energy_kj, thresholds.energy);
   const sat_fat_pts = lookupPoints(input.saturated_fat_g, thresholds.saturated_fat);
   const sugars_pts = lookupPoints(input.sugars_g, thresholds.sugars);
   const sodium_pts = lookupPoints(input.sodium_mg, thresholds.sodium);
