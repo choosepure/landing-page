@@ -37,7 +37,7 @@ Rules:
 - Return valid JSON only, no markdown fencing`;
 
 // Timeout per image in milliseconds
-const IMAGE_TIMEOUT_MS = 6000;
+const IMAGE_TIMEOUT_MS = 30000;
 
 // Fields that are merged across images
 const MERGEABLE_FIELDS = [
@@ -81,7 +81,7 @@ async function extractFromSingleImage(client, imageUrl) {
 
       const response = await client.messages.create(
         {
-          model: 'claude-sonnet-4-6-20250415',
+          model: 'claude-sonnet-4-5-20241022',
           max_tokens: 4096,
           messages: [
             {
@@ -138,6 +138,7 @@ async function extractFromSingleImage(client, imageUrl) {
 
   // All attempts failed
   if (lastError) {
+    console.error('❌ extractFromSingleImage actual error:', lastError.message, lastError.status || '', JSON.stringify(lastError.error || '').substring(0, 200));
     const err = new Error('Vision service temporarily unavailable');
     err.statusCode = 503;
     throw err;
