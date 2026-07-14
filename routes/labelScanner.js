@@ -646,6 +646,7 @@ function createLabelScannerRouter(db, authenticateUser) {
   // ─────────────────────────────────────────────────────────────────────────
   router.patch('/admin/scans/:id/approve', async (req, res) => {
     try {
+      // Update scan status
       const result = await scansCollection.updateOne(
         { scan_id: req.params.id },
         { $set: { status: 'approved', approved_at: new Date(), updated_at: new Date() } }
@@ -654,13 +655,33 @@ function createLabelScannerRouter(db, authenticateUser) {
         return res.status(404).json(errorResponse('NOT_FOUND', 'Scan not found'));
       }
 
-      // Also update the product record to mark it as verified
+      // Fetch the scan to get barcode and product data
       const scan = await scansCollection.findOne({ scan_id: req.params.id });
-      if (scan && scan.product_id) {
+      if (scan && scan.barcode) {
+        // Upsert product with approved status so /lookup/:barcode finds it
         await productsCollection.updateOne(
-          { product_id: scan.product_id },
-          { $set: { verified: true, updated_at: new Date() } }
+          { barcode: scan.barcode },
+          {
+            $set: {
+              name: scan.product_name || 'Unknown Product',
+              brand: scan.brand || 'Unknown Brand',
+              barcode: scan.barcode,
+              category: scan.category || 'solid',
+              latest_scan_id: scan.scan_id,
+              latest_nutri_score_grade: scan.nutri_score?.grade || null,
+              latest_nova_group: scan.nova_group?.group || null,
+              status: 'approved',
+              updated_at: new Date(),
+            },
+            $setOnInsert: {
+              product_id: scan.product_id,
+              scan_count: 1,
+              created_at: new Date(),
+            },
+          },
+          { upsert: true }
         );
+        console.log(`✅ Admin approved scan ${req.params.id}, product stored for barcode ${scan.barcode}`);
       }
 
       return res.status(200).json({ success: true, message: 'Scan approved' });
