@@ -468,9 +468,8 @@ export default function LabelResultScreen({ route, navigation }) {
                 setSubmitting(true);
                 try {
                   await apiClient.patch(`/api/v1/scans/${scan_id}/status`, { status: 'pending_review' });
-                  Alert.alert('Success', 'Data submitted for review!', [
-                    { text: 'OK', onPress: () => navigation.navigate('DashboardHome') }
-                  ]);
+                  Alert.alert('Success', 'Data submitted for review!');
+                  setTimeout(() => navigation.navigate('DashboardHome'), 500);
                 } catch (e) {
                   const msg = e.response?.data?.error?.message || e.message || 'Failed to submit';
                   Alert.alert('Error', msg);

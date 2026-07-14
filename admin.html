@@ -2505,6 +2505,65 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         // Enter key for OFF search
         document.getElementById('off-search-input')?.addEventListener('keypress', function(e) { if (e.key === 'Enter') searchOFF(); });
+
+        // ── LABEL SCANS ──
+        let labelScansLoaded = false;
+
+        async function loadLabelScans() {
+            const container = document.getElementById('label-scans-list');
+            const loading = document.getElementById('label-scans-loading');
+            const empty = document.getElementById('label-scans-empty');
+            loading.style.display = ''; container.innerHTML = ''; empty.style.display = 'none';
+            try {
+                const res = await fetch('/api/v1/admin/scans/pending', { credentials: 'include' });
+                const data = await res.json();
+                loading.style.display = 'none';
+                labelScansLoaded = true;
+                const scans = data.scans || [];
+                document.getElementById('pending-scans-count').textContent = scans.length;
+                if (!scans.length) { empty.style.display = ''; return; }
+                container.innerHTML = scans.map(s => `
+                    <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:16px;margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                            <div>
+                                <div style="font-weight:600;font-size:15px;color:#0F2419;">${s.product_name || 'Unknown Product'}</div>
+                                <div style="font-size:13px;color:#666;margin-top:2px;">${s.brand || ''} ${s.barcode ? '· ' + s.barcode : ''}</div>
+                            </div>
+                            <div style="display:flex;gap:6px;">
+                                ${s.nutri_score?.grade ? '<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:4px;font-weight:700;font-size:12px;">NS: ' + s.nutri_score.grade + '</span>' : ''}
+                                ${s.nova_group?.group ? '<span style="background:#FFF9E6;color:#F57C00;padding:2px 8px;border-radius:4px;font-weight:700;font-size:12px;">NOVA: ' + s.nova_group.group + '</span>' : ''}
+                            </div>
+                        </div>
+                        ${s.image_refs?.length ? '<div style="display:flex;gap:8px;margin-bottom:10px;">' + s.image_refs.map(url => '<img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #eee;">').join('') + '</div>' : ''}
+                        <div style="font-size:12px;color:#888;margin-bottom:10px;">Scanned: ${new Date(s.created_at).toLocaleString()}</div>
+                        <div style="display:flex;gap:10px;">
+                            <button onclick="approveScan('${s.scan_id}')" style="padding:8px 16px;background:#1F6B4E;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">✅ Approve</button>
+                            <button onclick="rejectScan('${s.scan_id}')" style="padding:8px 16px;background:#FFEBEE;color:#C62828;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">❌ Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { loading.style.display = 'none'; container.innerHTML = '<p style="color:#C62828;">Failed to load.</p>'; }
+        }
+
+        async function approveScan(scanId) {
+            if (!confirm('Approve this scan? It will override Open Food Facts data for this barcode.')) return;
+            try {
+                const res = await fetch('/api/v1/admin/scans/' + scanId + '/approve', { method: 'PATCH', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) { alert('Scan approved!'); loadLabelScans(); }
+                else alert(data.message || 'Failed to approve');
+            } catch (e) { alert('Error approving scan'); }
+        }
+
+        async function rejectScan(scanId) {
+            if (!confirm('Reject this scan?')) return;
+            try {
+                const res = await fetch('/api/v1/admin/scans/' + scanId + '/reject', { method: 'PATCH', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) { loadLabelScans(); }
+                else alert(data.message || 'Failed to reject');
+            } catch (e) { alert('Error rejecting scan'); }
+        }
     </script>
 </body>
 </html>
