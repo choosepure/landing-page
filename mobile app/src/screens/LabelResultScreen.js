@@ -104,9 +104,22 @@ export default function LabelResultScreen({ route, navigation }) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await apiClient.patch(`/api/v1/scans/${scan_id}`, {
-        corrections,
-      });
+      // Send corrections directly in body (not nested under 'corrections' key)
+      const payload = {};
+      // Map string corrections to proper nutrition object
+      const nutritionUpdates = {};
+      for (const [key, value] of Object.entries(corrections)) {
+        if (['energy_kcal', 'total_fat_g', 'saturated_fat_g', 'trans_fat_g', 'carbohydrates_g', 'sugars_g', 'added_sugars_g', 'fibre_g', 'protein_g', 'sodium_mg', 'cholesterol_mg'].includes(key)) {
+          nutritionUpdates[key] = parseFloat(value) || null;
+        } else if (key === 'ingredients_raw') {
+          payload.ingredients_raw = value;
+        }
+      }
+      if (Object.keys(nutritionUpdates).length > 0) {
+        payload.nutrition_per_100g = nutritionUpdates;
+      }
+
+      const res = await apiClient.patch(`/api/v1/scans/${scan_id}`, payload);
       // Update displayed data with response
       setScanData(res.data);
       setCorrections({});
@@ -432,43 +445,41 @@ export default function LabelResultScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* 6. Correct Data Button */}
+        {/* 6. Accept / Reject Buttons */}
         <View style={styles.bottomActions}>
-          {correctionMode && Object.keys(corrections).length > 0 && (
-            <Text style={styles.correctionsSummary}>
-              {Object.keys(corrections).length} field(s) edited
-            </Text>
-          )}
-          <TouchableOpacity
-            style={[styles.correctButton, submitting && styles.correctButtonDisabled]}
-            onPress={submitCorrections}
-            disabled={submitting}
-            activeOpacity={0.8}
-            accessibilityLabel="Correct Data"
-            accessibilityRole="button"
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.correctButtonText}>
-                {correctionMode && Object.keys(corrections).length > 0
-                  ? 'Submit Corrections'
-                  : 'Correct Data'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          {correctionMode && (
+          <Text style={styles.acceptRejectLabel}>Does this data look correct?</Text>
+          <View style={styles.acceptRejectRow}>
             <TouchableOpacity
-              style={styles.cancelCorrectionButton}
-              onPress={() => {
-                setCorrectionMode(false);
-                setCorrections({});
-              }}
+              style={[styles.rejectButton, submitting && styles.correctButtonDisabled]}
+              onPress={() => navigation.navigate('LabelScanner', { barcode: scanData?.barcode, promptReason: 'incorrect_data' })}
+              disabled={submitting}
               activeOpacity={0.8}
             >
-              <Text style={styles.cancelCorrectionText}>Cancel</Text>
+              <Text style={styles.rejectButtonText}>❌ Reject & Re-scan</Text>
             </TouchableOpacity>
-          )}
+            <TouchableOpacity
+              style={[styles.acceptButton, submitting && styles.correctButtonDisabled]}
+              onPress={async () => {
+                setSubmitting(true);
+                try {
+                  await apiClient.patch(`/api/v1/scans/${scan_id}/status`, { status: 'pending_review' });
+                  navigation.navigate('DashboardHome');
+                } catch (e) {
+                  setError('Failed to submit. Please try again.');
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+              disabled={submitting}
+              activeOpacity={0.8}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.acceptButtonText}>✅ Accept</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -917,35 +928,45 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     alignItems: 'center',
   },
-  correctionsSummary: {
+  acceptRejectLabel: {
     fontFamily: theme.fonts.medium,
-    fontSize: theme.fontSize.sm,
-    color: '#1F6B4E',
-    marginBottom: 8,
+    fontSize: theme.fontSize.base,
+    color: '#0F2419',
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  correctButton: {
+  acceptRejectRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  acceptButton: {
+    flex: 1,
     backgroundColor: '#1F6B4E',
     paddingVertical: 14,
-    paddingHorizontal: 32,
     borderRadius: 12,
-    width: '100%',
     alignItems: 'center',
   },
-  correctButtonDisabled: {
-    opacity: 0.6,
-  },
-  correctButtonText: {
+  acceptButtonText: {
     fontFamily: theme.fonts.semiBold,
     fontSize: theme.fontSize.md,
     color: '#FFFFFF',
   },
-  cancelCorrectionButton: {
-    marginTop: 10,
-    paddingVertical: 10,
+  rejectButton: {
+    flex: 1,
+    backgroundColor: '#FFF3E0',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFE082',
   },
-  cancelCorrectionText: {
-    fontFamily: theme.fonts.medium,
-    fontSize: theme.fontSize.base,
-    color: '#6B6B6B',
+  rejectButtonText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: theme.fontSize.md,
+    color: '#E67E22',
+  },
+  correctButtonDisabled: {
+    opacity: 0.6,
   },
 });

@@ -265,6 +265,7 @@ function createLabelScannerRouter(db, authenticateUser) {
           missing_fields: parsed.missing_fields,
           warnings,
           category,
+          status: 'extracted', // extracted → pending_review → approved / rejected
           correction_log: [],
           created_at: now,
           updated_at: now,
@@ -334,6 +335,32 @@ function createLabelScannerRouter(db, authenticateUser) {
       return res.status(500).json(
         errorResponse('INTERNAL_ERROR', 'An unexpected error occurred')
       );
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PATCH /api/v1/scans/:id/status — User accepts or rejects extracted data
+  // ─────────────────────────────────────────────────────────────────────────
+  router.patch('/scans/:id/status', authenticateUser, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!['pending_review', 'rejected'].includes(status)) {
+        return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Status must be pending_review or rejected'));
+      }
+
+      const result = await scansCollection.updateOne(
+        { scan_id: req.params.id },
+        { $set: { status, updated_at: new Date() } }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json(errorResponse('NOT_FOUND', 'Scan not found'));
+      }
+
+      return res.status(200).json({ success: true, status });
+    } catch (err) {
+      console.error('PATCH /api/v1/scans/:id/status error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'An unexpected error occurred'));
     }
   });
 
@@ -467,6 +494,34 @@ function createLabelScannerRouter(db, authenticateUser) {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // PATCH /api/v1/scans/:id/status — Update scan status (user accept/reject)
+  // ─────────────────────────────────────────────────────────────────────────
+  router.patch('/scans/:id/status', authenticateUser, async (req, res) => {
+    try {
+      const { status } = req.body;
+      const validStatuses = ['pending_review', 'rejected'];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Status must be pending_review or rejected'));
+      }
+
+      const result = await scansCollection.updateOne(
+        { scan_id: req.params.id },
+        { $set: { status, status_updated_at: new Date(), status_updated_by: req.user.id.toString() } }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json(errorResponse('NOT_FOUND', 'Scan not found'));
+      }
+
+      console.log(`✅ Scan ${req.params.id} status updated to ${status} by user ${req.user.id}`);
+      return res.status(200).json({ success: true, status });
+    } catch (err) {
+      console.error('PATCH /api/v1/scans/:id/status error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to update status'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // GET /api/v1/products — Search products with filters and pagination
   // ─────────────────────────────────────────────────────────────────────────
   router.get('/products', authenticateUser, async (req, res) => {
@@ -566,6 +621,211 @@ function createLabelScannerRouter(db, authenticateUser) {
       return res.status(500).json(
         errorResponse('INTERNAL_ERROR', 'An unexpected error occurred')
       );
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GET /api/v1/admin/pending-scans — Admin: list scans pending review
+  // ─────────────────────────────────────────────────────────────────────────
+  router.get('/admin/pending-scans', async (req, res) => {
+    try {
+      const scans = await scansCollection
+        .find({ status: 'pending_review' }, { projection: { _id: 0 } })
+        .sort({ created_at: -1 })
+        .limit(50)
+        .toArray();
+      return res.status(200).json({ success: true, scans });
+    } catch (err) {
+      console.error('GET /api/v1/admin/pending-scans error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to fetch pending scans'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PATCH /api/v1/admin/scans/:id/approve — Admin approves a scan
+  // ─────────────────────────────────────────────────────────────────────────
+  router.patch('/admin/scans/:id/approve', async (req, res) => {
+    try {
+      const result = await scansCollection.updateOne(
+        { scan_id: req.params.id },
+        { $set: { status: 'approved', approved_at: new Date(), updated_at: new Date() } }
+      );
+      if (result.matchedCount === 0) {
+        return res.status(404).json(errorResponse('NOT_FOUND', 'Scan not found'));
+      }
+
+      // Also update the product record to mark it as verified
+      const scan = await scansCollection.findOne({ scan_id: req.params.id });
+      if (scan && scan.product_id) {
+        await productsCollection.updateOne(
+          { product_id: scan.product_id },
+          { $set: { verified: true, updated_at: new Date() } }
+        );
+      }
+
+      return res.status(200).json({ success: true, message: 'Scan approved' });
+    } catch (err) {
+      console.error('PATCH /api/v1/admin/scans/:id/approve error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to approve scan'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PATCH /api/v1/admin/scans/:id/reject — Admin rejects a scan
+  // ─────────────────────────────────────────────────────────────────────────
+  router.patch('/admin/scans/:id/reject', async (req, res) => {
+    try {
+      const result = await scansCollection.updateOne(
+        { scan_id: req.params.id },
+        { $set: { status: 'admin_rejected', updated_at: new Date() } }
+      );
+      if (result.matchedCount === 0) {
+        return res.status(404).json(errorResponse('NOT_FOUND', 'Scan not found'));
+      }
+      return res.status(200).json({ success: true, message: 'Scan rejected' });
+    } catch (err) {
+      console.error('PATCH /api/v1/admin/scans/:id/reject error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to reject scan'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GET /api/v1/verified-product/:barcode — Check our DB first for approved scans
+  // ─────────────────────────────────────────────────────────────────────────
+  router.get('/verified-product/:barcode', async (req, res) => {
+    try {
+      const scan = await scansCollection.findOne(
+        { barcode: req.params.barcode, status: 'approved' },
+        { projection: { _id: 0 }, sort: { created_at: -1 } }
+      );
+      if (!scan) {
+        return res.status(404).json({ found: false });
+      }
+      return res.status(200).json({ found: true, product: scan });
+    } catch (err) {
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to check verified products'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ADMIN: GET /api/v1/admin/scans/pending — List scans pending admin review
+  // ─────────────────────────────────────────────────────────────────────────
+  router.get('/admin/scans/pending', async (req, res) => {
+    try {
+      const scans = await scansCollection
+        .find({ status: 'pending_review' })
+        .sort({ created_at: -1 })
+        .project({ _id: 0 })
+        .toArray();
+      return res.status(200).json({ success: true, scans });
+    } catch (err) {
+      console.error('GET /admin/scans/pending error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to fetch pending scans'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ADMIN: PATCH /api/v1/admin/scans/:id/approve — Approve a scan
+  // ─────────────────────────────────────────────────────────────────────────
+  router.patch('/admin/scans/:id/approve', async (req, res) => {
+    try {
+      const scan = await scansCollection.findOne({ scan_id: req.params.id });
+      if (!scan) return res.status(404).json(errorResponse('NOT_FOUND', 'Scan not found'));
+
+      // Update scan status to approved
+      await scansCollection.updateOne(
+        { scan_id: req.params.id },
+        { $set: { status: 'approved', approved_at: new Date() } }
+      );
+
+      // Update/create product with approved status so barcode lookups find it
+      if (scan.barcode) {
+        await productsCollection.updateOne(
+          { barcode: scan.barcode },
+          {
+            $set: {
+              name: scan.product_name || 'Unknown Product',
+              brand: scan.brand || 'Unknown Brand',
+              barcode: scan.barcode,
+              category: scan.category || 'solid',
+              latest_scan_id: scan.scan_id,
+              latest_nutri_score_grade: scan.nutri_score?.grade || null,
+              latest_nova_group: scan.nova_group?.group || null,
+              status: 'approved',
+              updated_at: new Date(),
+            },
+            $setOnInsert: {
+              product_id: scan.product_id,
+              scan_count: 1,
+              created_at: new Date(),
+            },
+          },
+          { upsert: true }
+        );
+      }
+
+      console.log(`✅ Admin approved scan ${req.params.id} (barcode: ${scan.barcode})`);
+      return res.status(200).json({ success: true, message: 'Scan approved' });
+    } catch (err) {
+      console.error('PATCH /admin/scans/:id/approve error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to approve scan'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ADMIN: PATCH /api/v1/admin/scans/:id/reject — Reject a scan
+  // ─────────────────────────────────────────────────────────────────────────
+  router.patch('/admin/scans/:id/reject', async (req, res) => {
+    try {
+      const result = await scansCollection.updateOne(
+        { scan_id: req.params.id },
+        { $set: { status: 'admin_rejected', rejected_at: new Date() } }
+      );
+      if (result.matchedCount === 0) return res.status(404).json(errorResponse('NOT_FOUND', 'Scan not found'));
+      return res.status(200).json({ success: true, message: 'Scan rejected' });
+    } catch (err) {
+      console.error('PATCH /admin/scans/:id/reject error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Failed to reject scan'));
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PUBLIC: GET /api/v1/lookup/:barcode — Check our DB first for approved data
+  // ─────────────────────────────────────────────────────────────────────────
+  router.get('/lookup/:barcode', async (req, res) => {
+    try {
+      // Check our approved products first
+      const product = await productsCollection.findOne({
+        barcode: req.params.barcode,
+        status: 'approved',
+      });
+
+      if (product) {
+        // Fetch the latest approved scan
+        const scan = await scansCollection.findOne(
+          { scan_id: product.latest_scan_id },
+          { projection: { _id: 0 } }
+        );
+        return res.status(200).json({
+          found: true,
+          source: 'choosepure',
+          product: {
+            name: product.name,
+            brand: product.brand,
+            barcode: product.barcode,
+            nutriScore: scan?.nutri_score?.grade || null,
+            novaGroup: scan?.nova_group?.group || null,
+            nutritionPer100g: scan?.nutrition_per_100g || null,
+            ingredients: scan?.ingredients_raw || '',
+            imageUrl: scan?.image_refs?.[0] || null,
+          },
+        });
+      }
+
+      return res.status(200).json({ found: false });
+    } catch (err) {
+      console.error('GET /api/v1/lookup/:barcode error:', err);
+      return res.status(500).json(errorResponse('INTERNAL_ERROR', 'Lookup failed'));
     }
   });
 

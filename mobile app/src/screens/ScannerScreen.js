@@ -83,6 +83,19 @@ export default function ScannerScreen({ navigation }) {
     setLookupBarcode(barcode);
     setError(null);
     try {
+      // Check our verified DB first
+      try {
+        const verifiedRes = await apiClient.get(`/api/v1/lookup/${barcode}`);
+        if (verifiedRes.data.found) {
+          try { logScanProduct(barcode); } catch (e) {}
+          navigation.navigate('ResultCard', { product: verifiedRes.data.product, barcode, source: 'choosepure' });
+          return;
+        }
+      } catch (e) {
+        // Not found in our DB — continue to OFF
+      }
+
+      // Fall back to Open Food Facts
       const res = await apiClient.get(`/api/off/product/${barcode}`);
       if (res.data.found) {
         try { logScanProduct(barcode); } catch (e) { /* analytics should never break user flow */ }
