@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { theme } from '../theme';
 import apiClient from '../api/client';
@@ -460,12 +461,19 @@ export default function LabelResultScreen({ route, navigation }) {
             <TouchableOpacity
               style={[styles.acceptButton, submitting && styles.correctButtonDisabled]}
               onPress={async () => {
+                if (!scan_id) {
+                  Alert.alert('Error', 'No scan ID found. Please try scanning again.');
+                  return;
+                }
                 setSubmitting(true);
                 try {
                   await apiClient.patch(`/api/v1/scans/${scan_id}/status`, { status: 'pending_review' });
-                  navigation.navigate('DashboardHome');
+                  Alert.alert('Success', 'Data submitted for review!', [
+                    { text: 'OK', onPress: () => navigation.navigate('DashboardHome') }
+                  ]);
                 } catch (e) {
-                  setError('Failed to submit. Please try again.');
+                  const msg = e.response?.data?.error?.message || e.message || 'Failed to submit';
+                  Alert.alert('Error', msg);
                 } finally {
                   setSubmitting(false);
                 }
