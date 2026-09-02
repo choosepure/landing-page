@@ -59,7 +59,7 @@ function HomeTabStack() {
       <HomeStack.Screen
         name="DashboardHome"
         component={DashboardScreen}
-        options={{ title: 'Home' }}
+        options={{ headerShown: false }}
       />
       <HomeStack.Screen
         name="ReportDetail"

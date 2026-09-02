@@ -18,6 +18,8 @@ import ProductCard from '../components/ProductCard';
 import Dropdown from '../components/Dropdown';
 import NutriGradeBadge from '../components/NutriGradeBadge';
 import PopularProductsSection from '../components/PopularProductsSection';
+import VotingModule from '../components/VotingModule';
+import { shouldShowCaption, POPULAR_CAPTION } from '../utils/popularCaption';
 
 /* ── Nutri-grade constants ─────────────────────────────────── */
 
@@ -92,6 +94,7 @@ export default function DashboardScreen({ navigation }) {
   const [nutriLoadingMore, setNutriLoadingMore] = useState(false);
   const [showReportsInfo, setShowReportsInfo] = useState(false);
   const [showNutriInfo, setShowNutriInfo] = useState(false);
+  const [popularGrades, setPopularGrades] = useState([]);
 
   const subscribed = isSubscriber(user);
 
@@ -271,14 +274,6 @@ export default function DashboardScreen({ navigation }) {
             <Text style={styles.searchPlaceholder}>
               Search products, brands, categories...
             </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Scan')}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Scan barcode"
-            >
-              <Icon name="scan-corners" size={18} color={theme.colors.text} />
-            </TouchableOpacity>
           </TouchableOpacity>
         </Card>
 
@@ -419,13 +414,29 @@ export default function DashboardScreen({ navigation }) {
                   <ActivityIndicator size="small" color={theme.colors.primary} />
                 </View>
               ) : nutriHasMore && nutriProducts.length > 0 ? (
-                <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreNutriProducts}>
-                  <Text style={styles.loadMoreText}>Load more products</Text>
+                <TouchableOpacity
+                  style={styles.loadMoreChip}
+                  onPress={loadMoreNutriProducts}
+                  activeOpacity={0.75}
+                  disabled={nutriLoadingMore}
+                >
+                  {nutriLoadingMore ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : (
+                    <Text style={styles.loadMoreChipText}>Load more products</Text>
+                  )}
                 </TouchableOpacity>
               ) : null
             }
           />
         )}
+
+        {/* Voting Module — above Popular Products */}
+        <VotingModule
+          onProductPress={(productId) =>
+            navigation.navigate('Polling', { productId })
+          }
+        />
 
         {/* Popular Products Section */}
         <PopularProductsSection
@@ -434,6 +445,8 @@ export default function DashboardScreen({ navigation }) {
               navigation.navigate('ProductDetail', { barcode: product.barcode, product });
             }
           }}
+          onGradesResolved={setPopularGrades}
+          caption={shouldShowCaption(popularGrades) ? POPULAR_CAPTION : null}
         />
       </ScrollView>
     </View>
@@ -593,13 +606,21 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
 
-  /* Load more */
-  loadMoreButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
+  /* Load more chip */
+  loadMoreChip: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.green50,
     marginTop: 8,
+    marginBottom: 28,
+    minWidth: 140,
+    alignItems: 'center',
   },
-  loadMoreText: {
+  loadMoreChipText: {
     fontFamily: theme.fonts.semiBold,
     fontSize: theme.fontSize.sm,
     color: theme.colors.primary,

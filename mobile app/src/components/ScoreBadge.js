@@ -1,62 +1,81 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../theme';
+import { getLabScoreToken } from '../utils/scoreTokens';
 
 /**
- * Returns tier colors for a given safety score (0-100).
- * Exported for reuse in other components.
+ * @deprecated Use getLabScoreToken from scoreTokens.js directly.
+ * Kept for backwards-compat with any callers that imported scoreTier.
  */
 export function scoreTier(score) {
-  if (score >= 90) return { bg: '#D9E8DD', fg: '#2D6B4F' };
-  if (score >= 80) return { bg: '#DCEAF4', fg: '#2C5F87' };
-  if (score >= 70) return { bg: '#F0E5D5', fg: '#8B6F3D' };
-  return { bg: '#F4DDD4', fg: '#A8482E' };
+  const token = getLabScoreToken(score);
+  // Map to legacy { bg, fg } shape
+  const fgMap = {
+    '#2E7D32': '#fff',
+    '#7CB342': '#fff',
+    '#E8A33D': '#fff',
+    '#D64545': '#fff',
+  };
+  return { bg: token.color + '33', fg: token.color };
 }
 
 /**
- * Circular safety-score badge (0-100). Color tier follows the ChoosePure scale.
+ * Circular Lab Score badge (0–100) with "Lab Score" caption below.
+ * Uses the shared Score Token System for semantically correct colors.
+ *
+ * - Shape: circle (differentiates from NutriGradeBadge square)
+ * - Caption: always shows "Lab Score" so it cannot be misread as Nutri-Score
+ * - Color: token-driven red→amber→green scale
  *
  * Usage:
  *   <ScoreBadge score={87} />
- *   <ScoreBadge score={92} size={64} />
+ *   <ScoreBadge score={92} size={48} />
  */
 export default function ScoreBadge({ score, size = 44 }) {
-  const tier = scoreTier(score);
-  const fontSize = Math.round(size * 0.42);
+  const token = getLabScoreToken(score ?? 0);
+  const fontSize = Math.round(size * 0.38);
 
   return (
-    <View
-      style={[
-        styles.badge,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: tier.bg,
-        },
-      ]}
-    >
-      <Text
+    <View style={styles.wrapper}>
+      <View
         style={[
-          styles.label,
+          styles.circle,
           {
-            color: tier.fg,
-            fontSize,
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: token.color,
           },
         ]}
       >
-        {score}
-      </Text>
+        <Text style={[styles.number, { fontSize, color: '#FFFFFF' }]}>
+          {score ?? '—'}
+        </Text>
+      </View>
+      <Text style={styles.caption}>Lab Score</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: {
+  wrapper: {
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  circle: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: {
-    fontFamily: theme.fonts.semiBold,
+  number: {
+    fontFamily: theme.fonts.bold,
+    lineHeight: undefined,
+  },
+  caption: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 9,
+    color: theme.colors.textSecondary,
+    marginTop: 3,
+    textAlign: 'center',
+    letterSpacing: 0.2,
   },
 });
