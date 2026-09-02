@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortune Refined Rice Bran Oil — Compliance Report · ChoosePure</title>
+    <link rel="icon" href="/public/favicon.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{
+          --g:#1F6B4E;--gb:#E8F5EE;--gbd:rgba(31,107,78,0.2);
+          --bl:#2196F3;--blb:#E3F2FD;--blbd:rgba(33,150,243,0.2);
+          --br:#8A6E4B;--brb:#F5EDE3;--brbd:rgba(138,110,75,0.25);
+          --a:#FFB703;--ab:#FFF8E1;--abd:rgba(255,183,3,0.3);
+          --r:#D62828;--rb:#FDECEA;--rbd:rgba(214,40,40,0.2);
+          --color-text-primary:#1A201A;--color-text-secondary:#6B7268;--color-text-tertiary:#9B9F97;
+          --color-background-primary:#FFFFFF;--color-background-secondary:#F5F7F4;
+          --color-border-tertiary:#ECEAE4;
+          --border-radius-md:10px;--border-radius-lg:14px;
+        }
+        body{font-family:'DM Sans',sans-serif;background:#FAFAF7;color:var(--color-text-primary)}
+        .page{max-width:720px;margin:0 auto;padding:1rem}
+        .w{padding:0.5rem 0 2rem}
+
+        .mh{background:var(--brb);border:0.5px solid var(--brbd);border-radius:var(--border-radius-lg);padding:14px 18px;margin-bottom:0.75rem;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:flex-start}
+        .mh h1{font-family:'Lora',serif;font-size:17px;color:var(--br);font-weight:600}
+        .mh p{font-size:11.5px;color:var(--color-text-secondary);margin-top:3px;line-height:1.5}
+        .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+        .chip{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:500}
+        .cg{background:var(--gb);color:var(--g);border:0.5px solid var(--gbd)}
+        .ca{background:var(--ab);color:#7A4F00;border:0.5px solid var(--abd)}
+        .ci{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+        .awl-badge{background:var(--br);color:white;border-radius:8px;padding:6px 10px;font-size:10px;font-weight:500;line-height:1.6;text-align:center;flex-shrink:0}
+
+        .tbhq-box{background:var(--ab);border:0.5px solid var(--abd);border-left:4px solid var(--a);border-radius:var(--border-radius-lg);padding:13px 15px;margin-bottom:0.75rem}
+        .tbhq-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+        .tbhq-left h3{font-family:'Lora',serif;font-size:14px;color:#7A4F00;font-weight:600}
+        .tbhq-left p{font-size:11.5px;color:#7A4F00;margin-top:2px}
+        .tbhq-pill{background:var(--a);color:#4A2C00;font-size:10.5px;font-weight:500;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+        .tbhq-bar-wrap{margin:8px 0}
+        .tbhq-bar-label{display:flex;justify-content:space-between;font-size:10px;color:#7A4F00;margin-bottom:3px}
+        .tbhq-track{height:10px;background:linear-gradient(to right,var(--gb) 0%,var(--gb) 50%,var(--ab) 50%,var(--ab) 85%,var(--rb) 85%,var(--rb) 100%);border-radius:5px;position:relative;border:0.5px solid rgba(138,110,75,0.2)}
+        .tbhq-pin{width:12px;height:16px;background:#7A4F00;border-radius:2px;position:absolute;top:-3px;transform:translateX(-50%)}
+        .tbhq-limits{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+        .tl{font-size:10px;padding:2px 7px;border-radius:4px}
+        .tl-pass{background:var(--gb);color:var(--g);border:0.5px solid var(--gbd)}
+        .tl-fail{background:var(--rb);color:#B71C1C;border:0.5px solid var(--rbd)}
+        .tl-warn{background:var(--ab);color:#7A4F00;border:0.5px solid var(--abd)}
+        .tbhq-explain{font-size:11.5px;color:#7A4F00;line-height:1.65;margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(255,183,3,0.3)}
+
+        .scope-box{background:var(--ab);border:0.5px solid var(--abd);border-left:3px solid var(--a);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:0.75rem;font-size:11.5px;color:#7A4F00;line-height:1.6}
+
+        .score-card{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:14px 18px;border-radius:var(--border-radius-lg);margin-bottom:0.75rem;background:var(--brb);border:0.5px solid var(--brbd)}
+        .dial{width:72px;height:72px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:2.5px solid rgba(255,255,255,0.5)}
+        .dn{font-family:'Lora',serif;font-size:26px;line-height:1}
+        .dl{font-size:9px;font-weight:500;margin-top:1px;letter-spacing:0.04em;opacity:0.9}
+        .si h2{font-family:'Lora',serif;font-size:15px;color:var(--br);font-weight:600}
+        .si .vrd{font-size:12px;color:var(--br);margin-top:4px;line-height:1.55;opacity:0.85}
+        .ewg-bar{height:6px;border-radius:3px;background:linear-gradient(to right,#D62828,#FFB703,#8A6E4B,#2196F3,#1F6B4E);position:relative;margin:8px 0 3px}
+        .ewg-pin{width:10px;height:10px;border-radius:50%;background:white;border:2px solid #333;position:absolute;top:-2px;transform:translateX(-50%)}
+        .ewg-ends{display:flex;justify-content:space-between;font-size:9.5px;color:var(--br);opacity:0.7}
+
+        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:0.75rem}
+        .stat{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 8px;text-align:center}
+        .sn{font-family:'Lora',serif;font-size:18px}
+        .sl{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+
+        .sec{font-size:10.5px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:1rem 0 6px}
+        .gh{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:var(--border-radius-md);margin-bottom:5px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+        .gn{font-size:12px;font-weight:500}
+        .gc{font-size:11px;margin-left:auto;color:var(--color-text-secondary)}
+
+        .pc{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:11px 13px;margin-bottom:6px;background:var(--color-background-primary)}
+        .pt{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+        .pn{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+        .pv{font-size:11.5px;color:var(--color-text-secondary);margin-top:2px}
+        .ppill{font-size:10.5px;font-weight:500;padding:2px 9px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+        .pw{font-size:11px;color:var(--color-text-secondary);margin-top:6px;line-height:1.55;font-style:italic;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)}
+        .lims{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+        .lc{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+        .lc strong{color:var(--color-text-primary)}
+        .pnote{font-size:11px;margin-top:5px;font-weight:500}
+
+        .pbar-wrap{margin-top:6px}
+        .pbar-track{height:6px;border-radius:3px;background:var(--color-border-tertiary);position:relative;overflow:hidden}
+        .pbar-fill{height:100%;border-radius:3px;transition:width 0.3s}
+        .pbar-labels{display:flex;justify-content:space-between;font-size:9.5px;color:var(--color-text-tertiary);margin-top:2px}
+
+        .cg2{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:8px}
+        .ci2{background:var(--gb);border:0.5px solid var(--gbd);border-radius:var(--border-radius-md);padding:8px 10px}
+        .ci2-n{font-size:11.5px;font-weight:500;color:var(--g)}
+        .ci2-v{font-size:10.5px;color:var(--g);opacity:0.75;margin-top:1px}
+        .ci2-s{font-size:10px;color:var(--g);opacity:0.6;margin-top:2px}
+
+        .oryz-box{background:linear-gradient(135deg,var(--gb),var(--blb));border:0.5px solid var(--gbd);border-radius:var(--border-radius-lg);padding:13px 15px;margin-bottom:6px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
+        .oryz-num{font-family:'Lora',serif;font-size:28px;color:var(--g);font-weight:600;flex-shrink:0;text-align:center;line-height:1}
+        .oryz-unit{font-size:11px;color:var(--g);text-align:center}
+        .oryz-info h4{font-size:13px;font-weight:500;color:var(--g);margin-bottom:4px}
+        .oryz-info p{font-size:11.5px;color:var(--g);line-height:1.6;opacity:0.85}
+
+        .hl{background:var(--gb);border:0.5px solid var(--gbd);border-radius:var(--border-radius-lg);padding:13px 15px;margin-top:0.75rem}
+        .hl-t{font-family:'Lora',serif;font-size:13px;color:var(--g);font-style:italic;margin-bottom:7px}
+        .hl-l{list-style:none}
+        .hl-l li{font-size:12px;color:var(--g);line-height:1.6;padding:2px 0 2px 16px;position:relative}
+        .hl-l li::before{content:'\2713';position:absolute;left:0;font-weight:600}
+
+        .gap-box{background:var(--ab);border:0.5px solid var(--abd);border-radius:var(--border-radius-md);padding:12px 14px;margin-top:0.75rem}
+        .gap-t{font-size:12px;font-weight:500;color:#7A4F00;margin-bottom:5px}
+
+        .vs-box{background:var(--blb);border:0.5px solid var(--blbd);border-radius:var(--border-radius-md);padding:11px 14px;margin-top:0.75rem}
+        .vs-box p{font-size:11.5px;color:#1565C0;line-height:1.6}
+
+        .fd{margin-top:1.5rem;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary);font-size:10.5px;color:var(--color-text-tertiary);line-height:1.6}
+    </style>
+</head>
+<body>
+<div class="page">
+<div class="w">
+
+<!-- MASTHEAD -->
+<div class="mh">
+  <div>
+    <h1>Fortune — Refined Rice Bran Oil</h1>
+    <p>AWL Agri Business Ltd (formerly Adani Wilmar) · Mantralayam, Andhra Pradesh<br>Batch (AM)RBP7O146 · Mfd: 26-May-2026 · Best before: 25-May-2027 · 4×4.350 KG Jar</p>
+    <div class="chips">
+      <span class="chip ci">FSSAI Lic: 10012044000012</span>
+      <span class="chip ci">27 parameters</span>
+      <span class="chip ca">⚠ In-house COA only</span>
+      <span class="chip ca">⚠ TBHQ: EU-banned additive</span>
+      <span class="chip ci">Scope: Physical, chemical &amp; adulteration</span>
+    </div>
+  </div>
+  <div class="awl-badge">AWL<br>Adani<br>Wilmar</div>
+</div>
+
+<!-- TBHQ HIGHLIGHT BOX -->
+<div class="tbhq-box">
+  <div class="tbhq-hdr">
+    <div class="tbhq-left">
+      <h3>⚠ TBHQ — Synthetic antioxidant found at 190.20 ppm</h3>
+      <p>Found: <strong>190.20 ppm</strong> &nbsp;|&nbsp; Company spec: 180–200 ppm &nbsp;|&nbsp; Passes India &amp; US · Banned in EU</p>
+    </div>
+    <span class="tbhq-pill">Caution (EU perspective)</span>
+  </div>
+  <div class="tbhq-bar-wrap">
+    <div class="tbhq-bar-label">
+      <span>0 ppm</span>
+      <span style="color:#7A4F00;font-weight:500">190.20 ppm found →</span>
+      <span>200 ppm (India/US max)</span>
+    </div>
+    <div class="tbhq-track">
+      <div class="tbhq-pin" style="left:95.1%"></div>
+    </div>
+    <div class="tbhq-bar-label">
+      <span style="color:var(--g)">Safe zone</span>
+      <span style="color:#7A4F00">Caution zone</span>
+      <span style="color:var(--r)">Over limit</span>
+    </div>
+  </div>
+  <div class="tbhq-limits">
+    <span class="tl tl-fail">EU: BANNED since 2004 (Dir 95/2/EC)</span>
+    <span class="tl tl-pass">India FSSAI: NMT 200 ppm ✓</span>
+    <span class="tl tl-pass">US FDA: Max 200 ppm (21 CFR 172.185) ✓</span>
+    <span class="tl tl-warn">Found at 95.1% of India/US maximum</span>
+  </div>
+  <div class="tbhq-explain">
+    <strong>What is TBHQ (Tert-Butylhydroquinone)?</strong> It is a petroleum-derived synthetic antioxidant added to cooking oils to prevent them from going rancid and extend shelf life. The EU banned it entirely in 2004 after studies raised concerns about its genotoxicity (DNA damage), potential carcinogenicity at high doses, and immune system effects. India and the US still permit it up to 200 ppm.<br/><br/>
+    <strong>Should parents be concerned?</strong> At 190.20 ppm — just 4.9% below the India/US maximum — this is not a violation of Indian law. However, regular daily cooking with an oil carrying near-maximum TBHQ levels means continuous low-level exposure, which is what the EU's cautionary stance is based on. The EWG gives TBHQ a concern rating of 3/10 (moderate) based on immune system and behaviour studies. Families who cook daily with this oil (as most Indian households do) may want to consider this.
+  </div>
+</div>
+
+<!-- SCOPE NOTE -->
+<div class="scope-box">
+  <strong>⚠ Important:</strong> This is an <strong>in-house Certificate of Analysis</strong> issued by Adani Wilmar's own quality team — it states "computer generated, no signatory required." It is <strong>not a third-party NABL-accredited test</strong>. Parameters covered are physical quality, adulteration checks and basic chemistry only. Pesticide residues, heavy metals and solvent residues are not tested.
+</div>
+
+<!-- SCORE -->
+<div class="score-card">
+  <div class="dial" style="background:var(--br)">
+    <span class="dn" style="color:white">71</span>
+    <span class="dl" style="color:white">ACCEPTABLE</span>
+  </div>
+  <div class="si">
+    <h2>EWG-style Safety Score</h2>
+    <div class="vrd">All 27 parameters meet the company specification. Adulteration panel (9 tests) is fully clean. TBHQ at 190.20 ppm is the primary concern — at 95% of the India/US maximum and banned in EU. Score reduced also for in-house (non-NABL) testing and absence of pesticide/heavy metal data.</div>
+    <div class="ewg-bar"><div class="ewg-pin" style="left:71%"></div></div>
+    <div class="ewg-ends"><span>0 — Concern</span><span>EWG-style score</span><span>100 — Excellent</span></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="sn" style="color:var(--g)">27</div><div class="sl">Parameters</div></div>
+  <div class="stat"><div class="sn" style="color:var(--g)">26</div><div class="sl">Pass all standards</div></div>
+  <div class="stat"><div class="sn" style="color:var(--a)">1</div><div class="sl">Caution (EU view)</div></div>
+  <div class="stat"><div class="sn" style="color:var(--r)">0</div><div class="sl">India violation</div></div>
+</div>
+
+<!-- ORYZANOL HIGHLIGHT -->
+<div class="sec">⭐ The key health benefit of rice bran oil — Gamma-Oryzanol</div>
+<div class="oryz-box">
+  <div>
+    <div class="oryz-num">1.38</div>
+    <div class="oryz-unit">% Oryzanol</div>
+  </div>
+  <div class="oryz-info">
+    <h4>Oryzanol at 1.38% — 38% above minimum spec</h4>
+    <p>Gamma-Oryzanol is the signature antioxidant compound found only in rice bran oil. It has been shown to lower LDL cholesterol, reduce inflammation and act as a powerful free-radical scavenger. The company minimum spec is 1.0%; at 1.38%, this batch exceeds it by 38%. A higher oryzanol content is better for health. This is the primary reason nutritionists recommend rice bran oil over refined vegetable oils — and this batch delivers it meaningfully.</p>
+  </div>
+</div>
+
+<!-- FRESHNESS / QUALITY PARAMETERS -->
+<div class="sec">🧪 Oil quality &amp; freshness indicators</div>
+
+<div class="pc">
+  <div class="pt">
+    <div>
+      <div class="pn">Peroxide Value — Oxidation / Rancidity indicator</div>
+      <div class="pv">Found: <strong>0.68 meq/kg</strong> &nbsp;|&nbsp; Company spec: max 1.50 meq/kg &nbsp;|&nbsp; 45% of limit</div>
+    </div>
+    <span class="ppill" style="background:var(--gb);color:var(--g)">Excellent ✓</span>
+  </div>
+  <div class="pbar-wrap">
+    <div class="pbar-track"><div class="pbar-fill" style="width:45%;background:var(--g)"></div></div>
+    <div class="pbar-labels"><span>0 (fresh)</span><span>0.68 found</span><span>1.50 max</span></div>
+  </div>
+  <div class="lims">
+    <div class="lc"><strong>EU:</strong> Refined oils: ≤10 meq/kg (Reg EC 1513/2001)</div>
+    <div class="lc"><strong>US FDA:</strong> No specific peroxide value for refined oils</div>
+    <div class="lc"><strong>India FSSAI:</strong> Refined oils: NMT 10 meq/kg</div>
+  </div>
+  <div class="pw">Peroxide value measures how much the oil has oxidised — i.e., how "stale" or rancid it is becoming. A value of 0.68 out of a maximum of 10 (FSSAI) is extremely fresh. Consuming oxidised oil produces harmful free radicals in the body. This is a very reassuring reading.</div>
+  <div class="pnote" style="color:var(--g)">✓ Very fresh oil — only 6.8% of the FSSAI maximum. Excellent for cooking.</div>
+</div>
+
+<div class="pc">
+  <div class="pt">
+    <div>
+      <div class="pn">FFA % — Free Fatty Acids (Oil degradation marker)</div>
+      <div class="pv">Found: <strong>0.112%</strong> &nbsp;|&nbsp; Company spec: max 0.12% &nbsp;|&nbsp; 93% of company limit</div>
+    </div>
+    <span class="ppill" style="background:var(--ab);color:#7A4F00">Close to spec</span>
+  </div>
+  <div class="pbar-wrap">
+    <div class="pbar-track"><div class="pbar-fill" style="width:93%;background:var(--a)"></div></div>
+    <div class="pbar-labels"><span>0</span><span>0.112 found</span><span>0.12 spec / 0.25 FSSAI</span></div>
+  </div>
+  <div class="lims">
+    <div class="lc"><strong>EU:</strong> Refined oils: FFA ≤0.3% as oleic acid</div>
+    <div class="lc"><strong>US FDA:</strong> No specific limit for refined oils</div>
+    <div class="lc"><strong>India FSSAI:</strong> Refined oils: NMT 0.25%</div>
+  </div>
+  <div class="pw">Free Fatty Acids indicate hydrolysis — breakdown of oil caused by heat, moisture or storage. Higher FFA = lower quality and shorter shelf life. At 0.112%, it just passes the company's own tight internal spec of 0.12%, but is well within the FSSAI limit of 0.25%.</div>
+  <div class="pnote" style="color:#7A4F00">⚠ Passes all regulatory limits but sits at 93% of the company's own tighter specification — worth noting for freshness.</div>
+</div>
+
+<div class="pc">
+  <div class="pt">
+    <div>
+      <div class="pn">MIV % (Moisture &amp; Impurities in Volatile matter)</div>
+      <div class="pv">Found: <strong>0.012%</strong> &nbsp;|&nbsp; Spec: max 0.08%</div>
+    </div>
+    <span class="ppill" style="background:var(--gb);color:var(--g)">Excellent ✓</span>
+  </div>
+  <div class="pw">Moisture content in oil causes hydrolysis and microbial growth — leading to faster rancidity. At 0.012% vs 0.08% max, this is excellent — only 15% of the limit. Very dry and pure oil.</div>
+  <div class="pnote" style="color:var(--g)">✓ Only 15% of maximum — very low moisture content.</div>
+</div>
+
+<div class="pc">
+  <div class="pt">
+    <div>
+      <div class="pn">Iodine Value — Fatty acid unsaturation level</div>
+      <div class="pv">Found: <strong>100.15</strong> &nbsp;|&nbsp; Spec: 90–105</div>
+    </div>
+    <span class="ppill" style="background:var(--gb);color:var(--g)">Pass ✓</span>
+  </div>
+  <div class="pw">The Iodine Value tells you how many double bonds (unsaturated fatty acids) the oil contains. Rice bran oil's characteristic range of 90–105 confirms this is genuine rice bran oil with the expected oleic and linoleic acid balance. A value outside this range would indicate adulteration or poor quality.</div>
+  <div class="pnote" style="color:var(--g)">✓ 100.15 — centrally within range. Confirms authentic rice bran oil composition.</div>
+</div>
+
+<div class="pc">
+  <div class="pt">
+    <div>
+      <div class="pn">Phosphorous Content</div>
+      <div class="pv">Found: <strong>0.90 ppm</strong> &nbsp;|&nbsp; Spec: max 1.0 ppm</div>
+    </div>
+    <span class="ppill" style="background:var(--gb);color:var(--g)">Pass ✓</span>
+  </div>
+  <div class="pw">Residual phosphorus from phospholipids indicates how well the oil has been degummed during refining. High phosphorus causes oil to darken and smoke at lower temperatures. At 0.90 ppm vs max 1.0 ppm, this is close to specification but passes.</div>
+  <div class="pnote" style="color:var(--g)">✓ Passes — at 90% of spec maximum.</div>
+</div>
+
+<!-- ADULTERATION PANEL -->
+<div class="sec">🛡️ Adulteration tests — 9 oil purity checks (all pass)</div>
+<div class="gh" style="background:var(--gb)">
+  <span>🔬</span>
+  <span class="gn" style="color:var(--g)">Zero adulteration detected across all 9 foreign oil and toxin tests</span>
+  <span class="gc" style="color:var(--g)">All negative ✓</span>
+</div>
+
+<div class="cg2">
+  <div class="ci2">
+    <div class="ci2-n">Argemone Oil Test (TLC)</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">⚠ Critical — causes epidemic dropsy; can be fatal</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Mineral Oil (TLC)</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Petroleum-derived — toxic if consumed; banned in food</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Tricresyl Phosphate (TLC)</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Industrial plasticiser — causes neurological damage</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Hydrocyanic Acid Test</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Cyanide derivative — lethal poison</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Castor Oil (TLC)</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Contains ricin — toxic at high doses</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Cottonseed Oil Test</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Contains gossypol — toxic, reproductive harm</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Linseed Oil Test</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Industrial oil — not for high-heat cooking</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Kusam Oil Test</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Non-edible oil — banned in food</div>
+  </div>
+  <div class="ci2">
+    <div class="ci2-n">Hexa Bromide Test</div>
+    <div class="ci2-v">Negative ✓</div>
+    <div class="ci2-s">Detects fatty acid unsaturation irregularities</div>
+  </div>
+</div>
+
+<div style="background:var(--brb);border:0.5px solid var(--brbd);border-radius:var(--border-radius-md);padding:10px 13px;font-size:11.5px;color:var(--br);line-height:1.65;margin-bottom:6px">
+  <strong>Why the Argemone Oil test matters most for Indian families:</strong> Argemone mexicana seed oil adulteration in cooking oils has caused mass poisonings in India — the most tragic being the 1998 Delhi epidemic dropsy outbreak that killed over 60 people and blinded thousands. This test being negative is the most critical result in this report for public safety.
+</div>
+
+<!-- VITAMIN TEST -->
+<div class="sec">💊 Vitamins &amp; other quality tests</div>
+<div class="pc">
+  <div class="pt">
+    <div>
+      <div class="pn">Vitamin A &amp; D — Fortification test</div>
+      <div class="pv">Spec: Positive &nbsp;|&nbsp; Result: <strong>Positive ✓</strong></div>
+    </div>
+    <span class="ppill" style="background:var(--gb);color:var(--g)">Fortified ✓</span>
+  </div>
+  <div class="lims">
+    <div class="lc"><strong>India FSSAI:</strong> Mandatory fortification of refined edible oils with Vitamins A &amp; D</div>
+    <div class="lc"><strong>EU/US:</strong> Voluntary fortification</div>
+  </div>
+  <div class="pw">Under FSSAI's mandatory oil fortification rules, refined cooking oils must contain added Vitamin A and Vitamin D. This improves nutritional value and addresses common deficiencies in India. Presence confirmed in this batch.</div>
+  <div class="pnote" style="color:var(--g)">✓ Vitamins A &amp; D confirmed — meets FSSAI mandatory fortification requirements.</div>
+</div>
+
+<div class="hl">
+  <div class="hl-t">What parents and ChoosePure members should know</div>
+  <ul class="hl-l">
+    <li>All 9 adulteration tests pass — this oil is pure rice bran oil with no toxic foreign oils mixed in. The Argemone oil negative result is the most important safety pass</li>
+    <li>Oryzanol at 1.38% (vs 1.0% minimum) is excellent — this is the primary health differentiator of rice bran oil, with cholesterol-lowering and antioxidant benefits</li>
+    <li>The oil is genuinely fresh — peroxide value of 0.68 out of a FSSAI maximum of 10 means minimal oxidation and rancidity</li>
+    <li>TBHQ at 190.20 ppm is the key concern — it's legal in India but banned in EU, and at 95% of the India maximum it represents high synthetic antioxidant exposure for daily cooking families</li>
+    <li>Vitamins A &amp; D are confirmed present — this is mandatory FSSAI fortification and a nutritional positive</li>
+    <li>This is an <em>in-house quality certificate</em>, not an independent NABL-accredited test — it tells you the oil meets the company's own internal specifications, not that it's been independently verified</li>
+  </ul>
+</div>
+
+<div class="gap-box">
+  <div class="gap-t">⚠ What this report does NOT cover</div>
+  <ul style="font-size:11.5px;color:#7A4F00;line-height:1.8;padding-left:4px;list-style:none">
+    <li>• <strong>Pesticide residues</strong> — rice bran can carry organochlorine and organophosphate residues from paddy cultivation; not tested here</li>
+    <li>• <strong>Heavy metals</strong> (Arsenic, Lead, Cadmium) — paddy crops are known to absorb arsenic from soil/water; not tested</li>
+    <li>• <strong>Solvent residues</strong> (Hexane) — rice bran oil is typically extracted using hexane; residual hexane levels not reported</li>
+    <li>• <strong>Aflatoxins</strong> — rice bran is susceptible to mycotoxin contamination; not tested</li>
+    <li>• <strong>Trans fat content</strong> — not reported (partially hydrogenated oils can have trans fats)</li>
+    <li>• <strong>Fatty acid profile</strong> — detailed omega-3/6/9 breakdown not provided</li>
+    <li>• <strong>Third-party NABL accredited verification</strong> — this is a manufacturer's own internal certificate</li>
+  </ul>
+</div>
+
+<div class="vs-box">
+  <p><strong>ChoosePure context:</strong> For an everyday cooking oil used in Indian kitchens at high temperatures, the most important tests are freshness (peroxide value ✓ excellent), adulteration (✓ all clean) and the antioxidant system (⚠ TBHQ at near-maximum). If you are a high-frequency user of this oil and are concerned about synthetic antioxidants, you may want to look for cold-pressed or wood-pressed rice bran oil alternatives that use natural tocopherols instead of TBHQ as the antioxidant system — though these will have shorter shelf lives. For occasional or moderate use, the FSSAI-compliant TBHQ levels in this product are legally considered safe for India.</p>
+</div>
+
+<div class="fd">ChoosePure AI Analysis | Fortune Refined Rice Bran Oil — AWL Agri Business Ltd (formerly Adani Wilmar Ltd), Mantralayam, AP. FSSAI Lic: 10012044000012. Batch (AM)RBP7O146, Mfd 26-May-2026. In-house Certificate of Analysis (not NABL-accredited third party). Standards: FSSAI FSS (Food Products Standards) Regulations 2011 — Schedule 2 (Edible Oils); EU Directive 95/2/EC &amp; Reg EC 1513/2001; US FDA 21 CFR Parts 172 and 179. EWG Score: Started 100; −10 for TBHQ at 190.20 ppm (EU-banned, near India maximum, daily cooking exposure); −8 for in-house testing only (no NABL third party); −6 for no pesticide/heavy metal/hexane/aflatoxin testing; −5 for FFA at 93% of company spec. Final: 71/100 (Acceptable). For consumer awareness only — not medical or dietary advice.</div>
+</div>
+</div>
+</body>
+</html>
