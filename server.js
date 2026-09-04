@@ -4064,7 +4064,6 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
             reportUrl: reportUrl || '',
             barcode: (barcode && /^\d{13}$/.test(barcode)) ? barcode : null,
             labName: labName || '',
-            labReportNumber: labReportNumber || null,
             reportDate: reportDate ? new Date(reportDate) : null,
             sampleCondition: sampleCondition || '',
             totalParametersTested: totalParametersTested || null,
@@ -4082,6 +4081,15 @@ app.post('/api/admin/reports', authenticateAdmin, async (req, res) => {
             createdAt: now,
             updatedAt: now
         };
+
+        // Only set labReportNumber when a real value is provided. The unique
+        // index on this field is sparse, so it ignores documents where the key
+        // is ABSENT — but an explicit null still collides across documents.
+        // Omitting the key entirely lets multiple reports without a lab report
+        // number coexist.
+        if (labReportNumber) {
+            report.labReportNumber = labReportNumber;
+        }
 
         const result = await testReportsCollection.insertOne(report);
         console.log('✅ Test report created:', result.insertedId);
