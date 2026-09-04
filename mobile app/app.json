@@ -46,6 +46,7 @@
             "newArchEnabled": false,
             "targetSdkVersion": 36,
             "compileSdkVersion": 36,
+            "buildToolsVersion": "36.0.0",
             "packagingOptions": {
               "jniLibs": {
                 "useLegacyPackaging": false
@@ -63,7 +64,8 @@
       "@react-native-firebase/auth",
       "@react-native-firebase/messaging",
       "@react-native-firebase/crashlytics",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-font"
     ],
     "extra": {
       "eas": {
