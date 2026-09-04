@@ -52,7 +52,7 @@ export default function ProductCard({
 
         {/* Text column */}
         <View style={styles.textColumn}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
             {name}
           </Text>
           {brand ? (

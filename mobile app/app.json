@@ -26,7 +26,7 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "versionCode": 28
+      "versionCode": 37
     },
     "plugins": [
       [
@@ -44,8 +44,8 @@
           "android": {
             "kotlinVersion": "1.9.25",
             "newArchEnabled": false,
-            "targetSdkVersion": 35,
-            "compileSdkVersion": 35,
+            "targetSdkVersion": 36,
+            "compileSdkVersion": 36,
             "packagingOptions": {
               "jniLibs": {
                 "useLegacyPackaging": false

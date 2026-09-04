@@ -1215,6 +1215,69 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
     });
 });
 
+// Get votes cast by the authenticated user
+app.get('/api/user/my-votes', authenticateUser, async (req, res) => {
+    try {
+        if (!isDbConnected || !voteTransactionsCollection) {
+            return res.status(503).json({
+                success: false,
+                message: 'Database not connected'
+            });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const userId = req.user.id.toString();
+
+        // Fetch all vote transactions for this user
+        const votes = await voteTransactionsCollection
+            .find({ userId })
+            .toArray();
+
+        // Deduplicate product IDs while tracking total vote count
+        const productVoteCount = {};
+        for (const vote of votes) {
+            const pid = vote.productId ? vote.productId.toString() : null;
+            if (!pid) continue;
+            productVoteCount[pid] = (productVoteCount[pid] || 0) + (vote.voteCount || 1);
+        }
+
+        const uniqueProductIds = Object.keys(productVoteCount);
+
+        // Look up product details for each unique product
+        const products = [];
+        for (const productId of uniqueProductIds) {
+            try {
+                const product = await productsCollection.findOne(
+                    { _id: new ObjectId(productId) },
+                    { projection: { name: 1, totalVotes: 1 } }
+                );
+                if (product) {
+                    products.push({
+                        _id: productId,
+                        productName: product.name,
+                        totalVotes: product.totalVotes || 0
+                    });
+                }
+            } catch (idError) {
+                // Skip malformed ObjectIds
+                console.warn(`⚠️ Skipping malformed productId in my-votes: ${productId}`);
+            }
+        }
+
+        return res.json({
+            success: true,
+            totalVotes: votes.length,
+            products
+        });
+    } catch (error) {
+        console.error('❌ Error fetching user votes:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch votes'
+        });
+    }
+});
+
 // Profile completion endpoint (for Google users to add phone/pincode)
 app.put('/api/user/profile', authenticateUser, async (req, res) => {
     try {

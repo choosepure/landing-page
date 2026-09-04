@@ -1,14 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../theme';
+import { getNutriScoreToken, NUTRI_SCORE_TOKENS } from '../utils/scoreTokens';
 
-const GRADE_COLORS = {
-  A: { bg: '#1E8449', text: '#FFFFFF' },
-  B: { bg: '#7CB342', text: '#FFFFFF' },
-  C: { bg: '#F4C430', text: '#1A201A' },
-  D: { bg: '#E89B3C', text: '#FFFFFF' },
-  E: { bg: '#D14E36', text: '#FFFFFF' },
-};
+const darkTextGrades = ['C'];
 
 /**
  * Returns the background and text color pair for a Nutri-Score grade.
@@ -16,7 +11,10 @@ const GRADE_COLORS = {
  * Exported for reuse in other components.
  */
 export function getNutriGradeColor(grade) {
-  return GRADE_COLORS[grade] || GRADE_COLORS.C;
+  const token = getNutriScoreToken(grade);
+  const bg = token.color;
+  const text = darkTextGrades.includes((grade || '').toUpperCase()) ? '#1A201A' : '#FFFFFF';
+  return { bg, text };
 }
 
 /**
@@ -29,7 +27,7 @@ export function getNutriGradeColor(grade) {
 export default function NutriGradeBadge({ grade, size = 40 }) {
   const colors = getNutriGradeColor(grade);
   const fontSize = Math.round(size * 0.55);
-  const displayGrade = GRADE_COLORS[grade] ? grade : 'C';
+  const displayGrade = NUTRI_SCORE_TOKENS[grade] ? grade : 'C';
 
   return (
     <View

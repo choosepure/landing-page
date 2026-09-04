@@ -337,6 +337,67 @@ const REPORTS = [
       statusBadges: ['Intertek NABL TC-5160', '300+ Parameters'],
     }
   },
+  {
+    // Fortune Refined Rice Bran Oil - find by productName
+    findBy: { productName: /Fortune.*Rice Bran/i },
+    update: {
+      productName: 'Fortune Refined Rice Bran Oil',
+      brandName: 'AWL Agri Business Ltd (formerly Adani Wilmar)',
+      category: 'Edible Oil · Rice Bran',
+      labName: 'AWL In-house Quality Lab (not NABL third-party)',
+      labReportNumber: 'AWL-COA-(AM)RBP7O146',
+      reportDate: new Date('2026-05-26'),
+      testDate: new Date('2026-05-26'),
+      batchCode: '(AM)RBP7O146',
+      sampleCondition: 'Good · 4×4.350 KG Jar',
+      totalParametersTested: 27,
+      origin: 'Mantralayam, Andhra Pradesh',
+      purityScore: 71,
+      scoreVerdict: 'Acceptable',
+      scoreFormula: 'Started 100; −10 TBHQ at 190.20 ppm (EU-banned, near India max); −8 in-house testing only (no NABL); −6 no pesticide/heavy metal/hexane/aflatoxin testing; −5 FFA at 93% of company spec. Final: 71',
+      categoryScores: [
+        { categoryName: 'Adulteration Panel', score: 100, description: '9 foreign-oil & toxin tests — all negative (incl. Argemone)' },
+        { categoryName: 'Freshness (Peroxide Value)', score: 95, description: '0.68 meq/kg vs FSSAI max 10 — very fresh oil' },
+        { categoryName: 'Gamma-Oryzanol', score: 100, description: '1.38% vs 1.0% minimum — 38% above spec' },
+        { categoryName: 'Synthetic Antioxidant (TBHQ)', score: 40, description: '190.20 ppm — legal in India/US, banned in EU, at 95% of max' },
+        { categoryName: 'Testing Transparency', score: 45, description: 'In-house COA only; no pesticide/heavy metal/hexane data' },
+      ],
+      testParameters: {
+        'Synthetic Antioxidants': [
+          { parameterName: 'TBHQ (Tert-Butylhydroquinone)', result: '190.20', unit: 'ppm', fssaiLimit: 'NMT 200 ppm', euLimit: 'Banned (Dir 95/2/EC)', usFdaLimit: '200 ppm (21 CFR 172.185)', status: 'Watchpoint' },
+        ],
+        'Oil Quality & Freshness': [
+          { parameterName: 'Peroxide Value (Oxidation)', result: '0.68', unit: 'meq/kg', fssaiLimit: 'NMT 10 meq/kg', euLimit: '≤ 10 meq/kg', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Free Fatty Acids (FFA)', result: '0.112', unit: '%', fssaiLimit: 'NMT 0.25%', euLimit: '≤ 0.3% (as oleic)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Moisture & Impurities (MIV)', result: '0.012', unit: '%', fssaiLimit: 'max 0.08%', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Iodine Value (Unsaturation)', result: '100.15', unit: '', fssaiLimit: '90–105 (rice bran)', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Phosphorous Content', result: '0.90', unit: 'ppm', fssaiLimit: 'max 1.0 ppm', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Gamma-Oryzanol', result: '1.38', unit: '%', fssaiLimit: 'min 1.0% (spec)', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+        ],
+        'Adulteration Tests': [
+          { parameterName: 'Argemone Oil (TLC)', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Mineral Oil (TLC)', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Tricresyl Phosphate (TLC)', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Hydrocyanic Acid', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Castor Oil (TLC)', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Cottonseed Oil', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Linseed Oil', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Kusam Oil', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+          { parameterName: 'Hexa Bromide Test', result: 'Negative', unit: '', fssaiLimit: 'Absent', euLimit: 'Absent', usFdaLimit: 'Absent', status: 'Pass' },
+        ],
+        'Fortification': [
+          { parameterName: 'Vitamin A & D', result: 'Positive', unit: '', fssaiLimit: 'Mandatory (present)', euLimit: 'Voluntary', usFdaLimit: 'Voluntary', status: 'Pass' },
+        ],
+      },
+      stats: { totalParameters: 27, passCount: 26, contextNotes: 1, safetyConcerns: 0 },
+      parentSummary: 'Fortune Refined Rice Bran Oil scores 71/100 — an Acceptable rating. All 9 adulteration tests are clean, including the critical Argemone oil test. Gamma-Oryzanol at 1.38% (38% above spec) delivers rice bran oil\'s signature cholesterol-lowering benefit, and the oil is very fresh (peroxide value 0.68 vs FSSAI max 10). The primary concern is TBHQ, a synthetic antioxidant, at 190.20 ppm — legal in India and the US but banned in the EU, and sitting at 95% of the India maximum, meaning high daily-cooking exposure. This is an in-house Certificate of Analysis, not an independent NABL-accredited test; pesticides, heavy metals, hexane residues and aflatoxins were not tested.',
+      expertCommentary: 'TBHQ at 190.20 ppm is the key consideration: it complies with Indian law but the EU banned it in 2004 over genotoxicity and immune-system concerns. Families cooking daily with this oil should be aware of the near-maximum synthetic antioxidant level. Consider cold-pressed / wood-pressed rice bran oils that use natural tocopherols instead. Note this is a manufacturer self-certification, not a third-party NABL test.',
+      methodology: 'In-house Certificate of Analysis by AWL Agri Business quality team (computer generated, no signatory). Standards: FSSAI FSS (Food Products Standards) Regulations 2011 Schedule 2; EU Directive 95/2/EC & Reg EC 1513/2001; US FDA 21 CFR Parts 172 & 179. Scope: physical quality, adulteration and basic chemistry only.',
+      isPremium: true,
+      reportUrl: '/fortune-rice-bran-oil-report.html',
+      statusBadges: ['⚠ In-house COA', '⚠ TBHQ near max', 'Adulteration clean'],
+    }
+  },
 ];
 
 async function seedReports() {

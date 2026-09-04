@@ -10,14 +10,7 @@ import {
 } from 'react-native';
 import { theme } from '../theme';
 import apiClient from '../api/client';
-
-const NUTRISCORE_COLORS = {
-  A: '#1E8449',
-  B: '#7CB342',
-  C: '#F4C430',
-  D: '#E89B3C',
-  E: '#D14E36',
-};
+import NutriGradeBadge from './NutriGradeBadge';
 
 /**
  * Hook to fetch popular products from the API.
@@ -49,9 +42,26 @@ export function usePopularProducts() {
 
 /**
  * Horizontal scrollable section showing popular curated products.
+ *
+ * Props:
+ *   onProductPress    — called with the product object when a card is tapped
+ *   onGradesResolved  — optional callback, called with string[] of nutriscoreGrade
+ *                       values after products load (used by DashboardScreen for caption)
+ *   caption           — optional string rendered below the section title
  */
-export default function PopularProductsSection({ onProductPress }) {
+export default function PopularProductsSection({ onProductPress, onGradesResolved, caption }) {
   const { products, loading, error } = usePopularProducts();
+
+  // Notify parent of resolved grades after products load
+  useEffect(() => {
+    if (!loading && products.length > 0 && onGradesResolved) {
+      const grades = products
+        .map((p) => p.nutriscoreGrade)
+        .filter(Boolean)
+        .map((g) => g.toUpperCase());
+      onGradesResolved(grades);
+    }
+  }, [products, loading, onGradesResolved]);
 
   // Don't render if no products and not loading
   if (!loading && products.length === 0) return null;
@@ -79,14 +89,7 @@ export default function PopularProductsSection({ onProductPress }) {
           </Text>
         ) : null}
         {item.nutriscoreGrade ? (
-          <View
-            style={[
-              styles.nutriBadge,
-              { backgroundColor: NUTRISCORE_COLORS[item.nutriscoreGrade] || '#9E9E9E' },
-            ]}
-          >
-            <Text style={styles.nutriText}>{item.nutriscoreGrade}</Text>
-          </View>
+          <NutriGradeBadge grade={item.nutriscoreGrade} size={28} />
         ) : null}
       </View>
     </TouchableOpacity>
@@ -95,6 +98,9 @@ export default function PopularProductsSection({ onProductPress }) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Popular Products</Text>
+      {caption ? (
+        <Text style={styles.caption}>{caption}</Text>
+      ) : null}
       {loading ? (
         <ActivityIndicator color={theme.colors.primary} style={{ paddingVertical: 20 }} />
       ) : error ? (
@@ -142,6 +148,7 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     padding: 10,
+    minHeight: 72,
   },
   productName: {
     fontFamily: theme.fonts.semiBold,
@@ -155,22 +162,18 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginTop: 2,
   },
-  nutriBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 6,
-  },
-  nutriText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 10,
-    color: '#FFFFFF',
-  },
   errorText: {
     fontFamily: theme.fonts.regular,
     fontSize: theme.fontSize.sm,
     color: theme.colors.error,
     paddingHorizontal: theme.spacing.lg,
+  },
+  caption: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
+    fontStyle: 'italic',
   },
 });
