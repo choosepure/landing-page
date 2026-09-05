@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "scheme": "choosepure",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FAFAF7"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.choosepure.app",
@@ -26,9 +21,18 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "versionCode": 37
+      "versionCode": 39
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/choosepure-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAFAF7"
+        }
+      ],
       [
         "expo-camera",
         {

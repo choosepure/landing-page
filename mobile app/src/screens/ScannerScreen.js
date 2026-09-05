@@ -14,6 +14,8 @@ import {
   Keyboard,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { theme } from '../theme';
 import apiClient from '../api/client';
@@ -21,6 +23,7 @@ import OfflineBanner from '../components/OfflineBanner';
 import Icon from '../components/Icon';
 import { logScanProduct } from '../services/firebase/analytics';
 import { trackEvent } from '../services/analytics';
+import { saveScanRecord, getScanHistory } from '../utils/scanHistory';
 
 /**
  * Validate a barcode string for EAN-13 format.
@@ -35,9 +38,6 @@ export function validateBarcode(input) {
   return { valid: true, error: null };
 }
 
-// Recent scan placeholder colors matching the handoff
-const RECENT_SCAN_COLORS = ['#F4D03F', '#E8DCC4', '#D14E36', '#E5D5BE'];
-
 export default function ScannerScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -48,6 +48,7 @@ export default function ScannerScreen({ navigation }) {
   const [manualError, setManualError] = useState(null);
   const [permissionRequested, setPermissionRequested] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [recentScans, setRecentScans] = useState([]);
   const netInfo = useNetInfo();
   const isOffline = netInfo.isConnected === false;
   const scrollViewRef = useRef(null);
@@ -71,6 +72,24 @@ export default function ScannerScreen({ navigation }) {
     }
   }, [permission, permissionRequested, requestPermission]);
 
+  // Load the 4 most recent scans whenever the screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        const history = await getScanHistory();
+        if (!cancelled) setRecentScans(history.slice(0, 4));
+      })();
+      return () => { cancelled = true; };
+    }, [])
+  );
+
+  // Initials fallback for scans without an image
+  function scanInitial(item) {
+    const src = item.productName || item.brand || '?';
+    return src.trim().charAt(0).toUpperCase() || '?';
+  }
+
   function handleBarcodeScanned({ type, data }) {
     if (data.length !== 13 || !/^\d{13}$/.test(data)) return;
     setScanned(true);
@@ -88,6 +107,7 @@ export default function ScannerScreen({ navigation }) {
         const verifiedRes = await apiClient.get(`/api/v1/lookup/${barcode}`);
         if (verifiedRes.data.found) {
           try { logScanProduct(barcode); } catch (e) {}
+          try { await saveScanRecord(barcode, verifiedRes.data.product); } catch (e) {}
           navigation.navigate('ResultCard', { product: verifiedRes.data.product, barcode, source: 'choosepure' });
           return;
         }
@@ -99,6 +119,7 @@ export default function ScannerScreen({ navigation }) {
       const res = await apiClient.get(`/api/off/product/${barcode}`);
       if (res.data.found) {
         try { logScanProduct(barcode); } catch (e) { /* analytics should never break user flow */ }
+        try { await saveScanRecord(barcode, res.data.product); } catch (e) {}
         navigation.navigate('ResultCard', { product: res.data.product, barcode });
       } else {
         // Product not found — prompt user to scan the label
@@ -268,17 +289,35 @@ export default function ScannerScreen({ navigation }) {
           </TouchableOpacity>
 
           {/* Recent Scans */}
-          <Text style={styles.recentScansLabel}>Recent Scans</Text>
-          <View style={styles.recentScansRow}>
-            {RECENT_SCAN_COLORS.map((color, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.recentScanThumb, { backgroundColor: color }]}
-                onPress={() => navigation.navigate('ScanHistory')}
-                activeOpacity={0.8}
-              />
-            ))}
-          </View>
+          {recentScans.length > 0 && (
+            <>
+              <Text style={styles.recentScansLabel}>Recent Scans</Text>
+              <View style={styles.recentScansRow}>
+                {recentScans.map((item, index) => (
+                  <TouchableOpacity
+                    key={`${item.barcode}-${index}`}
+                    style={styles.recentScanThumb}
+                    onPress={() =>
+                      navigation.navigate('ResultCard', { barcode: item.barcode, product: null })
+                    }
+                    activeOpacity={0.8}
+                  >
+                    {item.imageUrl ? (
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={styles.recentScanImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.recentScanFallback}>
+                        <Text style={styles.recentScanInitial}>{scanInitial(item)}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
 
           {/* Manual barcode entry — always visible */}
           <View style={styles.manualEntrySection}>
@@ -545,6 +584,24 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.green50,
+  },
+  recentScanImage: {
+    width: '100%',
+    height: '100%',
+  },
+  recentScanFallback: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.green100,
+  },
+  recentScanInitial: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.primary,
   },
 
   // Scan Label button

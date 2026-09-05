@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { mapFirebaseAuthError, signInWithPhone } from '../services/firebase/auth';
 import { setPhoneConfirmation } from '../utils/phoneAuthState';
@@ -9,10 +10,10 @@ import { theme } from '../theme';
 import Card from '../components/Card';
 import Input from '../components/Input';
 import Button from '../components/Button';
-import Icon from '../components/Icon';
 
 export default function LoginScreen({ navigation }) {
   const { login, loginWithGoogle } = useAuth();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -92,26 +93,18 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Icon name="arrow-left" size={20} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Welcome Back</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        {/* Logo card */}
-        <Card style={styles.logoCard}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + theme.spacing.lg }]} keyboardShouldPersistTaps="handled">
+        {/* Logo at the top */}
+        <View style={styles.logoHeader}>
+          <Image
+            source={require('../../assets/choosepure-logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+            accessibilityLabel="ChoosePure logo"
+          />
           <Text style={styles.logoText}>ChoosePure</Text>
           <Text style={styles.logoSubtitle}>Sign in to continue your pure journey</Text>
-        </Card>
+        </View>
 
         {/* Tab switcher */}
         <View style={styles.tabContainer}>
@@ -245,34 +238,21 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.lg,
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
+  // Logo header (top of screen)
+  logoHeader: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: theme.spacing.xs,
-    paddingBottom: 12,
+    marginBottom: theme.spacing.lg,
   },
-  headerTitle: {
-    fontFamily: theme.fonts.semiBold,
-    fontSize: theme.fontSize.lg,
-    color: theme.colors.primary,
-  },
-  headerSpacer: {
-    width: 36,
-  },
-
-  // Logo card
-  logoCard: {
-    padding: theme.spacing.lg,
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
+  logoImage: {
+    width: 88,
+    height: 88,
+    marginBottom: theme.spacing.sm,
   },
   logoText: {
     fontFamily: theme.fonts.bold,
     fontSize: theme.fontSize['2xl'],
     color: theme.colors.primary,
-    marginBottom: 12,
+    marginBottom: 6,
   },
   logoSubtitle: {
     fontFamily: theme.fonts.regular,

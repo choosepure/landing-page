@@ -239,8 +239,13 @@ export default function LabelScannerScreen({ navigation, route }) {
         <View style={styles.notFoundBanner}>
           <Text style={styles.notFoundTitle}>Product not in our database</Text>
           <Text style={styles.notFoundText}>
-            Take photos of the nutrition label and ingredient list. We'll calculate the Nutri-Score and NOVA rating for you.
+            Add up to 3 clear photos so we can calculate the Nutri-Score and NOVA rating:
           </Text>
+          <View style={styles.photoGuideList}>
+            <Text style={styles.photoGuideItem}>1️⃣  Product front (name & brand)</Text>
+            <Text style={styles.photoGuideItem}>2️⃣  Ingredients list</Text>
+            <Text style={styles.photoGuideItem}>3️⃣  Nutrition facts table</Text>
+          </View>
           {barcode && <Text style={styles.notFoundBarcode}>Barcode: {barcode}</Text>}
         </View>
       )}
@@ -250,8 +255,13 @@ export default function LabelScannerScreen({ navigation, route }) {
         <View style={[styles.notFoundBanner, { borderLeftColor: '#F57C00' }]}>
           <Text style={styles.notFoundTitle}>Update product data</Text>
           <Text style={styles.notFoundText}>
-            Take photos of the nutrition label and ingredient list. We'll recalculate the scores using the actual label data.
+            Add up to 3 clear photos so we can recalculate the scores from the actual label:
           </Text>
+          <View style={styles.photoGuideList}>
+            <Text style={styles.photoGuideItem}>1️⃣  Product front (name & brand)</Text>
+            <Text style={styles.photoGuideItem}>2️⃣  Ingredients list</Text>
+            <Text style={styles.photoGuideItem}>3️⃣  Nutrition facts table</Text>
+          </View>
           {barcode && <Text style={styles.notFoundBarcode}>Barcode: {barcode}</Text>}
         </View>
       )}
@@ -281,7 +291,13 @@ export default function LabelScannerScreen({ navigation, route }) {
             <View style={[styles.corner, styles.cornerTopRight]} />
             <View style={[styles.corner, styles.cornerBottomLeft]} />
             <View style={[styles.corner, styles.cornerBottomRight]} />
-            <Text style={styles.guideText}>Position food label within frame</Text>
+            <Text style={styles.guideText}>
+              {images.length === 0
+                ? 'Photo 1: product front'
+                : images.length === 1
+                ? 'Photo 2: ingredients list'
+                : 'Photo 3: nutrition facts table'}
+            </Text>
           </View>
         </View>
       )}
@@ -419,6 +435,16 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular,
     fontSize: theme.fontSize.base,
     color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: 20,
+  },
+  photoGuideList: {
+    marginTop: 8,
+    gap: 4,
+  },
+  photoGuideItem: {
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSize.base,
+    color: 'rgba(255, 255, 255, 0.92)',
     lineHeight: 20,
   },
   notFoundBarcode: {
