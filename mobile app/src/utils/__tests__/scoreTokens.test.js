@@ -17,15 +17,14 @@ import { getLabScoreToken, LAB_SCORE_BANDS } from '../scoreTokens';
 // ── Expected band→color mapping ──────────────────────────────────────────────
 
 const EXPECTED_BANDS = [
-  { min: 0,  max: 40,  color: '#D64545', band: 'poor' },
-  { min: 41, max: 60,  color: '#E8A33D', band: 'moderate' },
-  { min: 61, max: 80,  color: '#7CB342', band: 'good' },
-  { min: 81, max: 100, color: '#2E7D32', band: 'excellent' },
+  { min: 0,  max: 39,  color: '#D62828', band: 'poor' },
+  { min: 40, max: 69,  color: '#FFB703', band: 'moderate' },
+  { min: 70, max: 100, color: '#1F6B4E', band: 'good' },
 ];
 
 function expectedColor(score) {
   const band = EXPECTED_BANDS.find((b) => score >= b.min && score <= b.max);
-  return band ? band.color : '#D64545';
+  return band ? band.color : '#D62828';
 }
 
 function expectedBand(score) {

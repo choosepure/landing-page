@@ -49,6 +49,8 @@ export default function ScannerScreen({ navigation }) {
   const [permissionRequested, setPermissionRequested] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [recentScans, setRecentScans] = useState([]);
+  const [isScreenFocused, setIsScreenFocused] = useState(false);
+  const [cameraKey, setCameraKey] = useState(0);
   const netInfo = useNetInfo();
   const isOffline = netInfo.isConnected === false;
   const scrollViewRef = useRef(null);
@@ -72,15 +74,23 @@ export default function ScannerScreen({ navigation }) {
     }
   }, [permission, permissionRequested, requestPermission]);
 
-  // Load the 4 most recent scans whenever the screen is focused
+  // On focus: load recent scans, mark screen focused, and remount the camera
+  // (remounting avoids the "black camera" state that can occur when the
+  // camera surface does not survive a tab switch on some Android devices).
   useFocusEffect(
     React.useCallback(() => {
       let cancelled = false;
+      setIsScreenFocused(true);
+      setCameraKey((k) => k + 1);
+      setScanned(false);
       (async () => {
         const history = await getScanHistory();
         if (!cancelled) setRecentScans(history.slice(0, 4));
       })();
-      return () => { cancelled = true; };
+      return () => {
+        cancelled = true;
+        setIsScreenFocused(false);
+      };
     }, [])
   );
 
@@ -129,18 +139,20 @@ export default function ScannerScreen({ navigation }) {
         });
       }
     } catch (e) {
-      if (e.response?.status === 504) {
+      if (!e.response) {
+        // Genuine connectivity problem — retrying makes sense
+        setError('No internet connection. Please check your network and try again.');
+      } else if (e.response.status === 504) {
+        // Timeout — server was reachable but slow; let the user retry
         setError('Lookup timed out. The server took too long to respond. Please try again.');
-      } else if (e.response?.status === 404) {
-        // Product not found — prompt user to scan the label
+      } else {
+        // Any other server response (404, 500, malformed, etc.) means we could
+        // not find/verify this product. Send the user to the add-product flow
+        // instead of a dead-end "something went wrong" error.
         navigation.navigate('LabelScanner', {
           barcode: barcode,
           promptReason: 'not_found',
         });
-      } else if (!e.response) {
-        setError('No internet connection. Please check your network and try again.');
-      } else {
-        setError('Something went wrong. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -212,12 +224,17 @@ export default function ScannerScreen({ navigation }) {
         {/* Camera or permission request */}
         {cameraGranted ? (
           <View style={styles.cameraContainer}>
-            <CameraView
-              style={styles.camera}
-              facing="back"
-              onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
-              barcodeScannerSettings={{ barcodeTypes: ['ean13'] }}
-            />
+            {isScreenFocused ? (
+              <CameraView
+                key={cameraKey}
+                style={styles.camera}
+                facing="back"
+                onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+                barcodeScannerSettings={{ barcodeTypes: ['ean13'] }}
+              />
+            ) : (
+              <View style={[styles.camera, { backgroundColor: '#000' }]} />
+            )}
 
             {/* Flash and Gallery buttons */}
             <View style={styles.actionButtonsRow}>

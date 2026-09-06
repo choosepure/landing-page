@@ -12,12 +12,15 @@
  */
 
 // ── Lab Score Bands ──────────────────────────────────────────────────────────
+// Single source of truth, matching the website (deep-dive.html getScoreColor):
+//   >= 70  → green  (#1F6B4E)
+//   40-69  → amber  (#FFB703)
+//   < 40   → red    (#D62828)
 
 export const LAB_SCORE_BANDS = [
-  { min: 0,  max: 40,  band: 'poor',      color: '#D64545', label: 'Poor' },
-  { min: 41, max: 60,  band: 'moderate',  color: '#E8A33D', label: 'Moderate' },
-  { min: 61, max: 80,  band: 'good',      color: '#7CB342', label: 'Good' },
-  { min: 81, max: 100, band: 'excellent', color: '#2E7D32', label: 'Excellent' },
+  { min: 0,  max: 39,  band: 'poor',     color: '#D62828', label: 'Poor' },
+  { min: 40, max: 69,  band: 'moderate', color: '#FFB703', label: 'Moderate' },
+  { min: 70, max: 100, band: 'good',     color: '#1F6B4E', label: 'Good' },
 ];
 
 /**

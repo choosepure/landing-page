@@ -8,7 +8,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 import apiClient from '../api/client';
@@ -18,6 +20,7 @@ import Icon from '../components/Icon';
 import ProductCard from '../components/ProductCard';
 import Dropdown from '../components/Dropdown';
 import NutriGradeBadge from '../components/NutriGradeBadge';
+import { getLabScoreToken } from '../utils/scoreTokens';
 import PopularProductsSection from '../components/PopularProductsSection';
 import VotingModule from '../components/VotingModule';
 import { shouldShowCaption, POPULAR_CAPTION } from '../utils/popularCaption';
@@ -203,17 +206,41 @@ export default function DashboardScreen({ navigation }) {
 
   /* ── Render helpers ────────────────────────────────────── */
 
-  const renderReportItem = ({ item, index }) => (
-    <ProductCard
-      name={item.productName}
-      brand={item.brandName}
-      meta={getTimeAgo(item.createdAt)}
-      score={item.purityScore}
-      imageUrl={item.imageUrl}
-      imageColors={!item.imageUrl ? REPORT_IMAGE_COLORS[index % REPORT_IMAGE_COLORS.length] : null}
-      onPress={() => handleCardPress(item, index)}
-    />
-  );
+  const renderReportItem = ({ item, index }) => {
+    const token = getLabScoreToken(item.purityScore ?? 0);
+    const placeholder = REPORT_IMAGE_COLORS[index % REPORT_IMAGE_COLORS.length];
+    return (
+      <TouchableOpacity
+        style={styles.reportCard}
+        activeOpacity={0.85}
+        onPress={() => handleCardPress(item, index)}
+      >
+        {/* Image / placeholder with score badge overlay */}
+        <View style={styles.reportImageWrap}>
+          {item.imageUrl ? (
+            <Image source={{ uri: item.imageUrl }} style={styles.reportImage} resizeMode="cover" />
+          ) : (
+            <LinearGradient
+              colors={placeholder}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.reportImage}
+            />
+          )}
+          <View style={[styles.reportScoreBadge, { backgroundColor: token.color }]}>
+            <Text style={styles.reportScoreNum}>{item.purityScore ?? '—'}</Text>
+          </View>
+        </View>
+        <Text style={styles.reportName} numberOfLines={2} ellipsizeMode="tail">
+          {item.productName}
+        </Text>
+        {item.brandName ? (
+          <Text style={styles.reportBrand} numberOfLines={1}>{item.brandName}</Text>
+        ) : null}
+        <Text style={styles.reportScoreCaption}>Lab Score</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderNutriItem = ({ item }) => (
     <ProductCard
@@ -327,8 +354,9 @@ export default function DashboardScreen({ navigation }) {
             data={reports}
             keyExtractor={reportKeyExtractor}
             renderItem={renderReportItem}
-            scrollEnabled={false}
-            contentContainerStyle={styles.productList}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.reportsRow}
             ListEmptyComponent={null}
           />
         ) : (
@@ -405,28 +433,19 @@ export default function DashboardScreen({ navigation }) {
           </View>
         ) : (
           <FlatList
-            data={nutriProducts}
+            data={nutriProducts.slice(0, 5)}
             keyExtractor={nutriKeyExtractor}
             renderItem={renderNutriItem}
             scrollEnabled={false}
             contentContainerStyle={styles.productList}
             ListFooterComponent={
-              nutriLoadingMore ? (
-                <View style={styles.nutriLoadingContainer}>
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
-                </View>
-              ) : nutriHasMore && nutriProducts.length > 0 ? (
+              nutriProducts.length > 0 ? (
                 <TouchableOpacity
                   style={styles.loadMoreChip}
-                  onPress={loadMoreNutriProducts}
+                  onPress={() => navigation.navigate('NutriGradeList', { grade: selectedGrade })}
                   activeOpacity={0.75}
-                  disabled={nutriLoadingMore}
                 >
-                  {nutriLoadingMore ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                  ) : (
-                    <Text style={styles.loadMoreChipText}>Load more products</Text>
-                  )}
+                  <Text style={styles.loadMoreChipText}>View all</Text>
                 </TouchableOpacity>
               ) : null
             }
@@ -594,6 +613,72 @@ const styles = StyleSheet.create({
   productList: {
     gap: 10,
     marginBottom: 28,
+  },
+
+  /* Horizontal report cards */
+  reportsRow: {
+    gap: 12,
+    paddingRight: 20,
+    paddingBottom: 4,
+    marginBottom: 28,
+  },
+  reportCard: {
+    width: 150,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.lg,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadow.card,
+  },
+  reportImageWrap: {
+    width: '100%',
+    height: 110,
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    marginBottom: 8,
+    position: 'relative',
+    backgroundColor: theme.colors.green50,
+  },
+  reportImage: {
+    width: '100%',
+    height: '100%',
+  },
+  reportScoreBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  reportScoreNum: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.base,
+    color: '#FFFFFF',
+  },
+  reportName: {
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    minHeight: 34,
+  },
+  reportBrand: {
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  reportScoreCaption: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 10,
+    color: theme.colors.textDim,
+    marginTop: 4,
   },
 
   /* Dropdown */
