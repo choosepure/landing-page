@@ -165,6 +165,35 @@ export default function LabelScannerScreen({ navigation, route }) {
       clearTimeout(timeoutId);
       setLoading(false);
 
+      // For the "product not in our database" flow, the user has submitted
+      // label photos of a product we don't yet have. Rather than showing the
+      // OCR result screen, thank them and let them know we'll add the product.
+      if (isNotFoundFlow) {
+        // Move the freshly-created scan into the admin review queue so it can
+        // actually be added to the database (the server defaults new scans to
+        // 'extracted'; 'pending_review' is what surfaces it for approval).
+        const scanId = response.data?.scan_id;
+        if (scanId) {
+          try {
+            await apiClient.patch(`/api/v1/scans/${scanId}/status`, {
+              status: 'pending_review',
+            });
+          } catch (statusErr) {
+            // Non-fatal: the photos are already saved on the server. Log and
+            // still thank the user rather than surfacing a confusing error.
+            console.warn('Failed to mark scan for review:', statusErr?.message);
+          }
+        }
+
+        Alert.alert(
+          'Thank you! 🙏',
+          "We've received your photos. This product will be added to our database within 24 hours. Thanks for supporting the community and helping others make better choices!",
+          [{ text: 'Done', onPress: () => navigation.navigate('DashboardHome') }],
+          { cancelable: false }
+        );
+        return;
+      }
+
       // Navigate to result screen with scan data
       navigation.navigate('LabelResult', { scanData: response.data });
     } catch (err) {
@@ -363,19 +392,40 @@ export default function LabelScannerScreen({ navigation, route }) {
         </View>
       )}
 
-      {/* Scan Label submission button — always visible when images selected */}
+      {/* Submission button */}
       {images.length > 0 && (
-        <View style={styles.submitContainer}>
-          <TouchableOpacity
-            style={styles.scanButton}
-            onPress={handleScanLabel}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.scanButtonText}>
-              {images.length === 1 ? 'Scan 1 Image' : `Scan ${images.length} Images`}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        isNotFoundFlow ? (
+          // Add-product flow: require all 3 photos before submitting.
+          <View style={styles.submitContainer}>
+            <TouchableOpacity
+              style={[
+                styles.scanButton,
+                images.length < MAX_IMAGES && styles.scanButtonDisabled,
+              ]}
+              onPress={handleScanLabel}
+              activeOpacity={0.8}
+              disabled={images.length < MAX_IMAGES}
+            >
+              <Text style={styles.scanButtonText}>
+                {images.length < MAX_IMAGES
+                  ? `Add all ${MAX_IMAGES} photos to submit (${images.length}/${MAX_IMAGES})`
+                  : 'Submit Product'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.submitContainer}>
+            <TouchableOpacity
+              style={styles.scanButton}
+              onPress={handleScanLabel}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.scanButtonText}>
+                {images.length === 1 ? 'Scan 1 Image' : `Scan ${images.length} Images`}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )
       )}
     </View>
   );
@@ -661,6 +711,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
+  },
+  scanButtonDisabled: {
+    backgroundColor: 'rgba(31, 107, 78, 0.4)',
   },
   scanButtonText: {
     fontFamily: theme.fonts.semiBold,
