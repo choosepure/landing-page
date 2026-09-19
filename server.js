@@ -3026,171 +3026,165 @@ app.get('/api/polls/products', async (req, res) => {
     }
 });
 
-// Authenticated API: Create Razorpay order for vote payment
+// Authenticated API: Cast a single free vote for a product.
+// Voting is free — each signed-in user may vote once per product.
 app.post('/api/polls/vote', authenticateUser, async (req, res) => {
     try {
-        if (!productsCollection) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database not connected' 
+        if (!productsCollection || !voteTransactionsCollection) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database not connected'
             });
         }
 
-        const { productId, voteCount } = req.body;
-        const userName = req.user.name;
-        const userEmail = req.user.email;
-        const userPhone = req.user.phone;
-
-        // Validate voteCount (1–50)
-        if (!voteCount || typeof voteCount !== 'number' || voteCount < 1 || voteCount > 50 || !Number.isInteger(voteCount)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Vote count must be between 1 and 50' 
-            });
-        }
+        const { productId } = req.body;
 
         // Validate productId
         if (!productId) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Product ID is required' 
+            return res.status(400).json({
+                success: false,
+                message: 'Product ID is required'
             });
         }
 
         const { ObjectId } = require('mongodb');
-        const product = await productsCollection.findOne({ 
-            _id: new ObjectId(productId), 
-            status: 'active' 
+        let productObjectId;
+        try {
+            productObjectId = new ObjectId(productId);
+        } catch (e) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid product ID'
+            });
+        }
+
+        const product = await productsCollection.findOne({
+            _id: productObjectId,
+            status: 'active'
         });
 
         if (!product) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Product not found or not active' 
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found or not active'
             });
         }
 
-        // Calculate total amount
-        const amount = voteCount * product.minAmount;
-
-        // Create Razorpay order (amount in paise)
-        const order = await razorpay.orders.create({
-            amount: amount * 100,
-            currency: 'INR',
-            receipt: `v_${Date.now()}`
+        // Enforce one vote per user per product.
+        const existingVote = await voteTransactionsCollection.findOne({
+            productId: productObjectId,
+            userId: req.user.id
         });
 
-        console.log('✅ Razorpay order created:', order.id);
-
-        res.json({ 
-            success: true, 
-            orderId: order.id, 
-            amount: amount, 
-            key: process.env.RAZORPAY_KEY_ID 
-        });
-    } catch (error) {
-        console.error('❌ Error creating vote order:', error.message || error);
-        console.error('   Razorpay Key ID set:', process.env.RAZORPAY_KEY_ID ? '✅' : '❌ NOT SET');
-        console.error('   Razorpay Key Secret set:', process.env.RAZORPAY_KEY_SECRET ? '✅' : '❌ NOT SET');
-        console.error('   Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-        res.status(500).json({ 
-            success: false, 
-            message: 'Payment initialization failed: ' + (error.message || 'Unknown error')
-        });
-    }
-});
-
-// Authenticated API: Verify payment and record votes
-app.post('/api/polls/verify-payment', authenticateUser, async (req, res) => {
-    try {
-        if (!productsCollection || !voteTransactionsCollection) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database not connected' 
+        if (existingVote) {
+            const currentProduct = await productsCollection.findOne({ _id: productObjectId });
+            return res.status(409).json({
+                success: false,
+                alreadyVoted: true,
+                message: 'You have already voted for this product',
+                updatedVoteCount: currentProduct ? currentProduct.totalVotes : product.totalVotes
             });
         }
 
-        const { 
-            razorpay_order_id, 
-            razorpay_payment_id, 
-            razorpay_signature, 
-            productId, 
-            voteCount
-        } = req.body;
-
-        const userName = req.user.name;
-        const userEmail = req.user.email;
-        const userPhone = req.user.phone;
-
-        // Validate required payment fields
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Payment verification details are incomplete' 
-            });
-        }
-
-        // Verify signature using HMAC SHA256
-        const expectedSignature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-            .update(razorpay_order_id + '|' + razorpay_payment_id)
-            .digest('hex');
-
-        if (expectedSignature !== razorpay_signature) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Payment verification failed' 
-            });
-        }
-
-        const { ObjectId } = require('mongodb');
-        const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
-
-        if (!product) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Product not found' 
-            });
-        }
-
-        const amount = voteCount * product.minAmount;
-
-        // Insert vote transaction record
+        // Record the free vote
         await voteTransactionsCollection.insertOne({
-            productId: new ObjectId(productId),
+            productId: productObjectId,
             productName: product.name,
             userId: req.user.id,
-            userName,
-            userEmail,
-            userPhone,
-            voteCount,
-            amount,
-            razorpayOrderId: razorpay_order_id,
-            razorpayPaymentId: razorpay_payment_id,
-            razorpaySignature: razorpay_signature,
+            userName: req.user.name,
+            userEmail: req.user.email,
+            userPhone: req.user.phone || '',
+            voteCount: 1,
+            amount: 0,
             status: 'completed',
             createdAt: new Date()
         });
 
-        // Increment product totalVotes
+        // Increment product totalVotes by one
         const updateResult = await productsCollection.findOneAndUpdate(
-            { _id: new ObjectId(productId) },
-            { $inc: { totalVotes: voteCount } },
+            { _id: productObjectId },
+            { $inc: { totalVotes: 1 } },
             { returnDocument: 'after' }
         );
 
-        console.log(`✅ Payment verified and ${voteCount} votes recorded for product ${productId}`);
+        console.log(`✅ Free vote recorded for product ${product.name} by ${req.user.email}`);
 
-        res.json({ 
-            success: true, 
-            updatedVoteCount: updateResult.totalVotes 
+        res.json({
+            success: true,
+            updatedVoteCount: updateResult.totalVotes
         });
     } catch (error) {
-        console.error('❌ Error verifying payment:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Payment verification failed' 
+        console.error('❌ Error casting vote:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to record your vote. Please try again.'
         });
+    }
+});
+
+// Deprecated: voting no longer requires payment. Kept as a compatibility
+// shim so older app builds calling this endpoint still record a free vote
+// (guarded by the same one-vote-per-user-per-product rule) instead of erroring.
+app.post('/api/polls/verify-payment', authenticateUser, async (req, res) => {
+    try {
+        if (!productsCollection || !voteTransactionsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { productId } = req.body;
+        if (!productId) {
+            return res.status(400).json({ success: false, message: 'Product ID is required' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        let productObjectId;
+        try {
+            productObjectId = new ObjectId(productId);
+        } catch (e) {
+            return res.status(400).json({ success: false, message: 'Invalid product ID' });
+        }
+
+        const product = await productsCollection.findOne({ _id: productObjectId });
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        const existingVote = await voteTransactionsCollection.findOne({
+            productId: productObjectId,
+            userId: req.user.id
+        });
+
+        if (existingVote) {
+            const currentProduct = await productsCollection.findOne({ _id: productObjectId });
+            return res.json({
+                success: true,
+                updatedVoteCount: currentProduct ? currentProduct.totalVotes : product.totalVotes
+            });
+        }
+
+        await voteTransactionsCollection.insertOne({
+            productId: productObjectId,
+            productName: product.name,
+            userId: req.user.id,
+            userName: req.user.name,
+            userEmail: req.user.email,
+            userPhone: req.user.phone || '',
+            voteCount: 1,
+            amount: 0,
+            status: 'completed',
+            createdAt: new Date()
+        });
+
+        const updateResult = await productsCollection.findOneAndUpdate(
+            { _id: productObjectId },
+            { $inc: { totalVotes: 1 } },
+            { returnDocument: 'after' }
+        );
+
+        res.json({ success: true, updatedVoteCount: updateResult.totalVotes });
+    } catch (error) {
+        console.error('❌ Error recording vote (verify-payment shim):', error);
+        res.status(500).json({ success: false, message: 'Failed to record your vote. Please try again.' });
     }
 });
 
