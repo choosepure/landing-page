@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  ScrollView,
   Alert,
   ActivityIndicator,
   StyleSheet,
@@ -263,6 +264,13 @@ export default function LabelScannerScreen({ navigation, route }) {
         <View style={{ width: 20 }} />
       </View>
 
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+
       {/* Not-found prompt banner */}
       {isNotFoundFlow && (
         <View style={styles.notFoundBanner}>
@@ -391,8 +399,9 @@ export default function LabelScannerScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
       )}
+      </ScrollView>
 
-      {/* Submission button */}
+      {/* Submission button — fixed at the bottom of the screen */}
       {images.length > 0 && (
         isNotFoundFlow ? (
           // Add-product flow: require all 3 photos before submitting.
@@ -438,6 +447,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0F2419',
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 16,
   },
 
   // Header
@@ -701,10 +716,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Submit button
+  // Submit button — fixed footer bar
   submitContainer: {
     paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    backgroundColor: '#0F2419',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   scanButton: {
     backgroundColor: '#1F6B4E',
