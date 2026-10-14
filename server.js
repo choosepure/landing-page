@@ -2411,6 +2411,129 @@ app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Admin API: Look up a single user by email, with their payment history (protected)
+app.get('/api/admin/user-lookup', authenticateAdmin, async (req, res) => {
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const email = (req.query.email || '').trim().toLowerCase();
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const user = await usersCollection.findOne(
+            { email },
+            { projection: { password: 0, reset_token: 0, reset_token_expires: 0 } }
+        );
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'No user found with that email' });
+        }
+
+        const userId = user._id.toString();
+
+        // Gather payment history across all sources
+        const paymentHistory = [];
+        if (paymentAttemptsCollection) {
+            const attempts = await paymentAttemptsCollection
+                .find({ $or: [{ userId: user._id }, { userEmail: email }] })
+                .sort({ createdAt: -1 }).toArray();
+            attempts.forEach(a => paymentHistory.push({
+                source: 'attempt', paymentType: a.paymentType, plan: a.plan,
+                amount: a.amount, status: a.status,
+                razorpayPaymentId: a.razorpayPaymentId, razorpayOrderId: a.razorpayOrderId || a.razorpaySubscriptionId,
+                failureReason: a.failureReason || null, createdAt: a.createdAt
+            }));
+        }
+        if (subscriptionTransactionsCollection) {
+            const subs = await subscriptionTransactionsCollection
+                .find({ $or: [{ userId: user._id }, { userEmail: email }] })
+                .sort({ createdAt: -1 }).toArray();
+            subs.forEach(s => paymentHistory.push({
+                source: 'subscription_txn', plan: s.plan, amount: s.amount, status: s.status,
+                razorpayPaymentId: s.razorpayPaymentId, razorpayOrderId: s.razorpayOrderId || s.razorpaySubscriptionId,
+                createdAt: s.createdAt
+            }));
+        }
+
+        res.json({
+            success: true,
+            user: {
+                id: userId,
+                name: user.name,
+                email: user.email,
+                phone: user.phone || '',
+                subscriptionStatus: user.subscriptionStatus || 'free',
+                subscriptionPlan: user.subscriptionPlan || null,
+                subscribedAt: user.subscribedAt || null,
+                subscriptionExpiry: user.subscriptionExpiry || null,
+                razorpaySubscriptionId: user.razorpaySubscriptionId || null,
+                razorpayOrderId: user.razorpayOrderId || null,
+                createdAt: user.createdAt || null,
+            },
+            paymentHistory
+        });
+    } catch (error) {
+        console.error('❌ Error looking up user:', error);
+        res.status(500).json({ success: false, message: 'Failed to look up user' });
+    }
+});
+
+// Admin API: Manually grant/fix a user's subscription (protected)
+// Used when a payment succeeded but the status was not flipped automatically.
+app.post('/api/admin/users/grant-subscription', authenticateAdmin, async (req, res) => {
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+        const email = (req.body.email || '').trim().toLowerCase();
+        const plan = req.body.plan === 'annual' ? 'annual' : 'monthly';
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const user = await usersCollection.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'No user found with that email' });
+        }
+
+        // Expiry: 1 year for annual, 1 month for monthly (from today)
+        const now = new Date();
+        const subscriptionExpiry = new Date(now);
+        if (plan === 'annual') {
+            subscriptionExpiry.setFullYear(subscriptionExpiry.getFullYear() + 1);
+        } else {
+            subscriptionExpiry.setMonth(subscriptionExpiry.getMonth() + 1);
+        }
+
+        await usersCollection.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    subscriptionStatus: 'subscribed',
+                    subscriptionPlan: plan,
+                    subscribedAt: user.subscribedAt || now,
+                    subscriptionExpiry,
+                    manuallyGrantedBy: req.admin.email,
+                    manuallyGrantedAt: now,
+                },
+                $unset: { graceDeadline: '' }
+            }
+        );
+
+        console.log(`✅ Admin ${req.admin.email} manually granted ${plan} subscription to ${email}`);
+        res.json({
+            success: true,
+            message: `Granted ${plan} subscription to ${email}`,
+            subscriptionExpiry
+        });
+    } catch (error) {
+        console.error('❌ Error granting subscription:', error);
+        res.status(500).json({ success: false, message: 'Failed to grant subscription' });
+    }
+});
+
 // Admin API: Get all waitlist members (protected)
 app.get('/api/admin/waitlist', authenticateAdmin, async (req, res) => {
     try {

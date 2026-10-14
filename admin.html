@@ -359,6 +359,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <!-- USERS TAB -->
         <div class="tab-page" id="tab-users">
+            <!-- User Lookup & Subscription Fix -->
+            <div class="table-container" style="margin-bottom:20px;">
+                <h2 style="margin:0 0 6px;">🔎 User Lookup &amp; Subscription Fix</h2>
+                <p style="color:#666; font-size:13px; margin-bottom:16px;">Look up a user by email to see their subscription status and payment history. If a payment succeeded but access wasn't granted, use "Grant Subscription" to fix it.</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <input type="email" id="lookup-email" placeholder="user@example.com" style="flex:1; min-width:260px; padding:10px 14px; border:1px solid #D1D1D1; border-radius:8px; font-size:14px;">
+                    <button onclick="lookupUser()" style="padding:10px 20px; background:#1F6B4E; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Look Up</button>
+                </div>
+                <div id="lookup-result" style="display:none; margin-top:16px;"></div>
+            </div>
+
             <div class="stats" id="users-stats">
                 <div class="stat-card">
                     <h3>Total Registered</h3>
@@ -1116,6 +1127,91 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 const badge = '<span style="background:' + (statusBg[status] || '#f5f5f5') + ';color:' + (statusColors[status] || '#666') + ';padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500;">' + status + '</span>';
                 return '<tr><td>' + (u.name || '-') + '</td><td>' + (u.email || '-') + '</td><td>' + (u.phone || '-') + '</td><td>' + (u.pincode || '-') + '</td><td>' + badge + '</td><td>' + regDate + '</td><td>' + lastLogin + '</td></tr>';
             }).join('');
+        }
+
+        // ===== User Lookup & Subscription Fix =====
+        function escLookup(v) {
+            return (v == null ? '' : String(v)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        async function lookupUser() {
+            const email = (document.getElementById('lookup-email').value || '').trim();
+            const box = document.getElementById('lookup-result');
+            if (!email) { box.style.display = 'block'; box.innerHTML = '<p style="color:#C62828;">Please enter an email.</p>'; return; }
+            box.style.display = 'block';
+            box.innerHTML = '<p style="color:#666;">Looking up…</p>';
+            try {
+                const res = await fetch('/api/admin/user-lookup?email=' + encodeURIComponent(email), { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/admin/login'; return; }
+                const data = await res.json();
+                if (!data.success) { box.innerHTML = '<p style="color:#C62828;">' + escLookup(data.message || 'Lookup failed') + '</p>'; return; }
+                const u = data.user;
+                const hist = data.paymentHistory || [];
+                const statusColors = { subscribed: '#2E7D32', cancelled: '#E65100', free: '#C62828', expired: '#C62828' };
+                const hasAccess = (u.subscriptionStatus === 'subscribed' || u.subscriptionStatus === 'cancelled');
+
+                let html = '<div style="background:#F9F9F7;border:1px solid #E5E5E5;border-radius:10px;padding:16px;">';
+                html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">';
+                html += '<div><div style="font-size:11px;color:#888;">Name</div><div style="font-weight:600;">' + escLookup(u.name) + '</div></div>';
+                html += '<div><div style="font-size:11px;color:#888;">Email</div><div>' + escLookup(u.email) + '</div></div>';
+                html += '<div><div style="font-size:11px;color:#888;">Phone</div><div>' + escLookup(u.phone || '—') + '</div></div>';
+                html += '<div><div style="font-size:11px;color:#888;">Subscription Status</div><div style="font-weight:700;color:' + (statusColors[u.subscriptionStatus] || '#666') + ';">' + escLookup(u.subscriptionStatus) + (hasAccess ? ' ✓ has access' : ' ✗ no report access') + '</div></div>';
+                html += '<div><div style="font-size:11px;color:#888;">Plan</div><div>' + escLookup(u.subscriptionPlan || '—') + '</div></div>';
+                html += '<div><div style="font-size:11px;color:#888;">Expiry</div><div>' + (u.subscriptionExpiry ? new Date(u.subscriptionExpiry).toLocaleDateString('en-IN') : '—') + '</div></div>';
+                html += '</div>';
+
+                // Payment history
+                if (hist.length) {
+                    html += '<div style="font-size:12px;font-weight:700;margin:8px 0 6px;color:#333;">Payment History (' + hist.length + ')</div>';
+                    html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+                    html += '<thead><tr style="text-align:left;color:#888;"><th style="padding:4px 8px;">Date</th><th style="padding:4px 8px;">Payment ID</th><th style="padding:4px 8px;">Amount</th><th style="padding:4px 8px;">Status</th><th style="padding:4px 8px;">Reason</th></tr></thead><tbody>';
+                    hist.forEach(h => {
+                        const d = h.createdAt ? new Date(h.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—';
+                        html += '<tr style="border-top:1px solid #eee;"><td style="padding:4px 8px;">' + d + '</td><td style="padding:4px 8px;font-family:monospace;">' + escLookup(h.razorpayPaymentId || '—') + '</td><td style="padding:4px 8px;">₹' + (h.amount ?? '—') + '</td><td style="padding:4px 8px;">' + escLookup(h.status || '—') + '</td><td style="padding:4px 8px;color:#C62828;">' + escLookup(h.failureReason || '') + '</td></tr>';
+                    });
+                    html += '</tbody></table></div>';
+                } else {
+                    html += '<p style="font-size:12px;color:#888;">No payment records found for this user.</p>';
+                }
+
+                // Grant controls (show when no access, or always allow re-grant)
+                html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #E5E5E5;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">';
+                html += '<span style="font-size:13px;color:#333;">Grant subscription:</span>';
+                html += '<select id="grant-plan" style="padding:8px 12px;border:1px solid #D1D1D1;border-radius:6px;"><option value="monthly">Monthly (1 month)</option><option value="annual">Annual (1 year)</option></select>';
+                html += '<button onclick="grantSubscription(\'' + escLookup(u.email) + '\')" style="padding:8px 16px;background:' + (hasAccess ? '#8A6E4B' : '#1F6B4E') + ';color:white;border:none;border-radius:6px;font-weight:600;cursor:pointer;">' + (hasAccess ? 'Re-grant / Extend' : 'Grant Subscription') + '</button>';
+                html += '<span id="grant-status" style="font-size:13px;"></span>';
+                html += '</div>';
+                html += '</div>';
+                box.innerHTML = html;
+            } catch (e) {
+                box.innerHTML = '<p style="color:#C62828;">Lookup failed: ' + escLookup(e.message) + '</p>';
+            }
+        }
+
+        async function grantSubscription(email) {
+            const plan = document.getElementById('grant-plan').value;
+            const statusEl = document.getElementById('grant-status');
+            if (!confirm('Grant a ' + plan + ' subscription to ' + email + '?')) return;
+            statusEl.textContent = 'Granting…'; statusEl.style.color = '#666';
+            try {
+                const res = await fetch('/api/admin/users/grant-subscription', {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, plan })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    statusEl.textContent = '✅ ' + data.message;
+                    statusEl.style.color = '#2E7D32';
+                    usersLoaded = false; // force refresh of users table next view
+                    setTimeout(() => lookupUser(), 800); // re-fetch to show updated status
+                } else {
+                    statusEl.textContent = '❌ ' + (data.message || 'Failed');
+                    statusEl.style.color = '#C62828';
+                }
+            } catch (e) {
+                statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#C62828';
+            }
         }
 
         let referralsLoaded = false;
