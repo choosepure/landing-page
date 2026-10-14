@@ -278,6 +278,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="admin-tab" onclick="switchTab('polling')">🗳️ Polling</button>
             <button class="admin-tab" onclick="switchTab('reports')">🧪 Reports</button>
             <button class="admin-tab" onclick="switchTab('referrals')">🎁 Referrals</button>
+            <button class="admin-tab" onclick="switchTab('payments')">💳 Payments</button>
             <button class="admin-tab" onclick="switchTab('feedback')">💬 Feedback</button>
             <button class="admin-tab" onclick="switchTab('failed-lookups')">🔍 Failed Lookups</button>
             <button class="admin-tab" onclick="switchTab('products')">📦 Products</button>
@@ -765,6 +766,72 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <!-- END REFERRALS TAB -->
 
+        <!-- PAYMENTS TAB -->
+        <div class="tab-page" id="tab-payments">
+            <div class="stats" id="payments-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="payments-total">-</div>
+                    <div class="stat-label">Total Attempts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="payments-amount">-</div>
+                    <div class="stat-label">Collected Amount (₹)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="payments-subs">-</div>
+                    <div class="stat-label">Subscription (recurring)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="payments-onetime">-</div>
+                    <div class="stat-label">One-time</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="payments-failed">-</div>
+                    <div class="stat-label">Failed / Incomplete</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                    <h2 style="margin:0;">Payment Attempts</h2>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="payments-search" placeholder="Search name, email, phone, payment ID..." oninput="filterPayments()" style="padding:10px 14px; border:1px solid #D1D1D1; border-radius:8px; font-size:14px; min-width:260px;">
+                        <select id="payments-type-filter" onchange="filterPayments()" style="padding:10px 14px; border:1px solid #D1D1D1; border-radius:8px; font-size:14px;">
+                            <option value="">All payment types</option>
+                            <option value="Subscription">Subscription (recurring)</option>
+                            <option value="One-time">One-time</option>
+                        </select>
+                        <select id="payments-status-filter" onchange="filterPayments()" style="padding:10px 14px; border:1px solid #D1D1D1; border-radius:8px; font-size:14px;">
+                            <option value="">All statuses</option>
+                            <option value="paid">Successful</option>
+                            <option value="failed">Failed / Incomplete</option>
+                        </select>
+                        <button onclick="loadPayments()" style="padding:10px 18px; background:#1F6B4E; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">↻ Refresh</button>
+                    </div>
+                </div>
+                <div id="payments-loading" class="loading">Loading payments...</div>
+                <table id="payments-table" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Payment ID</th>
+                            <th>Order ID</th>
+                            <th>Amount (₹)</th>
+                            <th>User Name</th>
+                            <th>Email</th>
+                            <th>Mobile</th>
+                            <th>Payment Type</th>
+                            <th>Source / Plan</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payments-body"></tbody>
+                </table>
+                <div id="payments-empty" style="display:none; text-align:center; color:#666; padding:20px;">No payments recorded yet.</div>
+            </div>
+        </div>
+        <!-- END PAYMENTS TAB -->
+
         <!-- FEEDBACK TAB -->
         <div class="tab-page" id="tab-feedback">
             <div class="stats">
@@ -991,6 +1058,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             // Lazy load users on first visit
             if (tabName === 'users' && !usersLoaded) { loadUsers(); }
             if (tabName === 'referrals' && !referralsLoaded) { loadAdminReferrals(); }
+            if (tabName === 'payments' && !paymentsLoaded) { loadPayments(); }
             if (tabName === 'feedback' && !feedbackLoaded) { loadAdminFeedback(); }
             if (tabName === 'failed-lookups' && !failedLookupsLoaded) { loadFailedLookups(); }
             if (tabName === 'products' && !curatedProductsLoaded) { loadCuratedProducts(); }
@@ -1090,6 +1158,100 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             } catch (e) {
                 loading.textContent = 'Failed to load referrals.';
             }
+        }
+
+        // ========== Payments ==========
+        let paymentsLoaded = false;
+        let allPayments = [];
+
+        async function loadPayments() {
+            const loading = document.getElementById('payments-loading');
+            const table = document.getElementById('payments-table');
+            const empty = document.getElementById('payments-empty');
+            loading.style.display = ''; table.style.display = 'none'; empty.style.display = 'none';
+            try {
+                const res = await fetch('/api/admin/payments', { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/admin/login'; return; }
+                const data = await res.json();
+                loading.style.display = 'none';
+                paymentsLoaded = true;
+                if (!data.success) { empty.textContent = data.message || 'Failed to load payments.'; empty.style.display = 'block'; return; }
+                allPayments = data.payments || [];
+                const s = data.summary || {};
+                document.getElementById('payments-total').textContent = s.total ?? allPayments.length;
+                document.getElementById('payments-amount').textContent = (s.totalAmount ?? 0).toLocaleString('en-IN');
+                document.getElementById('payments-subs').textContent = s.subscriptionTypeCount ?? 0;
+                document.getElementById('payments-onetime').textContent = s.oneTimeCount ?? 0;
+                document.getElementById('payments-failed').textContent = s.failedCount ?? 0;
+                renderPayments(allPayments);
+            } catch (e) {
+                loading.textContent = 'Failed to load payments.';
+            }
+        }
+
+        function paymentStatusBadge(status) {
+            const st = (status || '').toLowerCase();
+            let bg = '#eee', color = '#555', label = status || 'Unknown';
+            if (st === 'completed' || st === 'active' || st === 'captured' || st === 'paid' || st === 'success') {
+                bg = '#d4edda'; color = '#155724'; label = status;
+            } else if (st === 'pending' || st === 'created' || st === 'authorized') {
+                bg = '#FFF8E1'; color = '#E65100'; label = status;
+            } else if (st === 'failed' || st === 'cancelled' || st === 'refunded') {
+                bg = '#FDECEA'; color = '#C62828'; label = status;
+            }
+            return '<span style="background:' + bg + ';color:' + color + ';padding:2px 8px;border-radius:4px;font-size:12px;white-space:nowrap;">' + label + '</span>';
+        }
+
+        function escapeHtmlCell(v) {
+            return (v == null ? '' : String(v)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function renderPayments(list) {
+            const table = document.getElementById('payments-table');
+            const empty = document.getElementById('payments-empty');
+            const tbody = document.getElementById('payments-body');
+            if (!list.length) { table.style.display = 'none'; empty.textContent = 'No payments match your filters.'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+            tbody.innerHTML = list.map(p => {
+                const date = p.createdAt
+                    ? new Date(p.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : '—';
+                const amount = (p.amount == null) ? '—' : Number(p.amount).toLocaleString('en-IN');
+                const payTypeBadge = p.paymentType === 'Subscription'
+                    ? '<span style="background:#EDE7F6;color:#5E35B1;padding:2px 8px;border-radius:4px;font-size:12px;white-space:nowrap;">🔁 Subscription</span>'
+                    : '<span style="background:#E8F5E9;color:#1F6B4E;padding:2px 8px;border-radius:4px;font-size:12px;white-space:nowrap;">1️⃣ One-time</span>';
+                const srcBadge = p.category === 'Vote'
+                    ? '<span style="background:#F1F8E9;color:#1F6B4E;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px;">Vote</span>'
+                    : '<span style="background:#E3F2FD;color:#1565C0;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px;">Sub</span>';
+                return '<tr>'
+                    + '<td style="font-family:monospace;font-size:12px;">' + escapeHtmlCell(p.paymentId) + '</td>'
+                    + '<td style="font-family:monospace;font-size:12px;">' + escapeHtmlCell(p.orderId) + '</td>'
+                    + '<td>' + amount + '</td>'
+                    + '<td>' + escapeHtmlCell(p.userName) + '</td>'
+                    + '<td>' + escapeHtmlCell(p.userEmail) + '</td>'
+                    + '<td>' + escapeHtmlCell(p.userPhone || '—') + '</td>'
+                    + '<td>' + payTypeBadge + '</td>'
+                    + '<td>' + srcBadge + escapeHtmlCell(p.plan) + '</td>'
+                    + '<td style="white-space:nowrap;">' + date + '</td>'
+                    + '<td>' + paymentStatusBadge(p.status) + '</td>'
+                    + '</tr>';
+            }).join('');
+        }
+
+        function filterPayments() {
+            const q = (document.getElementById('payments-search').value || '').toLowerCase().trim();
+            const type = document.getElementById('payments-type-filter').value;
+            const statusFilter = document.getElementById('payments-status-filter').value;
+            const paidStatuses = ['success', 'active', 'completed', 'captured', 'paid'];
+            const filtered = allPayments.filter(p => {
+                if (type && p.paymentType !== type) return false;
+                if (statusFilter === 'paid' && !paidStatuses.includes((p.status || '').toLowerCase())) return false;
+                if (statusFilter === 'failed' && paidStatuses.includes((p.status || '').toLowerCase())) return false;
+                if (!q) return true;
+                return [p.paymentId, p.orderId, p.userName, p.userEmail, p.userPhone]
+                    .some(f => (f || '').toString().toLowerCase().includes(q));
+            });
+            renderPayments(filtered);
         }
 
         let feedbackLoaded = false;
@@ -2294,6 +2456,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     { _id: '69e518677b9ef6b45470dc86', update: { productName: 'Akshayakalpa Organic Cow Pasteurised Milk', brandName: 'Akshayakalpa Farms & Foods Pvt Ltd', category: 'Milk · Organic', labName: 'Bangalore Analytical Research Center (NABL)', labReportNumber: 'BARC/25/09/0826', totalParametersTested: 290, purityScore: 96, scoreVerdict: 'Outstanding', categoryScores: [{categoryName:'Pesticide Residues',score:100,description:'232 pesticides tested, all BLQ'},{categoryName:'Antibiotics & Vet Drug Residues',score:100,description:'36 compounds tested, all BLQ'},{categoryName:'Heavy Metals & Mycotoxins',score:100,description:'All BLQ'},{categoryName:'Adulterants & Additives',score:100,description:'All 13 adulterant checks absent'},{categoryName:'Nutrition Quality',score:78,description:'Good profile'},{categoryName:'Processing Level',score:100,description:'Raw & unprocessed'}], stats: {totalParameters:290,passCount:288,contextNotes:2,safetyConcerns:0}, parentSummary: 'Akshayakalpa Organic Raw Milk scores 96/100. Zero pesticides, zero antibiotics, zero heavy metals, zero adulterants.', isPremium: false, reportUrl: '/akshayakalpa-report.html' }},
                     { _id: '6a2aff48d90eac2653bc4bf6', update: { productName: 'Happy Hens Free Range Omega-3 Brown Eggs', brandName: 'Sai Happy Farms Pvt. Ltd.', category: 'Eggs · Free Range', labName: 'Eurofins Analytical Services India (NABL TC-13580)', labReportNumber: 'AR-258-2025-20114811', totalParametersTested: 40, purityScore: 88, scoreVerdict: 'Good', categoryScores: [{categoryName:'Nitrofurans & Nitroimidazoles',score:100,description:'13 NABL-accredited parameters — all not detected'},{categoryName:'Chloramphenicol',score:100,description:'NABL accredited — not detected'},{categoryName:'Reproductive Hormones',score:100,description:'6 hormones — all not detected'},{categoryName:'Regulated Antibiotics',score:100,description:'20 compounds — all BLQ'}], stats: {totalParameters:40,passCount:40,contextNotes:0,safetyConcerns:0}, parentSummary: 'Happy Hens Free Range Omega-3 Brown Eggs score 88/100. All 40 parameters are clean.', isPremium: true, reportUrl: '/happy-hens-eggs-report.html' }},
                     { _id: '69ff3dae7570e7a0a513a7d1', update: { productName: 'Farm Made Free Range Brown Eggs', brandName: 'Farm Made Foods (U and V Agro Pvt. Ltd.)', category: 'Eggs · Free Range', labName: 'SGS India Pvt. Ltd. (NABL Accredited), Chennai', labReportNumber: 'SGS/CHE/2025/FT-001', totalParametersTested: 190, purityScore: 91, scoreVerdict: 'Excellent', categoryScores: [{categoryName:'Pesticide Residues',score:100,description:'140+ pesticides tested, all BLQ'},{categoryName:'Antibiotics & Vet Drugs',score:100,description:'35+ compounds, all ND/BLQ'},{categoryName:'Heavy Metals',score:100,description:'All BLQ'},{categoryName:'Microbiology',score:82,description:'9 clean, 2 context notes'},{categoryName:'Nutritional Quality',score:100,description:'Excellent protein, balanced fat'}], stats: {totalParameters:190,passCount:188,contextNotes:2,safetyConcerns:0}, parentSummary: 'Farm Made Foods Free Range Brown Eggs score 91/100. Zero antibiotics, zero pesticides, zero heavy metals.', isPremium: true, reportUrl: '/farmmade-eggs-report.html' }},
+                    { findBy: {productName: '/Eggoz/i'}, update: { productName: 'Eggoz Brown Eggs', brandName: 'Eggoz', category: 'Eggs · Brown', labName: 'FARE Labs Pvt. Ltd. (TC-5503), Gurugram', labReportNumber: 'FA20260311-035-417', totalParametersTested: 35, purityScore: 84, scoreVerdict: 'Good', categoryScores: [{categoryName:'Banned Antibiotics',score:100,description:'17 globally banned drugs — all below detection limit'},{categoryName:'Regulated Antibiotic Residues',score:100,description:'18 regulated residues — all BLQ'}], stats: {totalParameters:35,passCount:35,contextNotes:0,safetyConcerns:0}, parentSummary: 'Eggoz Brown Eggs score 84/100. All 35 antibiotic & veterinary-drug parameters clean — antibiotic-only scope.', isPremium: true, reportUrl: '/eggoz-brown-eggs-report.html' }},
                     { findBy: {productName: '/Heritage/i'}, update: { productName: 'Heritage Toned Milk', brandName: 'Heritage Foods Ltd.', category: 'Milk · Toned', labName: 'NABL Accredited Laboratory', labReportNumber: 'HER/NABL/2025/TM-001', totalParametersTested: 127, purityScore: 82, scoreVerdict: 'Good (Grade A-)', categoryScores: [{categoryName:'Antibiotics',score:100,description:'30+ drugs screened, all not detected'},{categoryName:'Pesticide Residues',score:100,description:'54 compounds, all not detected'},{categoryName:'Heavy Metals',score:100,description:'All not detected'},{categoryName:'Adulteration',score:100,description:'18 checks clean'},{categoryName:'Nutritional Composition',score:100,description:'Meets FSSAI minimums'},{categoryName:'Mycotoxins',score:45,description:'Aflatoxin M1 FAILS EU'}], stats: {totalParameters:127,passCount:125,contextNotes:2,safetyConcerns:0}, parentSummary: 'Heritage Toned Milk scores 82/100. 125 of 127 parameters clear. Watchpoints: Aflatoxin M1 above EU limit, unusual Sodium reading.', isPremium: true, reportUrl: '/heritage-report.html' }},
                     { findBy: {productName: '/Namdhari/i'}, update: { productName: 'Namdhari Dairy Tales – Toned Milk', brandName: 'Namdhari Fresh Pvt. Ltd.', category: 'Milk · Toned', labName: 'Intertek India Pvt. Ltd. (NABL Accredited – TC-5160)', labReportNumber: 'IFSH-251217094', totalParametersTested: 300, purityScore: 97, scoreVerdict: 'Excellent', categoryScores: [{categoryName:'Microbiology',score:96,description:'Very low counts, excellent pasteurization'},{categoryName:'Contaminants',score:95,description:'40+ antibiotics, 250+ pesticides — all BLQ'},{categoryName:'Adulteration',score:100,description:'All preservatives and adulterants absent'},{categoryName:'Transparency',score:100,description:'Comprehensive panel, NABL lab'}], stats: {totalParameters:300,passCount:300,contextNotes:0,safetyConcerns:0}, parentSummary: 'Namdhari Dairy Tales Toned Milk scores 97/100. Zero antibiotics, zero pesticides, zero heavy metals, zero mycotoxins, zero adulterants.', isPremium: true, reportUrl: '/namdhari-report.html' }},
                 ];

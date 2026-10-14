@@ -72,6 +72,7 @@ let voteTransactionsCollection;
 let suggestionsCollection;
 let testReportsCollection;
 let subscriptionTransactionsCollection;
+let paymentAttemptsCollection;
 let referralsCollection;
 let rewardsCollection;
 let feedbackCollection;
@@ -144,6 +145,14 @@ async function connectToDatabase() {
         await subscriptionTransactionsCollection.createIndex({ userId: 1 });
         await subscriptionTransactionsCollection.createIndex({ createdAt: -1 });
         console.log('✅ Subscription transactions collection initialized');
+
+        // Initialize payment_attempts collection (every payment attempt, any status)
+        paymentAttemptsCollection = db.collection('payment_attempts');
+        await paymentAttemptsCollection.createIndex({ createdAt: -1 });
+        await paymentAttemptsCollection.createIndex({ razorpayOrderId: 1 }, { sparse: true });
+        await paymentAttemptsCollection.createIndex({ razorpaySubscriptionId: 1 }, { sparse: true });
+        await paymentAttemptsCollection.createIndex({ userId: 1 });
+        console.log('✅ Payment attempts collection initialized');
         
         // Create indexes for users collection
         await usersCollection.createIndex({ email: 1 }, { unique: true });
@@ -2885,6 +2894,141 @@ app.get('/api/admin/polls/transactions', authenticateAdmin, async (req, res) => 
     }
 });
 
+// Admin API: List all payment attempts (subscriptions + votes) with status (protected)
+app.get('/api/admin/payments', authenticateAdmin, async (req, res) => {
+    try {
+        if (!isDbConnected) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const payments = [];
+        // Track order/subscription IDs already represented so we don't double-count
+        // historical transactions that also have a payment_attempts record.
+        const seenRefs = new Set();
+
+        // 1. Payment attempts — the authoritative source (includes created/failed/success)
+        if (paymentAttemptsCollection) {
+            const attempts = await paymentAttemptsCollection
+                .find({})
+                .sort({ createdAt: -1 })
+                .limit(2000)
+                .toArray();
+            for (const t of attempts) {
+                const ref = t.razorpayOrderId || t.razorpaySubscriptionId;
+                if (ref) seenRefs.add(ref);
+                payments.push({
+                    category: t.category || 'Subscription',
+                    paymentType: t.paymentType || (t.plan === 'monthly' ? 'Subscription' : 'One-time'),
+                    paymentId: t.razorpayPaymentId || '—',
+                    orderId: t.razorpayOrderId || t.razorpaySubscriptionId || '—',
+                    amount: typeof t.amount === 'number' ? t.amount : null,
+                    userName: t.userName || '',
+                    userEmail: t.userEmail || '',
+                    userPhone: t.userPhone || '',
+                    userId: t.userId ? t.userId.toString() : null,
+                    plan: t.plan || '',
+                    status: t.status || 'unknown',
+                    createdAt: t.createdAt || null,
+                });
+            }
+        }
+
+        // 2. Historical subscription payments (recorded before attempt-tracking existed)
+        if (subscriptionTransactionsCollection) {
+            const subs = await subscriptionTransactionsCollection
+                .find({})
+                .sort({ createdAt: -1 })
+                .limit(1000)
+                .toArray();
+            for (const t of subs) {
+                const ref = t.razorpayOrderId || t.razorpaySubscriptionId;
+                if (ref && seenRefs.has(ref)) continue; // already captured via payment_attempts
+                payments.push({
+                    category: 'Subscription',
+                    paymentType: t.plan === 'monthly' ? 'Subscription' : 'One-time',
+                    paymentId: t.razorpayPaymentId || '—',
+                    orderId: t.razorpayOrderId || t.razorpaySubscriptionId || '—',
+                    amount: typeof t.amount === 'number' ? t.amount : null,
+                    userName: t.userName || '',
+                    userEmail: t.userEmail || '',
+                    userPhone: t.userPhone || '',
+                    userId: t.userId ? t.userId.toString() : null,
+                    plan: t.plan || '',
+                    status: t.status || 'unknown',
+                    createdAt: t.createdAt || null,
+                });
+            }
+        }
+
+        // 3. Historical paid votes — one-time payments via Razorpay (free/manual votes excluded)
+        if (voteTransactionsCollection) {
+            const votes = await voteTransactionsCollection
+                .find({ razorpayPaymentId: { $exists: true, $ne: null } })
+                .sort({ createdAt: -1 })
+                .limit(1000)
+                .toArray();
+            for (const t of votes) {
+                payments.push({
+                    category: 'Vote',
+                    paymentType: 'One-time',
+                    paymentId: t.razorpayPaymentId || '—',
+                    orderId: t.razorpayOrderId || '—',
+                    amount: typeof t.amount === 'number' ? t.amount : null,
+                    userName: t.userName || '',
+                    userEmail: t.userEmail || '',
+                    userPhone: t.userPhone || '',
+                    userId: t.userId ? t.userId.toString() : null,
+                    plan: t.productName ? `${t.voteCount || 1} vote(s): ${t.productName}` : 'Vote',
+                    status: t.status || 'unknown',
+                    createdAt: t.createdAt || null,
+                });
+            }
+        }
+
+        // 4. Enrich missing phone numbers from the users collection
+        if (usersCollection) {
+            const missingPhoneIds = [...new Set(
+                payments.filter(p => !p.userPhone && p.userId).map(p => p.userId)
+            )];
+            if (missingPhoneIds.length > 0) {
+                const objectIds = missingPhoneIds
+                    .map(id => { try { return new ObjectId(id); } catch (e) { return null; } })
+                    .filter(Boolean);
+                const users = await usersCollection
+                    .find({ _id: { $in: objectIds } })
+                    .project({ phone: 1 })
+                    .toArray();
+                const phoneById = {};
+                users.forEach(u => { phoneById[u._id.toString()] = u.phone || ''; });
+                payments.forEach(p => {
+                    if (!p.userPhone && p.userId && phoneById[p.userId]) {
+                        p.userPhone = phoneById[p.userId];
+                    }
+                });
+            }
+        }
+
+        // Sort combined list by date, newest first
+        payments.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+        // Summary stats
+        const isPaid = (s) => ['success', 'active', 'completed', 'captured', 'paid'].includes((s || '').toLowerCase());
+        const summary = {
+            total: payments.length,
+            totalAmount: payments.reduce((sum, p) => sum + (isPaid(p.status) ? (p.amount || 0) : 0), 0),
+            subscriptionTypeCount: payments.filter(p => p.paymentType === 'Subscription').length,
+            oneTimeCount: payments.filter(p => p.paymentType === 'One-time').length,
+            failedCount: payments.filter(p => ['failed', 'created', 'cancelled'].includes((p.status || '').toLowerCase())).length,
+        };
+
+        res.json({ success: true, payments, summary });
+    } catch (error) {
+        console.error('❌ Error fetching payments:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch payments' });
+    }
+});
+
 // Admin API: Cast manual vote for a product (protected)
 app.post('/api/admin/polls/manual-vote', authenticateAdmin, async (req, res) => {
     try {
@@ -4578,6 +4722,26 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
                 notes: { userId: req.user.id.toString(), userEmail: req.user.email, plan: 'annual' }
             });
             console.log('Annual order created:', order.id);
+            try {
+                if (paymentAttemptsCollection) {
+                    const { ObjectId } = require('mongodb');
+                    await paymentAttemptsCollection.insertOne({
+                        category: 'Subscription',
+                        paymentType: 'One-time',
+                        plan: 'annual',
+                        amount: 2499,
+                        userId: new ObjectId(req.user.id),
+                        userName: req.user.name,
+                        userEmail: req.user.email,
+                        userPhone: req.user.phone || '',
+                        razorpayOrderId: order.id,
+                        razorpayPaymentId: null,
+                        status: 'created',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    });
+                }
+            } catch (e) { console.error('⚠️ payment attempt log (annual) failed:', e.message); }
             res.json({ success: true, orderId: order.id, key: process.env.RAZORPAY_KEY_ID, amount: 249900, plan: 'annual', type: 'order' });
         } else {
             // Monthly: Razorpay Subscription (recurring)
@@ -4589,6 +4753,26 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
                 notes: { userId: req.user.id.toString(), userEmail: req.user.email }
             });
             console.log('Monthly subscription created:', subscription.id);
+            try {
+                if (paymentAttemptsCollection) {
+                    const { ObjectId } = require('mongodb');
+                    await paymentAttemptsCollection.insertOne({
+                        category: 'Subscription',
+                        paymentType: 'Subscription',
+                        plan: 'monthly',
+                        amount: 299,
+                        userId: new ObjectId(req.user.id),
+                        userName: req.user.name,
+                        userEmail: req.user.email,
+                        userPhone: req.user.phone || '',
+                        razorpaySubscriptionId: subscription.id,
+                        razorpayPaymentId: null,
+                        status: 'created',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    });
+                }
+            } catch (e) { console.error('⚠️ payment attempt log (monthly) failed:', e.message); }
             res.json({ success: true, subscriptionId: subscription.id, key: process.env.RAZORPAY_KEY_ID, plan: 'monthly', type: 'subscription' });
         }
     } catch (error) {
@@ -4618,8 +4802,24 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
                 .update(razorpay_order_id + '|' + razorpay_payment_id)
                 .digest('hex');
             if (expectedSignature !== razorpay_signature) {
+                try {
+                    if (paymentAttemptsCollection) {
+                        await paymentAttemptsCollection.updateOne(
+                            { razorpayOrderId: razorpay_order_id },
+                            { $set: { status: 'failed', razorpayPaymentId: razorpay_payment_id || null, failureReason: 'Signature verification failed', updatedAt: new Date() } }
+                        );
+                    }
+                } catch (e) { /* non-blocking */ }
                 return res.status(400).json({ success: false, message: 'Payment verification failed' });
             }
+            try {
+                if (paymentAttemptsCollection) {
+                    await paymentAttemptsCollection.updateOne(
+                        { razorpayOrderId: razorpay_order_id },
+                        { $set: { status: 'success', razorpayPaymentId: razorpay_payment_id, updatedAt: new Date() } }
+                    );
+                }
+            } catch (e) { /* non-blocking */ }
             const { ObjectId } = require('mongodb');
             // Set subscription expiry to 1 year from now
             const subscriptionExpiry = new Date();
@@ -4651,8 +4851,24 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
                 .update(razorpay_payment_id + '|' + razorpay_subscription_id)
                 .digest('hex');
             if (expectedSignature !== razorpay_signature) {
+                try {
+                    if (paymentAttemptsCollection) {
+                        await paymentAttemptsCollection.updateOne(
+                            { razorpaySubscriptionId: razorpay_subscription_id },
+                            { $set: { status: 'failed', razorpayPaymentId: razorpay_payment_id || null, failureReason: 'Signature verification failed', updatedAt: new Date() } }
+                        );
+                    }
+                } catch (e) { /* non-blocking */ }
                 return res.status(400).json({ success: false, message: 'Payment verification failed' });
             }
+            try {
+                if (paymentAttemptsCollection) {
+                    await paymentAttemptsCollection.updateOne(
+                        { razorpaySubscriptionId: razorpay_subscription_id },
+                        { $set: { status: 'success', razorpayPaymentId: razorpay_payment_id, updatedAt: new Date() } }
+                    );
+                }
+            } catch (e) { /* non-blocking */ }
             const { ObjectId } = require('mongodb');
             await usersCollection.updateOne(
                 { _id: new ObjectId(req.user.id) },
