@@ -225,6 +225,54 @@ const REPORTS = [
     }
   },
   {
+    // Himalayan Organics Protein Super Herbs – Women - find by productName
+    findBy: { productName: /Himalayan Organics Protein Super Herbs/i },
+    update: {
+      productName: 'Himalayan Organics Protein Super Herbs – Women',
+      brandName: 'Himalayan Organics',
+      category: 'Supplement · Herbal Protein',
+      labName: 'NABL-accredited laboratory',
+      labReportNumber: 'HO-PROT-W-001',
+      totalParametersTested: 10,
+      origin: 'India',
+      purityScore: 84,
+      scoreVerdict: 'Good',
+      scoreFormula: 'Started 100; −8 lead detected 0.086 mg/kg (below 0.1 benchmark); −4 protein 4% below label (within ±5%); −4 herbs of concern. Final: 84',
+      categoryScores: [
+        { categoryName: 'Protein Accuracy', score: 96, description: '68.4% claimed vs 65.65% detected (−4%) — within ±5% tolerance' },
+        { categoryName: 'Mycotoxins', score: 100, description: 'Aflatoxin — not detected' },
+        { categoryName: 'Pesticide Residues', score: 100, description: 'All pesticides below detection limit' },
+        { categoryName: 'Heavy Metals', score: 80, description: 'Lead 0.086 mg/kg & Copper 1.61 mg/kg detected (below limits); As, Cd, Hg, Tl not detected' },
+        { categoryName: 'Herbs of Concern', score: 75, description: 'Garcinia cambogia — caution for pregnancy / medication' },
+      ],
+      testParameters: {
+        'Protein (Label vs Detected)': [
+          { parameterName: 'Protein content', result: '65.65', unit: '% (label 68.4%)', fssaiLimit: 'Within ±5% of label', euLimit: 'Within tolerance', usFdaLimit: 'Within tolerance', status: 'Pass' },
+        ],
+        'Mycotoxins': [
+          { parameterName: 'Aflatoxin (total)', result: 'Below detection limit', unit: 'µg/kg', fssaiLimit: 'Total ≤15 µg/kg', euLimit: '≤4 µg/kg', usFdaLimit: '≤20 µg/kg', status: 'Pass' },
+        ],
+        'Pesticide Residues': [
+          { parameterName: 'Pesticide residues (multi-residue)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Default MRL 0.01 mg/kg', euLimit: '0.01 mg/kg default', usFdaLimit: 'Per EPA tolerance', status: 'Pass' },
+        ],
+        'Heavy Metals': [
+          { parameterName: 'Lead (Pb)', result: '0.086', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 3.0 mg/kg', usFdaLimit: 'USP ≤10 µg/day', status: 'Watchpoint' },
+          { parameterName: 'Arsenic (As)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.01 (inorganic)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Cadmium (Cd)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.5 (supplements)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Mercury (Hg)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.1 mg/kg', usFdaLimit: 'FDA 1 ppm', status: 'Pass' },
+          { parameterName: 'Thallium (Tl)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Not specified', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Copper (Cu)', result: '1.61', unit: 'mg/kg', fssaiLimit: 'NMT 30 mg/kg', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+        ],
+      },
+      stats: { totalParameters: 10, passCount: 9, contextNotes: 1, safetyConcerns: 0 },
+      parentSummary: 'Himalayan Organics Protein Super Herbs (Women) scores 84/100 — a near-clean result. Detected protein is 65.65% vs a 68.4% label claim (−4%, within the ±5% tolerance). Lead is detected at 0.086 mg/kg — below the 0.1 mg/kg benchmark but worth noting for daily use. Aflatoxins, pesticides and arsenic are not detected. The product contains herbal ingredients (green tea extract, curcumin, Garcinia cambogia); Garcinia cambogia has been linked to liver toxicity in some studies — consult a doctor if pregnant, breastfeeding or on medication.',
+      expertCommentary: 'Good label accuracy and a clean mycotoxin/pesticide result. The main watchpoints are trace lead (below limit) and Garcinia cambogia, which some populations should approach with caution.',
+      isPremium: true,
+      reportUrl: '/himalayan-organics-protein-women-report.html',
+      statusBadges: ['Lead below limit', 'No aflatoxins/pesticides'],
+    }
+  },
+  {
     // Heritage Toned Milk - find by productName
     findBy: { productName: /Heritage/i },
     update: {
