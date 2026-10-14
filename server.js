@@ -369,7 +369,14 @@ app.use(cors({
     origin: ['https://choosepure.in', 'https://www.choosepure.in', 'http://localhost:3000'],
     credentials: true
 }));
-app.use(express.json());
+// Capture the raw request body during JSON parsing so webhook signatures can
+// be verified against the exact bytes the sender signed (re-serializing the
+// parsed object does not reliably reproduce the original payload).
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(__dirname));
@@ -5111,12 +5118,26 @@ app.post('/api/razorpay/webhook', async (req, res) => {
             return res.status(400).json({ success: false });
         }
 
+        // Verify against the exact raw bytes Razorpay signed. Falling back to a
+        // re-serialized body does not reliably reproduce the original payload
+        // (key order / whitespace differences), which previously caused valid
+        // webhooks to be rejected.
+        const rawBody = req.rawBody
+            ? req.rawBody.toString('utf8')
+            : JSON.stringify(req.body);
+
         const expectedSignature = crypto
             .createHmac('sha256', webhookSecret)
-            .update(JSON.stringify(req.body))
+            .update(rawBody)
             .digest('hex');
 
-        if (expectedSignature !== signature) {
+        // Constant-time comparison to avoid timing attacks
+        const sigBuf = Buffer.from(signature);
+        const expBuf = Buffer.from(expectedSignature);
+        const signatureValid = sigBuf.length === expBuf.length &&
+            crypto.timingSafeEqual(sigBuf, expBuf);
+
+        if (!signatureValid) {
             console.error('❌ Webhook: Invalid signature');
             return res.status(400).json({ success: false });
         }
