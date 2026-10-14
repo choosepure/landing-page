@@ -5056,6 +5056,16 @@ app.post('/api/razorpay/webhook', async (req, res) => {
                     );
                     console.log('✅ Webhook: Subscription charged for', user.email, 'payment:', paymentId);
 
+                    // Mark the matching subscription payment attempt as paid.
+                    if (paymentAttemptsCollection && subscriptionId) {
+                        try {
+                            await paymentAttemptsCollection.updateOne(
+                                { razorpaySubscriptionId: subscriptionId },
+                                { $set: { status: 'paid', razorpayPaymentId: paymentId || null, updatedAt: new Date() } }
+                            );
+                        } catch (e) { console.error('⚠️ Webhook: attempt update (charged) failed:', e.message); }
+                    }
+
                     // Send invoice email (fire-and-forget)
                     try {
                         const planType = user.subscriptionPlan || 'monthly';
@@ -5103,13 +5113,42 @@ app.post('/api/razorpay/webhook', async (req, res) => {
         if (event === 'payment.captured') {
             const paymentId = payload.payment?.entity?.id;
             const amount = payload.payment?.entity?.amount;
+            const orderId = payload.payment?.entity?.order_id;
             console.log('✅ Webhook: Payment captured', paymentId, 'amount:', amount);
+
+            // Mark the matching payment attempt as paid (authoritative — fires even
+            // if the user closed the checkout before our verify endpoint ran).
+            if (paymentAttemptsCollection && (orderId || paymentId)) {
+                try {
+                    const filter = orderId
+                        ? { razorpayOrderId: orderId }
+                        : { razorpayPaymentId: paymentId };
+                    await paymentAttemptsCollection.updateOne(
+                        filter,
+                        { $set: { status: 'paid', razorpayPaymentId: paymentId || null, updatedAt: new Date() } }
+                    );
+                } catch (e) { console.error('⚠️ Webhook: attempt update (captured) failed:', e.message); }
+            }
         }
 
         if (event === 'payment.failed') {
             const paymentId = payload.payment?.entity?.id;
             const error = payload.payment?.entity?.error_description;
+            const orderId = payload.payment?.entity?.order_id;
             console.log('⚠️ Webhook: Payment failed', paymentId, 'error:', error);
+
+            // Mark the matching payment attempt as failed with the real reason.
+            if (paymentAttemptsCollection && (orderId || paymentId)) {
+                try {
+                    const filter = orderId
+                        ? { razorpayOrderId: orderId }
+                        : { razorpayPaymentId: paymentId };
+                    await paymentAttemptsCollection.updateOne(
+                        filter,
+                        { $set: { status: 'failed', razorpayPaymentId: paymentId || null, failureReason: error || 'Payment failed at gateway', updatedAt: new Date() } }
+                    );
+                } catch (e) { console.error('⚠️ Webhook: attempt update (failed) failed:', e.message); }
+            }
 
             // Set grace period for subscription-related payment failures
             if (usersCollection) {
