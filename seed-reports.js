@@ -273,6 +273,53 @@ const REPORTS = [
     }
   },
   {
+    // Oriflame High Protein Nutrishake – Vanilla - find by productName
+    findBy: { productName: /Oriflame High Protein Nutrishake/i },
+    update: {
+      productName: 'Oriflame High Protein Nutrishake – Vanilla',
+      brandName: 'Oriflame',
+      category: 'Supplement · Protein Blend',
+      labName: 'NABL-accredited laboratory',
+      labReportNumber: 'ORI-NSHAKE-V-001',
+      totalParametersTested: 10,
+      origin: 'India',
+      purityScore: 93,
+      scoreVerdict: 'Excellent',
+      scoreFormula: 'Started 100; −4 lead detected 0.04 mg/kg (well below 0.1 benchmark); −3 copper 4.41 mg/kg (within limits). Final: 93',
+      categoryScores: [
+        { categoryName: 'Protein Accuracy', score: 100, description: '41.1% claimed vs 43.28% detected (+5.3%) — exceeds label, within ±10%' },
+        { categoryName: 'Mycotoxins', score: 100, description: 'Aflatoxin — not detected' },
+        { categoryName: 'Pesticide Residues', score: 100, description: 'All pesticides below detection limit' },
+        { categoryName: 'Heavy Metals', score: 88, description: 'Lead 0.04 mg/kg & Copper 4.41 mg/kg detected (well below limits); As, Cd, Hg, Tl not detected' },
+      ],
+      testParameters: {
+        'Protein (Label vs Detected)': [
+          { parameterName: 'Protein content', result: '43.28', unit: '% (label 41.1%)', fssaiLimit: 'Within ±20% of label', euLimit: 'Within tolerance', usFdaLimit: 'Within tolerance', status: 'Pass' },
+        ],
+        'Mycotoxins': [
+          { parameterName: 'Aflatoxin (total)', result: 'Below detection limit', unit: 'µg/kg', fssaiLimit: 'Total ≤15 µg/kg', euLimit: '≤4 µg/kg', usFdaLimit: '≤20 µg/kg', status: 'Pass' },
+        ],
+        'Pesticide Residues': [
+          { parameterName: 'Pesticide residues (multi-residue)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Default MRL 0.01 mg/kg', euLimit: '0.01 mg/kg default', usFdaLimit: 'Per EPA tolerance', status: 'Pass' },
+        ],
+        'Heavy Metals': [
+          { parameterName: 'Lead (Pb)', result: '0.04', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 3.0 mg/kg', usFdaLimit: 'USP ≤10 µg/day', status: 'Watchpoint' },
+          { parameterName: 'Arsenic (As)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.01 (inorganic)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Cadmium (Cd)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.5 (supplements)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Mercury (Hg)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.1 mg/kg', usFdaLimit: 'FDA 1 ppm', status: 'Pass' },
+          { parameterName: 'Thallium (Tl)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Not specified', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Copper (Cu)', result: '4.41', unit: 'mg/kg', fssaiLimit: 'NMT 30 mg/kg', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+        ],
+      },
+      stats: { totalParameters: 10, passCount: 10, contextNotes: 0, safetyConcerns: 0 },
+      parentSummary: 'Oriflame High Protein Nutrishake (Vanilla) scores 93/100 — one of the cleanest results in this series. Detected protein is 43.28% vs a 41.1% label claim, so it actually delivers 5.3% more protein than stated (honest or slightly conservative labelling). Lead is detected at just 0.04 mg/kg, less than half the 0.1 mg/kg benchmark. Aflatoxins, pesticides and heavy metals of concern (arsenic, cadmium, mercury, thallium) are all not detected. A reassuring result for a meal-replacement style protein product.',
+      expertCommentary: 'An excellent, clean result: protein exceeds the label, lead is very low, and no aflatoxins, pesticides or heavy metals of concern were detected.',
+      isPremium: true,
+      reportUrl: '/oriflame-nutrishake-vanilla-report.html',
+      statusBadges: ['Protein exceeds label', 'Very low lead'],
+    }
+  },
+  {
     // Heritage Toned Milk - find by productName
     findBy: { productName: /Heritage/i },
     update: {
