@@ -5138,7 +5138,16 @@ app.post('/api/razorpay/webhook', async (req, res) => {
             crypto.timingSafeEqual(sigBuf, expBuf);
 
         if (!signatureValid) {
-            console.error('❌ Webhook: Invalid signature');
+            // Diagnostic (no secrets logged): helps distinguish a raw-body mismatch
+            // from a wrong/missing webhook secret when triaging rejected webhooks.
+            console.error('❌ Webhook: Invalid signature', JSON.stringify({
+                event: req.body?.event || 'unknown',
+                rawBodyCaptured: !!req.rawBody,
+                rawBodyLength: req.rawBody ? req.rawBody.length : 0,
+                receivedSigLength: signature.length,
+                expectedSigLength: expectedSignature.length,
+                secretConfigured: !!webhookSecret
+            }));
             return res.status(400).json({ success: false });
         }
 
