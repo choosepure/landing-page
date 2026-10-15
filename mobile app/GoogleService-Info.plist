@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>46652240387-1bflfsnfu8acrd5pdrbmc58h4si5rhi3.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.46652240387-1bflfsnfu8acrd5pdrbmc58h4si5rhi3</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>46652240387-oqmp5sv669t6cv9s7r3rld5v7b6v0jrd.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyAjfFguCKfsGRlZxhu3ZkUsKYEtQMqfnHE</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.choosepure.iOS</string>
+	<string>in.choosepure.app</string>
 	<key>PROJECT_ID</key>
 	<string>choosepure-priyank</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:46652240387:ios:1c01b6dc0d3ce26cfa1436</string>
+	<string>1:46652240387:ios:4a20e34d56fd745dfa1436</string>
 </dict>
 </plist>

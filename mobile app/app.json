@@ -2,14 +2,19 @@
   "expo": {
     "name": "ChoosePure",
     "slug": "choosepure",
-    "version": "2.2.0",
+    "version": "2.2.1",
     "orientation": "portrait",
     "scheme": "choosepure",
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.choosepure.app",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Allow ChoosePure to access your camera to scan product barcodes and capture label photos.",
+        "NSPhotoLibraryUsageDescription": "Allow ChoosePure to access your photos so you can upload product label images."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +26,7 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "versionCode": 40
+      "versionCode": 43
     },
     "plugins": [
       [
@@ -68,7 +73,12 @@
       "@react-native-firebase/auth",
       "@react-native-firebase/messaging",
       "@react-native-firebase/crashlytics",
-      "@react-native-google-signin/google-signin",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.46652240387-1bflfsnfu8acrd5pdrbmc58h4si5rhi3"
+        }
+      ],
       "expo-font"
     ],
     "extra": {
