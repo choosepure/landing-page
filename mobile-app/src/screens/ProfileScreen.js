@@ -35,6 +35,12 @@ const MENU_SECTIONS = [
       { icon: 'logout', label: 'Sign out', isSignOut: true },
     ],
   },
+  {
+    group: 'Account management',
+    rows: [
+      { icon: 'trash', label: 'Request account deletion', isDeleteAccount: true },
+    ],
+  },
 ];
 
 export default function ProfileScreen({ navigation }) {
@@ -79,6 +85,38 @@ export default function ProfileScreen({ navigation }) {
     ]);
   };
 
+  const submitDeletionRequest = async () => {
+    try {
+      trackEvent('account_deletion_requested');
+    } catch (e) { /* analytics should never break the flow */ }
+
+    try {
+      await apiClient.post('/api/user/request-deletion');
+      Alert.alert(
+        'Deletion requested',
+        'Your account will be deleted within 24 hours.\n\nIf you change your mind, email support@choosepure.in within 24 hours to cancel the deletion.\n\nYou will now be signed out.',
+        [{ text: 'OK', onPress: () => { logout(); } }],
+        { cancelable: false }
+      );
+    } catch (e) {
+      Alert.alert(
+        'Could not submit request',
+        e?.response?.data?.message || 'Something went wrong. Please try again, or email support@choosepure.in.'
+      );
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Request account deletion',
+      'This will submit a request to permanently delete your ChoosePure account and associated data. Your account will be deleted within 24 hours.\n\nThis cannot be undone once processed. Do you want to continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Request deletion', style: 'destructive', onPress: submitDeletionRequest },
+      ]
+    );
+  };
+
   const initials = user?.name?.charAt(0)?.toUpperCase() || '?';
   const displayName = user?.name || 'User';
   const displayEmail = user?.email || '';
@@ -98,6 +136,8 @@ export default function ProfileScreen({ navigation }) {
   const handleMenuPress = (row) => {
     if (row.isSignOut) {
       handleSignOut();
+    } else if (row.isDeleteAccount) {
+      handleDeleteAccount();
     } else if (row.isRateApp) {
       handleRateApp();
     } else if (row.route) {
@@ -151,6 +191,8 @@ export default function ProfileScreen({ navigation }) {
                 const isLast = i === section.rows.length - 1;
                 const isSignOut = row.isSignOut;
                 const isRateApp = row.isRateApp;
+                const isDeleteAccount = row.isDeleteAccount;
+                const isDanger = isSignOut || isDeleteAccount;
                 return (
                   <TouchableOpacity
                     key={row.label}
@@ -164,17 +206,17 @@ export default function ProfileScreen({ navigation }) {
                     <Icon
                       name={row.icon}
                       size={20}
-                      color={isSignOut ? theme.colors.error : isRateApp ? theme.colors.warning : theme.colors.textSecondary}
+                      color={isDanger ? theme.colors.error : isRateApp ? theme.colors.warning : theme.colors.textSecondary}
                     />
                     <Text
                       style={[
                         styles.menuRowLabel,
-                        isSignOut && styles.menuRowLabelDanger,
+                        isDanger && styles.menuRowLabelDanger,
                       ]}
                     >
                       {row.label}
                     </Text>
-                    {!isSignOut && (
+                    {!isDanger && (
                       <Icon name="chevron-right" size={16} color={theme.colors.textDim} />
                     )}
                   </TouchableOpacity>

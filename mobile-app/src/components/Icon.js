@@ -257,6 +257,15 @@ function Icon({ name, size = 20, color = theme.colors.text, strokeWidth = 1.7 })
           <Path d="M12 9v4M12 17h.01" />
         </Svg>
       );
+    case 'trash':
+      return (
+        <Svg {...svgProps}>
+          <Path d="M3 6h18" />
+          <Path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <Path d="M10 11v6M14 11v6" />
+        </Svg>
+      );
     default:
       return null;
   }
