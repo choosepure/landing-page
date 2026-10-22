@@ -77,6 +77,7 @@ let referralsCollection;
 let rewardsCollection;
 let feedbackCollection;
 let curatedProductsCollection;
+let deletionRequestsCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -179,6 +180,13 @@ async function connectToDatabase() {
         feedbackCollection = db.collection('feedback');
         await feedbackCollection.createIndex({ createdAt: -1 });
         console.log('✅ Feedback collection initialized');
+
+        // Initialize account_deletion_requests collection
+        deletionRequestsCollection = db.collection('account_deletion_requests');
+        await deletionRequestsCollection.createIndex({ createdAt: -1 });
+        await deletionRequestsCollection.createIndex({ userId: 1 });
+        await deletionRequestsCollection.createIndex({ status: 1 });
+        console.log('✅ Account deletion requests collection initialized');
 
         // Initialize curated_products collection
         curatedProductsCollection = db.collection('curated_products');
@@ -1229,6 +1237,50 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
             hasPassword: !!req.user.password
         } 
     });
+});
+
+// Authenticated API: Request account deletion (processed by admin within 24 hrs)
+app.post('/api/user/request-deletion', authenticateUser, async (req, res) => {
+    try {
+        if (!isDbConnected || !deletionRequestsCollection) {
+            return res.status(503).json({ success: false, message: 'Database not connected' });
+        }
+
+        const userId = req.user.id.toString();
+
+        // If there's already a pending request for this user, don't create a duplicate
+        const existing = await deletionRequestsCollection.findOne({ userId, status: 'pending' });
+        if (existing) {
+            return res.json({
+                success: true,
+                alreadyRequested: true,
+                message: 'A deletion request is already pending for this account.'
+            });
+        }
+
+        const { reason } = req.body || {};
+
+        await deletionRequestsCollection.insertOne({
+            userId,
+            name: req.user.name || '',
+            email: req.user.email || '',
+            phone: req.user.phone || '',
+            reason: (reason || '').toString().slice(0, 500),
+            status: 'pending',
+            requestedAt: new Date(),
+            createdAt: new Date()
+        });
+
+        console.log(`🗑️ Account deletion requested by ${req.user.email} (${userId})`);
+
+        res.json({
+            success: true,
+            message: 'Your account deletion request has been received. Your account will be deleted within 24 hours. Contact support@choosepure.in if you change your mind.'
+        });
+    } catch (error) {
+        console.error('❌ Error creating deletion request:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit deletion request. Please try again.' });
+    }
 });
 
 // Get votes cast by the authenticated user
@@ -3562,6 +3614,141 @@ app.delete('/api/admin/feedback/:id', authenticateAdmin, async (req, res) => {
     } catch (error) {
         console.error('❌ Error deleting feedback:', error);
         res.status(500).json({ success: false, message: 'Failed to delete feedback' });
+    }
+});
+
+// ==========================================
+// ACCOUNT DELETION REQUESTS API (admin)
+// ==========================================
+
+// Admin API: List account deletion requests
+app.get('/api/admin/deletion-requests', authenticateAdmin, async (req, res) => {
+    try {
+        if (!deletionRequestsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const requests = await deletionRequestsCollection
+            .find({})
+            .sort({ createdAt: -1 })
+            .limit(500)
+            .toArray();
+
+        const summary = {
+            total: requests.length,
+            pending: requests.filter(r => r.status === 'pending').length,
+        };
+
+        res.json({ success: true, requests, summary });
+    } catch (error) {
+        console.error('❌ Error fetching deletion requests:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch deletion requests' });
+    }
+});
+
+// Admin API: Delete a user account for a deletion request (cascades related data)
+app.delete('/api/admin/deletion-requests/:id/account', authenticateAdmin, async (req, res) => {
+    try {
+        if (!deletionRequestsCollection || !usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+
+        const request = await deletionRequestsCollection.findOne({ _id: new ObjectId(req.params.id) });
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Deletion request not found' });
+        }
+
+        const userIdStr = (request.userId || '').toString();
+        let userObjectId = null;
+        try { userObjectId = new ObjectId(userIdStr); } catch (e) { /* malformed id */ }
+
+        // Delete the user account
+        let userDeleted = 0;
+        if (userObjectId) {
+            const del = await usersCollection.deleteOne({ _id: userObjectId, role: 'user' });
+            userDeleted = del.deletedCount;
+        }
+
+        // Clean up related data (best-effort; never block the account deletion)
+        const cleanup = {};
+        try {
+            if (subscriptionTransactionsCollection && userObjectId) {
+                const r = await subscriptionTransactionsCollection.deleteMany({ userId: userObjectId });
+                cleanup.subscriptionTransactions = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup subscription_transactions failed:', e.message); }
+        try {
+            if (paymentAttemptsCollection && userObjectId) {
+                const r = await paymentAttemptsCollection.deleteMany({ userId: userObjectId });
+                cleanup.paymentAttempts = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup payment_attempts failed:', e.message); }
+        try {
+            if (rewardsCollection && userObjectId) {
+                const r = await rewardsCollection.deleteMany({ user_id: userObjectId });
+                cleanup.rewards = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup rewards failed:', e.message); }
+        try {
+            if (referralsCollection && userObjectId) {
+                const r = await referralsCollection.deleteMany({
+                    $or: [{ referrer_user_id: userObjectId }, { referee_user_id: userObjectId }]
+                });
+                cleanup.referrals = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup referrals failed:', e.message); }
+        try {
+            // vote_transactions store userId as a string
+            if (voteTransactionsCollection && userIdStr) {
+                const r = await voteTransactionsCollection.deleteMany({ userId: userIdStr });
+                cleanup.voteTransactions = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup vote_transactions failed:', e.message); }
+        try {
+            // label_scans store user_id as a string (from JWT)
+            if (db && userIdStr) {
+                const r = await db.collection('label_scans').deleteMany({ user_id: userIdStr });
+                cleanup.labelScans = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup label_scans failed:', e.message); }
+
+        // Mark the request as completed (keep a record of the action)
+        await deletionRequestsCollection.updateOne(
+            { _id: new ObjectId(req.params.id) },
+            { $set: { status: 'completed', deletedAt: new Date(), deletedByAdmin: req.admin.email, cleanup } }
+        );
+
+        console.log(`🗑️ Admin ${req.admin.email} deleted account ${request.email} (${userIdStr}). User removed: ${userDeleted}. Cleanup:`, cleanup);
+
+        res.json({
+            success: true,
+            message: userDeleted ? 'Account and related data deleted.' : 'Account not found (already deleted); request marked complete.',
+            cleanup
+        });
+    } catch (error) {
+        console.error('❌ Error deleting account:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete account' });
+    }
+});
+
+// Admin API: Dismiss/cancel a deletion request without deleting the account
+app.patch('/api/admin/deletion-requests/:id/cancel', authenticateAdmin, async (req, res) => {
+    try {
+        if (!deletionRequestsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+        const result = await deletionRequestsCollection.updateOne(
+            { _id: new ObjectId(req.params.id) },
+            { $set: { status: 'cancelled', cancelledAt: new Date(), cancelledByAdmin: req.admin.email } }
+        );
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Deletion request not found' });
+        }
+        res.json({ success: true, message: 'Deletion request cancelled.' });
+    } catch (error) {
+        console.error('❌ Error cancelling deletion request:', error);
+        res.status(500).json({ success: false, message: 'Failed to cancel request' });
     }
 });
 

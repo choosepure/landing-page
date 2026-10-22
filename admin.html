@@ -280,6 +280,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="admin-tab" onclick="switchTab('referrals')">🎁 Referrals</button>
             <button class="admin-tab" onclick="switchTab('payments')">💳 Payments</button>
             <button class="admin-tab" onclick="switchTab('feedback')">💬 Feedback</button>
+            <button class="admin-tab" onclick="switchTab('deletion-requests')">🗑️ Deletion Requests</button>
             <button class="admin-tab" onclick="switchTab('failed-lookups')">🔍 Failed Lookups</button>
             <button class="admin-tab" onclick="switchTab('products')">📦 Products</button>
             <button class="admin-tab" onclick="switchTab('label-scans')">🏷️ Label Scans</button>
@@ -878,6 +879,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <!-- END FEEDBACK TAB -->
 
+        <!-- DELETION REQUESTS TAB -->
+        <div class="tab-page" id="tab-deletion-requests">
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Requests</h3>
+                    <div class="number" id="del-total">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending</h3>
+                    <div class="number" id="del-pending" style="color: #D62828;">-</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h2 style="margin-bottom: 8px;">Account Deletion Requests</h2>
+                <p style="color:#666; margin-bottom:20px; font-size:14px;">Users who requested account deletion from the app. Delete the account within 24 hours of the request, unless the user cancelled by emailing support.</p>
+                <div id="deletion-requests-loading" class="loading">Loading requests...</div>
+                <table id="deletion-requests-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Requested</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deletion-requests-body"></tbody>
+                </table>
+                <div id="deletion-requests-empty" style="display:none; text-align:center; color:#666; padding:20px;">No account deletion requests.</div>
+            </div>
+        </div>
+        <!-- END DELETION REQUESTS TAB -->
+
         <!-- FAILED LOOKUPS TAB -->
         <div class="tab-page" id="tab-failed-lookups">
             <div class="stats">
@@ -1071,6 +1108,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             if (tabName === 'referrals' && !referralsLoaded) { loadAdminReferrals(); }
             if (tabName === 'payments' && !paymentsLoaded) { loadPayments(); }
             if (tabName === 'feedback' && !feedbackLoaded) { loadAdminFeedback(); }
+            if (tabName === 'deletion-requests' && !deletionRequestsLoaded) { loadDeletionRequests(); }
             if (tabName === 'failed-lookups' && !failedLookupsLoaded) { loadFailedLookups(); }
             if (tabName === 'products' && !curatedProductsLoaded) { loadCuratedProducts(); }
             if (tabName === 'label-scans' && !labelScansLoaded) { loadLabelScans(); }
@@ -1400,6 +1438,89 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 if (data.success) loadAdminFeedback();
                 else alert('Failed to delete');
             } catch (e) { alert('Error deleting message'); }
+        }
+
+        // ===== Account Deletion Requests =====
+        let deletionRequestsLoaded = false;
+
+        function escDel(v) {
+            return (v == null ? '' : String(v)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        async function loadDeletionRequests() {
+            const loading = document.getElementById('deletion-requests-loading');
+            const table = document.getElementById('deletion-requests-table');
+            const empty = document.getElementById('deletion-requests-empty');
+            loading.style.display = ''; table.style.display = 'none'; empty.style.display = 'none';
+            try {
+                const res = await fetch('/api/admin/deletion-requests', { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/admin/login'; return; }
+                const data = await res.json();
+                loading.style.display = 'none';
+                deletionRequestsLoaded = true;
+                if (!data.success) { empty.textContent = data.message || 'Failed to load.'; empty.style.display = 'block'; return; }
+                const requests = data.requests || [];
+                const summary = data.summary || {};
+                document.getElementById('del-total').textContent = summary.total ?? requests.length;
+                document.getElementById('del-pending').textContent = summary.pending ?? requests.filter(r => r.status === 'pending').length;
+                if (!requests.length) { empty.style.display = 'block'; return; }
+                table.style.display = 'table';
+                const tbody = document.getElementById('deletion-requests-body');
+                tbody.innerHTML = requests.map(r => {
+                    const when = r.requestedAt || r.createdAt;
+                    const date = when ? new Date(when).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                    const st = (r.status || 'pending').toLowerCase();
+                    let stBg = '#FFF8E1', stColor = '#E65100', stLabel = r.status || 'pending';
+                    if (st === 'completed') { stBg = '#FDECEA'; stColor = '#C62828'; stLabel = 'deleted'; }
+                    else if (st === 'cancelled') { stBg = '#f5f5f5'; stColor = '#666'; }
+                    const statusBadge = '<span style="background:' + stBg + ';color:' + stColor + ';padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap;">' + escDel(stLabel) + '</span>';
+                    let actions = '';
+                    if (st === 'pending') {
+                        actions =
+                            '<button class="btn btn-danger btn-small" onclick="deleteUserAccount(\'' + r._id + '\', \'' + escDel(r.email) + '\')">Delete Account</button> ' +
+                            '<button class="btn btn-secondary btn-small" onclick="cancelDeletionRequest(\'' + r._id + '\')">Cancel</button>';
+                    } else if (st === 'completed') {
+                        actions = '<span style="font-size:12px;color:#888;">by ' + escDel(r.deletedByAdmin || 'admin') + '</span>';
+                    } else {
+                        actions = '<span style="font-size:12px;color:#888;">—</span>';
+                    }
+                    return '<tr>' +
+                        '<td>' + escDel(r.name || '-') + '</td>' +
+                        '<td>' + escDel(r.email || '-') + '</td>' +
+                        '<td>' + escDel(r.phone || '-') + '</td>' +
+                        '<td style="max-width:220px;white-space:pre-wrap;font-size:13px;">' + escDel(r.reason || '—') + '</td>' +
+                        '<td>' + statusBadge + '</td>' +
+                        '<td style="white-space:nowrap;font-size:12px;">' + date + '</td>' +
+                        '<td style="white-space:nowrap;">' + actions + '</td>' +
+                        '</tr>';
+                }).join('');
+            } catch (e) {
+                loading.textContent = 'Failed to load deletion requests.';
+            }
+        }
+
+        async function deleteUserAccount(id, email) {
+            if (!confirm('Permanently DELETE the account for ' + email + ' and all associated data?\n\nThis cannot be undone.')) return;
+            try {
+                const res = await fetch('/api/admin/deletion-requests/' + id + '/account', { method: 'DELETE', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message || 'Account deleted.');
+                    loadDeletionRequests();
+                } else {
+                    alert(data.message || 'Failed to delete account');
+                }
+            } catch (e) { alert('Error deleting account'); }
+        }
+
+        async function cancelDeletionRequest(id) {
+            if (!confirm('Cancel this deletion request? The account will NOT be deleted.')) return;
+            try {
+                const res = await fetch('/api/admin/deletion-requests/' + id + '/cancel', { method: 'PATCH', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) loadDeletionRequests();
+                else alert(data.message || 'Failed to cancel request');
+            } catch (e) { alert('Error cancelling request'); }
         }
 
         let failedLookupsLoaded = false;
