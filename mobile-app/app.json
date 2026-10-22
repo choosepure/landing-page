@@ -15,7 +15,7 @@
         "NSCameraUsageDescription": "Allow ChoosePure to access your camera to scan product barcodes and capture label photos.",
         "NSPhotoLibraryUsageDescription": "Allow ChoosePure to access your photos so you can upload product label images."
       },
-      "buildNumber": "2"
+      "buildNumber": "5"
     },
     "android": {
       "adaptiveIcon": {
