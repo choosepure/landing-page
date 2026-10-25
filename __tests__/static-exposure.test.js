@@ -10,6 +10,10 @@
  * The app is required in-process (server.js exports `app` and skips listen/DB
  * connect under require.main !== module), so no network or MongoDB is needed.
  */
+// Tests drive the exported app in-process; set a dummy SECRET_KEY so requiring
+// server.js never triggers the startup enforcement (which only fires when run
+// directly via `node server.js`).
+process.env.SECRET_KEY = process.env.SECRET_KEY || 'test-secret-key';
 const request = require('supertest');
 const app = require('../server');
 

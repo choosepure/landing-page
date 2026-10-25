@@ -35,8 +35,14 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// JWT Secret
-const JWT_SECRET = process.env.SECRET_KEY || 'your-secret-key-change-this';
+// JWT Secret — REQUIRED. No fallback: a hardcoded default would let anyone
+// forge tokens. When run directly (node server.js), refuse to start without it.
+// Tests require the app in-process and set a dummy SECRET_KEY instead.
+if (require.main === module && !process.env.SECRET_KEY) {
+    console.error('❌ FATAL: SECRET_KEY environment variable is not set. Refusing to start.');
+    process.exit(1);
+}
+const JWT_SECRET = process.env.SECRET_KEY;
 
 // Initialize Mailgun
 const mailgun = new Mailgun(formData);
