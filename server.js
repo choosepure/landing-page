@@ -72,10 +72,12 @@ let voteTransactionsCollection;
 let suggestionsCollection;
 let testReportsCollection;
 let subscriptionTransactionsCollection;
+let paymentAttemptsCollection;
 let referralsCollection;
 let rewardsCollection;
 let feedbackCollection;
 let curatedProductsCollection;
+let deletionRequestsCollection;
 let isDbConnected = false;
 
 async function connectToDatabase() {
@@ -144,6 +146,14 @@ async function connectToDatabase() {
         await subscriptionTransactionsCollection.createIndex({ userId: 1 });
         await subscriptionTransactionsCollection.createIndex({ createdAt: -1 });
         console.log('✅ Subscription transactions collection initialized');
+
+        // Initialize payment_attempts collection (every payment attempt, any status)
+        paymentAttemptsCollection = db.collection('payment_attempts');
+        await paymentAttemptsCollection.createIndex({ createdAt: -1 });
+        await paymentAttemptsCollection.createIndex({ razorpayOrderId: 1 }, { sparse: true });
+        await paymentAttemptsCollection.createIndex({ razorpaySubscriptionId: 1 }, { sparse: true });
+        await paymentAttemptsCollection.createIndex({ userId: 1 });
+        console.log('✅ Payment attempts collection initialized');
         
         // Create indexes for users collection
         await usersCollection.createIndex({ email: 1 }, { unique: true });
@@ -170,6 +180,13 @@ async function connectToDatabase() {
         feedbackCollection = db.collection('feedback');
         await feedbackCollection.createIndex({ createdAt: -1 });
         console.log('✅ Feedback collection initialized');
+
+        // Initialize account_deletion_requests collection
+        deletionRequestsCollection = db.collection('account_deletion_requests');
+        await deletionRequestsCollection.createIndex({ createdAt: -1 });
+        await deletionRequestsCollection.createIndex({ userId: 1 });
+        await deletionRequestsCollection.createIndex({ status: 1 });
+        console.log('✅ Account deletion requests collection initialized');
 
         // Initialize curated_products collection
         curatedProductsCollection = db.collection('curated_products');
@@ -360,7 +377,14 @@ app.use(cors({
     origin: ['https://choosepure.in', 'https://www.choosepure.in', 'http://localhost:3000'],
     credentials: true
 }));
-app.use(express.json());
+// Capture the raw request body during JSON parsing so webhook signatures can
+// be verified against the exact bytes the sender signed (re-serializing the
+// parsed object does not reliably reproduce the original payload).
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(__dirname));
@@ -1213,6 +1237,50 @@ app.get('/api/user/me', authenticateUser, (req, res) => {
             hasPassword: !!req.user.password
         } 
     });
+});
+
+// Authenticated API: Request account deletion (processed by admin within 24 hrs)
+app.post('/api/user/request-deletion', authenticateUser, async (req, res) => {
+    try {
+        if (!isDbConnected || !deletionRequestsCollection) {
+            return res.status(503).json({ success: false, message: 'Database not connected' });
+        }
+
+        const userId = req.user.id.toString();
+
+        // If there's already a pending request for this user, don't create a duplicate
+        const existing = await deletionRequestsCollection.findOne({ userId, status: 'pending' });
+        if (existing) {
+            return res.json({
+                success: true,
+                alreadyRequested: true,
+                message: 'A deletion request is already pending for this account.'
+            });
+        }
+
+        const { reason } = req.body || {};
+
+        await deletionRequestsCollection.insertOne({
+            userId,
+            name: req.user.name || '',
+            email: req.user.email || '',
+            phone: req.user.phone || '',
+            reason: (reason || '').toString().slice(0, 500),
+            status: 'pending',
+            requestedAt: new Date(),
+            createdAt: new Date()
+        });
+
+        console.log(`🗑️ Account deletion requested by ${req.user.email} (${userId})`);
+
+        res.json({
+            success: true,
+            message: 'Your account deletion request has been received. Your account will be deleted within 24 hours. Contact support@choosepure.in if you change your mind.'
+        });
+    } catch (error) {
+        console.error('❌ Error creating deletion request:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit deletion request. Please try again.' });
+    }
 });
 
 // Get votes cast by the authenticated user
@@ -2402,6 +2470,129 @@ app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Admin API: Look up a single user by email, with their payment history (protected)
+app.get('/api/admin/user-lookup', authenticateAdmin, async (req, res) => {
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const email = (req.query.email || '').trim().toLowerCase();
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const user = await usersCollection.findOne(
+            { email },
+            { projection: { password: 0, reset_token: 0, reset_token_expires: 0 } }
+        );
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'No user found with that email' });
+        }
+
+        const userId = user._id.toString();
+
+        // Gather payment history across all sources
+        const paymentHistory = [];
+        if (paymentAttemptsCollection) {
+            const attempts = await paymentAttemptsCollection
+                .find({ $or: [{ userId: user._id }, { userEmail: email }] })
+                .sort({ createdAt: -1 }).toArray();
+            attempts.forEach(a => paymentHistory.push({
+                source: 'attempt', paymentType: a.paymentType, plan: a.plan,
+                amount: a.amount, status: a.status,
+                razorpayPaymentId: a.razorpayPaymentId, razorpayOrderId: a.razorpayOrderId || a.razorpaySubscriptionId,
+                failureReason: a.failureReason || null, createdAt: a.createdAt
+            }));
+        }
+        if (subscriptionTransactionsCollection) {
+            const subs = await subscriptionTransactionsCollection
+                .find({ $or: [{ userId: user._id }, { userEmail: email }] })
+                .sort({ createdAt: -1 }).toArray();
+            subs.forEach(s => paymentHistory.push({
+                source: 'subscription_txn', plan: s.plan, amount: s.amount, status: s.status,
+                razorpayPaymentId: s.razorpayPaymentId, razorpayOrderId: s.razorpayOrderId || s.razorpaySubscriptionId,
+                createdAt: s.createdAt
+            }));
+        }
+
+        res.json({
+            success: true,
+            user: {
+                id: userId,
+                name: user.name,
+                email: user.email,
+                phone: user.phone || '',
+                subscriptionStatus: user.subscriptionStatus || 'free',
+                subscriptionPlan: user.subscriptionPlan || null,
+                subscribedAt: user.subscribedAt || null,
+                subscriptionExpiry: user.subscriptionExpiry || null,
+                razorpaySubscriptionId: user.razorpaySubscriptionId || null,
+                razorpayOrderId: user.razorpayOrderId || null,
+                createdAt: user.createdAt || null,
+            },
+            paymentHistory
+        });
+    } catch (error) {
+        console.error('❌ Error looking up user:', error);
+        res.status(500).json({ success: false, message: 'Failed to look up user' });
+    }
+});
+
+// Admin API: Manually grant/fix a user's subscription (protected)
+// Used when a payment succeeded but the status was not flipped automatically.
+app.post('/api/admin/users/grant-subscription', authenticateAdmin, async (req, res) => {
+    try {
+        if (!usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+        const email = (req.body.email || '').trim().toLowerCase();
+        const plan = req.body.plan === 'annual' ? 'annual' : 'monthly';
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const user = await usersCollection.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'No user found with that email' });
+        }
+
+        // Expiry: 1 year for annual, 1 month for monthly (from today)
+        const now = new Date();
+        const subscriptionExpiry = new Date(now);
+        if (plan === 'annual') {
+            subscriptionExpiry.setFullYear(subscriptionExpiry.getFullYear() + 1);
+        } else {
+            subscriptionExpiry.setMonth(subscriptionExpiry.getMonth() + 1);
+        }
+
+        await usersCollection.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    subscriptionStatus: 'subscribed',
+                    subscriptionPlan: plan,
+                    subscribedAt: user.subscribedAt || now,
+                    subscriptionExpiry,
+                    manuallyGrantedBy: req.admin.email,
+                    manuallyGrantedAt: now,
+                },
+                $unset: { graceDeadline: '' }
+            }
+        );
+
+        console.log(`✅ Admin ${req.admin.email} manually granted ${plan} subscription to ${email}`);
+        res.json({
+            success: true,
+            message: `Granted ${plan} subscription to ${email}`,
+            subscriptionExpiry
+        });
+    } catch (error) {
+        console.error('❌ Error granting subscription:', error);
+        res.status(500).json({ success: false, message: 'Failed to grant subscription' });
+    }
+});
+
 // Admin API: Get all waitlist members (protected)
 app.get('/api/admin/waitlist', authenticateAdmin, async (req, res) => {
     try {
@@ -2885,6 +3076,141 @@ app.get('/api/admin/polls/transactions', authenticateAdmin, async (req, res) => 
     }
 });
 
+// Admin API: List all payment attempts (subscriptions + votes) with status (protected)
+app.get('/api/admin/payments', authenticateAdmin, async (req, res) => {
+    try {
+        if (!isDbConnected) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+
+        const { ObjectId } = require('mongodb');
+        const payments = [];
+        // Track order/subscription IDs already represented so we don't double-count
+        // historical transactions that also have a payment_attempts record.
+        const seenRefs = new Set();
+
+        // 1. Payment attempts — the authoritative source (includes created/failed/success)
+        if (paymentAttemptsCollection) {
+            const attempts = await paymentAttemptsCollection
+                .find({})
+                .sort({ createdAt: -1 })
+                .limit(2000)
+                .toArray();
+            for (const t of attempts) {
+                const ref = t.razorpayOrderId || t.razorpaySubscriptionId;
+                if (ref) seenRefs.add(ref);
+                payments.push({
+                    category: t.category || 'Subscription',
+                    paymentType: t.paymentType || (t.plan === 'monthly' ? 'Subscription' : 'One-time'),
+                    paymentId: t.razorpayPaymentId || '—',
+                    orderId: t.razorpayOrderId || t.razorpaySubscriptionId || '—',
+                    amount: typeof t.amount === 'number' ? t.amount : null,
+                    userName: t.userName || '',
+                    userEmail: t.userEmail || '',
+                    userPhone: t.userPhone || '',
+                    userId: t.userId ? t.userId.toString() : null,
+                    plan: t.plan || '',
+                    status: t.status || 'unknown',
+                    createdAt: t.createdAt || null,
+                });
+            }
+        }
+
+        // 2. Historical subscription payments (recorded before attempt-tracking existed)
+        if (subscriptionTransactionsCollection) {
+            const subs = await subscriptionTransactionsCollection
+                .find({})
+                .sort({ createdAt: -1 })
+                .limit(1000)
+                .toArray();
+            for (const t of subs) {
+                const ref = t.razorpayOrderId || t.razorpaySubscriptionId;
+                if (ref && seenRefs.has(ref)) continue; // already captured via payment_attempts
+                payments.push({
+                    category: 'Subscription',
+                    paymentType: t.plan === 'monthly' ? 'Subscription' : 'One-time',
+                    paymentId: t.razorpayPaymentId || '—',
+                    orderId: t.razorpayOrderId || t.razorpaySubscriptionId || '—',
+                    amount: typeof t.amount === 'number' ? t.amount : null,
+                    userName: t.userName || '',
+                    userEmail: t.userEmail || '',
+                    userPhone: t.userPhone || '',
+                    userId: t.userId ? t.userId.toString() : null,
+                    plan: t.plan || '',
+                    status: t.status || 'unknown',
+                    createdAt: t.createdAt || null,
+                });
+            }
+        }
+
+        // 3. Historical paid votes — one-time payments via Razorpay (free/manual votes excluded)
+        if (voteTransactionsCollection) {
+            const votes = await voteTransactionsCollection
+                .find({ razorpayPaymentId: { $exists: true, $ne: null } })
+                .sort({ createdAt: -1 })
+                .limit(1000)
+                .toArray();
+            for (const t of votes) {
+                payments.push({
+                    category: 'Vote',
+                    paymentType: 'One-time',
+                    paymentId: t.razorpayPaymentId || '—',
+                    orderId: t.razorpayOrderId || '—',
+                    amount: typeof t.amount === 'number' ? t.amount : null,
+                    userName: t.userName || '',
+                    userEmail: t.userEmail || '',
+                    userPhone: t.userPhone || '',
+                    userId: t.userId ? t.userId.toString() : null,
+                    plan: t.productName ? `${t.voteCount || 1} vote(s): ${t.productName}` : 'Vote',
+                    status: t.status || 'unknown',
+                    createdAt: t.createdAt || null,
+                });
+            }
+        }
+
+        // 4. Enrich missing phone numbers from the users collection
+        if (usersCollection) {
+            const missingPhoneIds = [...new Set(
+                payments.filter(p => !p.userPhone && p.userId).map(p => p.userId)
+            )];
+            if (missingPhoneIds.length > 0) {
+                const objectIds = missingPhoneIds
+                    .map(id => { try { return new ObjectId(id); } catch (e) { return null; } })
+                    .filter(Boolean);
+                const users = await usersCollection
+                    .find({ _id: { $in: objectIds } })
+                    .project({ phone: 1 })
+                    .toArray();
+                const phoneById = {};
+                users.forEach(u => { phoneById[u._id.toString()] = u.phone || ''; });
+                payments.forEach(p => {
+                    if (!p.userPhone && p.userId && phoneById[p.userId]) {
+                        p.userPhone = phoneById[p.userId];
+                    }
+                });
+            }
+        }
+
+        // Sort combined list by date, newest first
+        payments.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+        // Summary stats
+        const isPaid = (s) => ['success', 'active', 'completed', 'captured', 'paid'].includes((s || '').toLowerCase());
+        const summary = {
+            total: payments.length,
+            totalAmount: payments.reduce((sum, p) => sum + (isPaid(p.status) ? (p.amount || 0) : 0), 0),
+            subscriptionTypeCount: payments.filter(p => p.paymentType === 'Subscription').length,
+            oneTimeCount: payments.filter(p => p.paymentType === 'One-time').length,
+            failedCount: payments.filter(p => ['failed', 'created', 'cancelled'].includes((p.status || '').toLowerCase())).length,
+        };
+
+        res.json({ success: true, payments, summary });
+    } catch (error) {
+        console.error('❌ Error fetching payments:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch payments' });
+    }
+});
+
 // Admin API: Cast manual vote for a product (protected)
 app.post('/api/admin/polls/manual-vote', authenticateAdmin, async (req, res) => {
     try {
@@ -3294,6 +3620,141 @@ app.delete('/api/admin/feedback/:id', authenticateAdmin, async (req, res) => {
     } catch (error) {
         console.error('❌ Error deleting feedback:', error);
         res.status(500).json({ success: false, message: 'Failed to delete feedback' });
+    }
+});
+
+// ==========================================
+// ACCOUNT DELETION REQUESTS API (admin)
+// ==========================================
+
+// Admin API: List account deletion requests
+app.get('/api/admin/deletion-requests', authenticateAdmin, async (req, res) => {
+    try {
+        if (!deletionRequestsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const requests = await deletionRequestsCollection
+            .find({})
+            .sort({ createdAt: -1 })
+            .limit(500)
+            .toArray();
+
+        const summary = {
+            total: requests.length,
+            pending: requests.filter(r => r.status === 'pending').length,
+        };
+
+        res.json({ success: true, requests, summary });
+    } catch (error) {
+        console.error('❌ Error fetching deletion requests:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch deletion requests' });
+    }
+});
+
+// Admin API: Delete a user account for a deletion request (cascades related data)
+app.delete('/api/admin/deletion-requests/:id/account', authenticateAdmin, async (req, res) => {
+    try {
+        if (!deletionRequestsCollection || !usersCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+
+        const request = await deletionRequestsCollection.findOne({ _id: new ObjectId(req.params.id) });
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Deletion request not found' });
+        }
+
+        const userIdStr = (request.userId || '').toString();
+        let userObjectId = null;
+        try { userObjectId = new ObjectId(userIdStr); } catch (e) { /* malformed id */ }
+
+        // Delete the user account
+        let userDeleted = 0;
+        if (userObjectId) {
+            const del = await usersCollection.deleteOne({ _id: userObjectId, role: 'user' });
+            userDeleted = del.deletedCount;
+        }
+
+        // Clean up related data (best-effort; never block the account deletion)
+        const cleanup = {};
+        try {
+            if (subscriptionTransactionsCollection && userObjectId) {
+                const r = await subscriptionTransactionsCollection.deleteMany({ userId: userObjectId });
+                cleanup.subscriptionTransactions = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup subscription_transactions failed:', e.message); }
+        try {
+            if (paymentAttemptsCollection && userObjectId) {
+                const r = await paymentAttemptsCollection.deleteMany({ userId: userObjectId });
+                cleanup.paymentAttempts = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup payment_attempts failed:', e.message); }
+        try {
+            if (rewardsCollection && userObjectId) {
+                const r = await rewardsCollection.deleteMany({ user_id: userObjectId });
+                cleanup.rewards = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup rewards failed:', e.message); }
+        try {
+            if (referralsCollection && userObjectId) {
+                const r = await referralsCollection.deleteMany({
+                    $or: [{ referrer_user_id: userObjectId }, { referee_user_id: userObjectId }]
+                });
+                cleanup.referrals = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup referrals failed:', e.message); }
+        try {
+            // vote_transactions store userId as a string
+            if (voteTransactionsCollection && userIdStr) {
+                const r = await voteTransactionsCollection.deleteMany({ userId: userIdStr });
+                cleanup.voteTransactions = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup vote_transactions failed:', e.message); }
+        try {
+            // label_scans store user_id as a string (from JWT)
+            if (db && userIdStr) {
+                const r = await db.collection('label_scans').deleteMany({ user_id: userIdStr });
+                cleanup.labelScans = r.deletedCount;
+            }
+        } catch (e) { console.warn('cleanup label_scans failed:', e.message); }
+
+        // Mark the request as completed (keep a record of the action)
+        await deletionRequestsCollection.updateOne(
+            { _id: new ObjectId(req.params.id) },
+            { $set: { status: 'completed', deletedAt: new Date(), deletedByAdmin: req.admin.email, cleanup } }
+        );
+
+        console.log(`🗑️ Admin ${req.admin.email} deleted account ${request.email} (${userIdStr}). User removed: ${userDeleted}. Cleanup:`, cleanup);
+
+        res.json({
+            success: true,
+            message: userDeleted ? 'Account and related data deleted.' : 'Account not found (already deleted); request marked complete.',
+            cleanup
+        });
+    } catch (error) {
+        console.error('❌ Error deleting account:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete account' });
+    }
+});
+
+// Admin API: Dismiss/cancel a deletion request without deleting the account
+app.patch('/api/admin/deletion-requests/:id/cancel', authenticateAdmin, async (req, res) => {
+    try {
+        if (!deletionRequestsCollection) {
+            return res.status(500).json({ success: false, message: 'Database not connected' });
+        }
+        const { ObjectId } = require('mongodb');
+        const result = await deletionRequestsCollection.updateOne(
+            { _id: new ObjectId(req.params.id) },
+            { $set: { status: 'cancelled', cancelledAt: new Date(), cancelledByAdmin: req.admin.email } }
+        );
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Deletion request not found' });
+        }
+        res.json({ success: true, message: 'Deletion request cancelled.' });
+    } catch (error) {
+        console.error('❌ Error cancelling deletion request:', error);
+        res.status(500).json({ success: false, message: 'Failed to cancel request' });
     }
 });
 
@@ -4584,6 +5045,26 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
                 notes: { userId: req.user.id.toString(), userEmail: req.user.email, plan: 'annual' }
             });
             console.log('Annual order created:', order.id);
+            try {
+                if (paymentAttemptsCollection) {
+                    const { ObjectId } = require('mongodb');
+                    await paymentAttemptsCollection.insertOne({
+                        category: 'Subscription',
+                        paymentType: 'One-time',
+                        plan: 'annual',
+                        amount: 2499,
+                        userId: new ObjectId(req.user.id),
+                        userName: req.user.name,
+                        userEmail: req.user.email,
+                        userPhone: req.user.phone || '',
+                        razorpayOrderId: order.id,
+                        razorpayPaymentId: null,
+                        status: 'created',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    });
+                }
+            } catch (e) { console.error('⚠️ payment attempt log (annual) failed:', e.message); }
             res.json({ success: true, orderId: order.id, key: process.env.RAZORPAY_KEY_ID, amount: 249900, plan: 'annual', type: 'order' });
         } else {
             // Monthly: Razorpay Subscription (recurring)
@@ -4595,6 +5076,26 @@ app.post('/api/subscription/create-order', authenticateUser, async (req, res) =>
                 notes: { userId: req.user.id.toString(), userEmail: req.user.email }
             });
             console.log('Monthly subscription created:', subscription.id);
+            try {
+                if (paymentAttemptsCollection) {
+                    const { ObjectId } = require('mongodb');
+                    await paymentAttemptsCollection.insertOne({
+                        category: 'Subscription',
+                        paymentType: 'Subscription',
+                        plan: 'monthly',
+                        amount: 299,
+                        userId: new ObjectId(req.user.id),
+                        userName: req.user.name,
+                        userEmail: req.user.email,
+                        userPhone: req.user.phone || '',
+                        razorpaySubscriptionId: subscription.id,
+                        razorpayPaymentId: null,
+                        status: 'created',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    });
+                }
+            } catch (e) { console.error('⚠️ payment attempt log (monthly) failed:', e.message); }
             res.json({ success: true, subscriptionId: subscription.id, key: process.env.RAZORPAY_KEY_ID, plan: 'monthly', type: 'subscription' });
         }
     } catch (error) {
@@ -4624,8 +5125,24 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
                 .update(razorpay_order_id + '|' + razorpay_payment_id)
                 .digest('hex');
             if (expectedSignature !== razorpay_signature) {
+                try {
+                    if (paymentAttemptsCollection) {
+                        await paymentAttemptsCollection.updateOne(
+                            { razorpayOrderId: razorpay_order_id },
+                            { $set: { status: 'failed', razorpayPaymentId: razorpay_payment_id || null, failureReason: 'Signature verification failed', updatedAt: new Date() } }
+                        );
+                    }
+                } catch (e) { /* non-blocking */ }
                 return res.status(400).json({ success: false, message: 'Payment verification failed' });
             }
+            try {
+                if (paymentAttemptsCollection) {
+                    await paymentAttemptsCollection.updateOne(
+                        { razorpayOrderId: razorpay_order_id },
+                        { $set: { status: 'success', razorpayPaymentId: razorpay_payment_id, updatedAt: new Date() } }
+                    );
+                }
+            } catch (e) { /* non-blocking */ }
             const { ObjectId } = require('mongodb');
             // Set subscription expiry to 1 year from now
             const subscriptionExpiry = new Date();
@@ -4657,8 +5174,24 @@ app.post('/api/subscription/verify-payment', authenticateUser, async (req, res) 
                 .update(razorpay_payment_id + '|' + razorpay_subscription_id)
                 .digest('hex');
             if (expectedSignature !== razorpay_signature) {
+                try {
+                    if (paymentAttemptsCollection) {
+                        await paymentAttemptsCollection.updateOne(
+                            { razorpaySubscriptionId: razorpay_subscription_id },
+                            { $set: { status: 'failed', razorpayPaymentId: razorpay_payment_id || null, failureReason: 'Signature verification failed', updatedAt: new Date() } }
+                        );
+                    }
+                } catch (e) { /* non-blocking */ }
                 return res.status(400).json({ success: false, message: 'Payment verification failed' });
             }
+            try {
+                if (paymentAttemptsCollection) {
+                    await paymentAttemptsCollection.updateOne(
+                        { razorpaySubscriptionId: razorpay_subscription_id },
+                        { $set: { status: 'success', razorpayPaymentId: razorpay_payment_id, updatedAt: new Date() } }
+                    );
+                }
+            } catch (e) { /* non-blocking */ }
             const { ObjectId } = require('mongodb');
             await usersCollection.updateOne(
                 { _id: new ObjectId(req.user.id) },
@@ -4778,13 +5311,36 @@ app.post('/api/razorpay/webhook', async (req, res) => {
             return res.status(400).json({ success: false });
         }
 
+        // Verify against the exact raw bytes Razorpay signed. Falling back to a
+        // re-serialized body does not reliably reproduce the original payload
+        // (key order / whitespace differences), which previously caused valid
+        // webhooks to be rejected.
+        const rawBody = req.rawBody
+            ? req.rawBody.toString('utf8')
+            : JSON.stringify(req.body);
+
         const expectedSignature = crypto
             .createHmac('sha256', webhookSecret)
-            .update(JSON.stringify(req.body))
+            .update(rawBody)
             .digest('hex');
 
-        if (expectedSignature !== signature) {
-            console.error('❌ Webhook: Invalid signature');
+        // Constant-time comparison to avoid timing attacks
+        const sigBuf = Buffer.from(signature);
+        const expBuf = Buffer.from(expectedSignature);
+        const signatureValid = sigBuf.length === expBuf.length &&
+            crypto.timingSafeEqual(sigBuf, expBuf);
+
+        if (!signatureValid) {
+            // Diagnostic (no secrets logged): helps distinguish a raw-body mismatch
+            // from a wrong/missing webhook secret when triaging rejected webhooks.
+            console.error('❌ Webhook: Invalid signature', JSON.stringify({
+                event: req.body?.event || 'unknown',
+                rawBodyCaptured: !!req.rawBody,
+                rawBodyLength: req.rawBody ? req.rawBody.length : 0,
+                receivedSigLength: signature.length,
+                expectedSigLength: expectedSignature.length,
+                secretConfigured: !!webhookSecret
+            }));
             return res.status(400).json({ success: false });
         }
 
@@ -4846,6 +5402,16 @@ app.post('/api/razorpay/webhook', async (req, res) => {
                     );
                     console.log('✅ Webhook: Subscription charged for', user.email, 'payment:', paymentId);
 
+                    // Mark the matching subscription payment attempt as paid.
+                    if (paymentAttemptsCollection && subscriptionId) {
+                        try {
+                            await paymentAttemptsCollection.updateOne(
+                                { razorpaySubscriptionId: subscriptionId },
+                                { $set: { status: 'paid', razorpayPaymentId: paymentId || null, updatedAt: new Date() } }
+                            );
+                        } catch (e) { console.error('⚠️ Webhook: attempt update (charged) failed:', e.message); }
+                    }
+
                     // Send invoice email (fire-and-forget)
                     try {
                         const planType = user.subscriptionPlan || 'monthly';
@@ -4893,13 +5459,42 @@ app.post('/api/razorpay/webhook', async (req, res) => {
         if (event === 'payment.captured') {
             const paymentId = payload.payment?.entity?.id;
             const amount = payload.payment?.entity?.amount;
+            const orderId = payload.payment?.entity?.order_id;
             console.log('✅ Webhook: Payment captured', paymentId, 'amount:', amount);
+
+            // Mark the matching payment attempt as paid (authoritative — fires even
+            // if the user closed the checkout before our verify endpoint ran).
+            if (paymentAttemptsCollection && (orderId || paymentId)) {
+                try {
+                    const filter = orderId
+                        ? { razorpayOrderId: orderId }
+                        : { razorpayPaymentId: paymentId };
+                    await paymentAttemptsCollection.updateOne(
+                        filter,
+                        { $set: { status: 'paid', razorpayPaymentId: paymentId || null, updatedAt: new Date() } }
+                    );
+                } catch (e) { console.error('⚠️ Webhook: attempt update (captured) failed:', e.message); }
+            }
         }
 
         if (event === 'payment.failed') {
             const paymentId = payload.payment?.entity?.id;
             const error = payload.payment?.entity?.error_description;
+            const orderId = payload.payment?.entity?.order_id;
             console.log('⚠️ Webhook: Payment failed', paymentId, 'error:', error);
+
+            // Mark the matching payment attempt as failed with the real reason.
+            if (paymentAttemptsCollection && (orderId || paymentId)) {
+                try {
+                    const filter = orderId
+                        ? { razorpayOrderId: orderId }
+                        : { razorpayPaymentId: paymentId };
+                    await paymentAttemptsCollection.updateOne(
+                        filter,
+                        { $set: { status: 'failed', razorpayPaymentId: paymentId || null, failureReason: error || 'Payment failed at gateway', updatedAt: new Date() } }
+                    );
+                } catch (e) { console.error('⚠️ Webhook: attempt update (failed) failed:', e.message); }
+            }
 
             // Set grace period for subscription-related payment failures
             if (usersCollection) {

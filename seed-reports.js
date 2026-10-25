@@ -177,6 +177,149 @@ const REPORTS = [
     }
   },
   {
+    // Eggoz Brown Eggs - find by productName (no fixed _id; upserted by name)
+    findBy: { productName: /Eggoz/i },
+    update: {
+      productName: 'Eggoz Brown Eggs',
+      brandName: 'Eggoz',
+      category: 'Eggs · Brown',
+      labName: 'FARE Labs Pvt. Ltd. (TC-5503), Gurugram',
+      labReportNumber: 'FA20260311-035-417',
+      reportDate: new Date('2026-03-16'),
+      testDate: new Date('2026-03-11'),
+      batchCode: 'SS23861',
+      sampleCondition: 'Good · 30 eggs (1 crate) · Sealed',
+      totalParametersTested: 35,
+      origin: 'Gurugram',
+      purityScore: 84,
+      scoreVerdict: 'Good',
+      scoreFormula: 'Started 100; −10 antibiotic-only scope (no microbiology, heavy metals, pesticides, hormones); −5 for TC-5503 vs full NABL; −1 for no hormone panel. Final: 84',
+      categoryScores: [
+        { categoryName: 'Banned Antibiotics', score: 100, description: '17 globally banned drugs — all below detection limit' },
+        { categoryName: 'Regulated Antibiotic Residues', score: 100, description: '18 regulated residues — all BLQ' },
+      ],
+      testParameters: {
+        'Banned Antibiotics & Vet Drugs': [
+          { parameterName: 'Chloramphenicol', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.0003 mg/kg', euLimit: 'Zero tolerance — banned', usFdaLimit: 'Banned in food animals', status: 'Pass' },
+          { parameterName: 'Clenbuterol', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.001 mg/kg', euLimit: 'Banned (Dir 96/22)', usFdaLimit: 'Banned in food animals', status: 'Pass' },
+          { parameterName: 'Nitrofurans (AOZ, AMOZ, AHD, SEM)', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.001 mg/kg', euLimit: 'Zero tolerance — banned', usFdaLimit: 'Banned in food animals', status: 'Pass' },
+          { parameterName: 'Colistin', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.001 mg/kg', euLimit: 'Banned as growth promoter', usFdaLimit: 'No longer approved', status: 'Pass' },
+          { parameterName: 'Malachite Green + Crystal Violet', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.001 mg/kg', euLimit: 'Zero tolerance — banned', usFdaLimit: 'Banned in food animals', status: 'Pass' },
+          { parameterName: 'Metronidazole / Dimetridazole / Ronidazole', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.001 mg/kg', euLimit: 'Banned globally', usFdaLimit: 'Not approved', status: 'Pass' },
+        ],
+        'Regulated Antibiotic Residues': [
+          { parameterName: 'Tetracycline', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.4 mg/kg', euLimit: '0.2 mg/kg', usFdaLimit: '0.4 mg/kg', status: 'Pass' },
+          { parameterName: 'Oxytetracycline', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.4 mg/kg', euLimit: '0.2 mg/kg', usFdaLimit: '0.4 mg/kg', status: 'Pass' },
+          { parameterName: 'Chlortetracycline', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.4 mg/kg', euLimit: '0.2 mg/kg', usFdaLimit: '0.4 mg/kg', status: 'Pass' },
+          { parameterName: 'Erythromycin', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.05 mg/kg', euLimit: '0.05 mg/kg', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Tylosin', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'NMT 0.3 mg/kg', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Vancomycin', result: 'BLQ', unit: 'mg/kg', fssaiLimit: 'Critical human antibiotic', euLimit: 'Critical', usFdaLimit: 'Critical', status: 'Pass' },
+        ],
+      },
+      stats: { totalParameters: 35, passCount: 35, contextNotes: 0, safetyConcerns: 0 },
+      parentSummary: 'Eggoz Brown Eggs score 84/100 in this focused antibiotic and veterinary-drug safety test by FARE Labs (TC-5503), Gurugram. All 35 parameters are below the limit of quantification — zero detections across all 17 globally banned antibiotics and 18 regulated residues. This is an antibiotic-only report, so microbiology, heavy metals and pesticides are not covered.',
+      expertCommentary: 'A clean antibiotic screen from a certified lab. Every one of the 35 antibiotic and veterinary-drug parameters is undetected, including the most critical banned drugs (Chloramphenicol, Nitrofurans, Colistin, Malachite Green). The scope is antibiotic-only.',
+      isPremium: true,
+      reportUrl: '/eggoz-brown-eggs-report.html',
+      statusBadges: ['FARE Labs TC-5503', 'FSSR 2011 Compliant'],
+    }
+  },
+  {
+    // Himalayan Organics Protein Super Herbs – Women - find by productName
+    findBy: { productName: /Himalayan Organics Protein Super Herbs/i },
+    update: {
+      productName: 'Himalayan Organics Protein Super Herbs – Women',
+      brandName: 'Himalayan Organics',
+      category: 'Supplement · Herbal Protein',
+      labName: 'NABL-accredited laboratory',
+      labReportNumber: 'HO-PROT-W-001',
+      totalParametersTested: 10,
+      origin: 'India',
+      purityScore: 84,
+      scoreVerdict: 'Good',
+      scoreFormula: 'Started 100; −8 lead detected 0.086 mg/kg (below 0.1 benchmark); −4 protein 4% below label (within ±5%); −4 herbs of concern. Final: 84',
+      categoryScores: [
+        { categoryName: 'Protein Accuracy', score: 96, description: '68.4% claimed vs 65.65% detected (−4%) — within ±5% tolerance' },
+        { categoryName: 'Mycotoxins', score: 100, description: 'Aflatoxin — not detected' },
+        { categoryName: 'Pesticide Residues', score: 100, description: 'All pesticides below detection limit' },
+        { categoryName: 'Heavy Metals', score: 80, description: 'Lead 0.086 mg/kg & Copper 1.61 mg/kg detected (below limits); As, Cd, Hg, Tl not detected' },
+        { categoryName: 'Herbs of Concern', score: 75, description: 'Garcinia cambogia — caution for pregnancy / medication' },
+      ],
+      testParameters: {
+        'Protein (Label vs Detected)': [
+          { parameterName: 'Protein content', result: '65.65', unit: '% (label 68.4%)', fssaiLimit: 'Within ±5% of label', euLimit: 'Within tolerance', usFdaLimit: 'Within tolerance', status: 'Pass' },
+        ],
+        'Mycotoxins': [
+          { parameterName: 'Aflatoxin (total)', result: 'Below detection limit', unit: 'µg/kg', fssaiLimit: 'Total ≤15 µg/kg', euLimit: '≤4 µg/kg', usFdaLimit: '≤20 µg/kg', status: 'Pass' },
+        ],
+        'Pesticide Residues': [
+          { parameterName: 'Pesticide residues (multi-residue)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Default MRL 0.01 mg/kg', euLimit: '0.01 mg/kg default', usFdaLimit: 'Per EPA tolerance', status: 'Pass' },
+        ],
+        'Heavy Metals': [
+          { parameterName: 'Lead (Pb)', result: '0.086', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 3.0 mg/kg', usFdaLimit: 'USP ≤10 µg/day', status: 'Watchpoint' },
+          { parameterName: 'Arsenic (As)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.01 (inorganic)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Cadmium (Cd)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.5 (supplements)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Mercury (Hg)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.1 mg/kg', usFdaLimit: 'FDA 1 ppm', status: 'Pass' },
+          { parameterName: 'Thallium (Tl)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Not specified', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Copper (Cu)', result: '1.61', unit: 'mg/kg', fssaiLimit: 'NMT 30 mg/kg', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+        ],
+      },
+      stats: { totalParameters: 10, passCount: 9, contextNotes: 1, safetyConcerns: 0 },
+      parentSummary: 'Himalayan Organics Protein Super Herbs (Women) scores 84/100 — a near-clean result. Detected protein is 65.65% vs a 68.4% label claim (−4%, within the ±5% tolerance). Lead is detected at 0.086 mg/kg — below the 0.1 mg/kg benchmark but worth noting for daily use. Aflatoxins, pesticides and arsenic are not detected. The product contains herbal ingredients (green tea extract, curcumin, Garcinia cambogia); Garcinia cambogia has been linked to liver toxicity in some studies — consult a doctor if pregnant, breastfeeding or on medication.',
+      expertCommentary: 'Good label accuracy and a clean mycotoxin/pesticide result. The main watchpoints are trace lead (below limit) and Garcinia cambogia, which some populations should approach with caution.',
+      isPremium: true,
+      reportUrl: '/himalayan-organics-protein-women-report.html',
+      statusBadges: ['Lead below limit', 'No aflatoxins/pesticides'],
+    }
+  },
+  {
+    // Oriflame High Protein Nutrishake – Vanilla - find by productName
+    findBy: { productName: /Oriflame High Protein Nutrishake/i },
+    update: {
+      productName: 'Oriflame High Protein Nutrishake – Vanilla',
+      brandName: 'Oriflame',
+      category: 'Supplement · Protein Blend',
+      labName: 'NABL-accredited laboratory',
+      labReportNumber: 'ORI-NSHAKE-V-001',
+      totalParametersTested: 10,
+      origin: 'India',
+      purityScore: 93,
+      scoreVerdict: 'Excellent',
+      scoreFormula: 'Started 100; −4 lead detected 0.04 mg/kg (well below 0.1 benchmark); −3 copper 4.41 mg/kg (within limits). Final: 93',
+      categoryScores: [
+        { categoryName: 'Protein Accuracy', score: 100, description: '41.1% claimed vs 43.28% detected (+5.3%) — exceeds label, within ±10%' },
+        { categoryName: 'Mycotoxins', score: 100, description: 'Aflatoxin — not detected' },
+        { categoryName: 'Pesticide Residues', score: 100, description: 'All pesticides below detection limit' },
+        { categoryName: 'Heavy Metals', score: 88, description: 'Lead 0.04 mg/kg & Copper 4.41 mg/kg detected (well below limits); As, Cd, Hg, Tl not detected' },
+      ],
+      testParameters: {
+        'Protein (Label vs Detected)': [
+          { parameterName: 'Protein content', result: '43.28', unit: '% (label 41.1%)', fssaiLimit: 'Within ±20% of label', euLimit: 'Within tolerance', usFdaLimit: 'Within tolerance', status: 'Pass' },
+        ],
+        'Mycotoxins': [
+          { parameterName: 'Aflatoxin (total)', result: 'Below detection limit', unit: 'µg/kg', fssaiLimit: 'Total ≤15 µg/kg', euLimit: '≤4 µg/kg', usFdaLimit: '≤20 µg/kg', status: 'Pass' },
+        ],
+        'Pesticide Residues': [
+          { parameterName: 'Pesticide residues (multi-residue)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Default MRL 0.01 mg/kg', euLimit: '0.01 mg/kg default', usFdaLimit: 'Per EPA tolerance', status: 'Pass' },
+        ],
+        'Heavy Metals': [
+          { parameterName: 'Lead (Pb)', result: '0.04', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 3.0 mg/kg', usFdaLimit: 'USP ≤10 µg/day', status: 'Watchpoint' },
+          { parameterName: 'Arsenic (As)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.01 (inorganic)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Cadmium (Cd)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.5 (supplements)', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Mercury (Hg)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'NMT 0.1 mg/kg', euLimit: 'NMT 0.1 mg/kg', usFdaLimit: 'FDA 1 ppm', status: 'Pass' },
+          { parameterName: 'Thallium (Tl)', result: 'Below detection limit', unit: 'mg/kg', fssaiLimit: 'Not specified', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+          { parameterName: 'Copper (Cu)', result: '4.41', unit: 'mg/kg', fssaiLimit: 'NMT 30 mg/kg', euLimit: 'Not specified', usFdaLimit: 'Not specified', status: 'Pass' },
+        ],
+      },
+      stats: { totalParameters: 10, passCount: 10, contextNotes: 0, safetyConcerns: 0 },
+      parentSummary: 'Oriflame High Protein Nutrishake (Vanilla) scores 93/100 — one of the cleanest results in this series. Detected protein is 43.28% vs a 41.1% label claim, so it actually delivers 5.3% more protein than stated (honest or slightly conservative labelling). Lead is detected at just 0.04 mg/kg, less than half the 0.1 mg/kg benchmark. Aflatoxins, pesticides and heavy metals of concern (arsenic, cadmium, mercury, thallium) are all not detected. A reassuring result for a meal-replacement style protein product.',
+      expertCommentary: 'An excellent, clean result: protein exceeds the label, lead is very low, and no aflatoxins, pesticides or heavy metals of concern were detected.',
+      isPremium: true,
+      reportUrl: '/oriflame-nutrishake-vanilla-report.html',
+      statusBadges: ['Protein exceeds label', 'Very low lead'],
+    }
+  },
+  {
     // Heritage Toned Milk - find by productName
     findBy: { productName: /Heritage/i },
     update: {
