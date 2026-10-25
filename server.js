@@ -226,7 +226,11 @@ async function connectToDatabase() {
     }
 }
 
-connectToDatabase();
+// Only connect to the DB when run directly (node server.js), not when the
+// app is required by a test harness.
+if (require.main === module) {
+    connectToDatabase();
+}
 
 // ── Open Food Facts (OFF) in-memory cache ──
 const offCache = new Map();
@@ -387,8 +391,29 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(__dirname));
+
+// --- Static serving (hardened) ------------------------------------------
+// Previously `express.static(__dirname)` served the ENTIRE repo root, which
+// publicly exposed server.js, package.json, *.json, the mobile app tree and
+// .kiro/. We now serve only the public/ asset directory (safe, no source),
+// both at the root (so /favicon.png, /logo.png, /choosepure-logo.png resolve)
+// and under /public (so /public/* resolves).
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Serve top-level marketing/report HTML pages by explicit allowlist, without
+// exposing anything else at the repo root. Only a bare "/<name>.html" (single
+// path segment, no subdirectories, no dotfiles) is eligible, and admin.html is
+// excluded so it is only reachable via the JWT-gated /admin route.
+app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    const match = /^\/([A-Za-z0-9_-]+\.html)$/.exec(req.path);
+    if (!match) return next();
+    if (match[1] === 'admin.html') return next(); // gated via /admin only
+    return res.sendFile(path.join(__dirname, match[1]), (err) => {
+        if (err) next();
+    });
+});
 
 // WhatsApp integration function
 async function addToWhatsAppCommunity(phone, name) {
@@ -5547,6 +5572,16 @@ app.get('/product-lookup', (req, res) => {
     res.sendFile(path.join(__dirname, 'product-lookup.html'));
 });
 
+// Serve legal pages via clean (extensionless) routes. These URLs appear in
+// already-sent emails, so they must resolve even though the static allowlist
+// only serves "*.html" paths.
+app.get('/privacy-policy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'privacy-policy.html'));
+});
+app.get('/terms-conditions', (req, res) => {
+    res.sendFile(path.join(__dirname, 'terms-conditions.html'));
+});
+
 // ── Open Food Facts proxy endpoints ──
 
 // GET /api/off/product/:barcode — lookup a single product by EAN-13 barcode
@@ -5896,11 +5931,17 @@ app.get('/api/admin/parse-report/:filename', authenticateAdmin, async (req, res)
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log('📧 Email Configuration:');
-    console.log('   MAILGUN_API_KEY:', process.env.MAILGUN_API_KEY ? '✅ Set' : '❌ Not set');
-    console.log('   MAILGUN_DOMAIN:', process.env.MAILGUN_DOMAIN || '❌ Not set');
-    console.log('   MAILGUN_FROM_EMAIL:', process.env.MAILGUN_FROM_EMAIL || '❌ Not set');
-    console.log('   WHATSAPP_GROUP_LINK:', process.env.WHATSAPP_GROUP_LINK ? '✅ Set' : '❌ Not set');
-});
+// Only start listening when run directly (node server.js), not when required
+// by a test harness (supertest drives the exported app in-process).
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log('📧 Email Configuration:');
+        console.log('   MAILGUN_API_KEY:', process.env.MAILGUN_API_KEY ? '✅ Set' : '❌ Not set');
+        console.log('   MAILGUN_DOMAIN:', process.env.MAILGUN_DOMAIN || '❌ Not set');
+        console.log('   MAILGUN_FROM_EMAIL:', process.env.MAILGUN_FROM_EMAIL || '❌ Not set');
+        console.log('   WHATSAPP_GROUP_LINK:', process.env.WHATSAPP_GROUP_LINK ? '✅ Set' : '❌ Not set');
+    });
+}
+
+module.exports = app;
