@@ -35,12 +35,17 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// True when running under a test runner (jest). Used to relax hard failures
+// so the app can be required in-process by supertest without real env/DB.
+const IS_TEST = process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID;
+
 // JWT Secret — REQUIRED. No fallback: a hardcoded default would let anyone
-// forge tokens. When run directly (node server.js), refuse to start without it.
-// Tests require the app in-process and set a dummy SECRET_KEY instead.
-if (require.main === module && !process.env.SECRET_KEY) {
+// forge tokens. Enforced symmetrically outside tests: throw at module load so
+// Render (run directly) exits non-zero and Vercel (required as a serverless
+// function) fails requests closed rather than signing tokens with undefined.
+if (!IS_TEST && !process.env.SECRET_KEY) {
     console.error('❌ FATAL: SECRET_KEY environment variable is not set. Refusing to start.');
-    process.exit(1);
+    throw new Error('SECRET_KEY environment variable is not set');
 }
 const JWT_SECRET = process.env.SECRET_KEY;
 
@@ -232,9 +237,11 @@ async function connectToDatabase() {
     }
 }
 
-// Only connect to the DB when run directly (node server.js), not when the
-// app is required by a test harness.
-if (require.main === module) {
+// Connect to the DB in every environment EXCEPT tests. On Render the app is
+// run directly (node server.js); on Vercel it is required as a serverless
+// function (require.main !== module) — both must connect. We only skip under
+// a test runner (IS_TEST) so supertest can import the app without touching Mongo.
+if (!IS_TEST) {
     connectToDatabase();
 }
 

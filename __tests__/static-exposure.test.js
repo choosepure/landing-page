@@ -7,8 +7,10 @@
  * behavior: only public/ assets and a set of top-level HTML pages are served;
  * everything else 404s. admin.html must NOT be directly downloadable.
  *
- * The app is required in-process (server.js exports `app` and skips listen/DB
- * connect under require.main !== module), so no network or MongoDB is needed.
+ * The app is required in-process (server.js exports `app`, skips app.listen
+ * under require.main !== module, and skips the DB connection under a test
+ * runner via NODE_ENV==='test' / JEST_WORKER_ID), so no network or MongoDB is
+ * needed. admin.html must 404, but admin-login/forgot/reset pages must serve.
  */
 // Tests drive the exported app in-process; set a dummy SECRET_KEY so requiring
 // server.js never triggers the startup enforcement (which only fires when run
@@ -49,6 +51,10 @@ describe('static file exposure is locked down', () => {
     '/contact',
     '/contact-us.html',
     '/happy-hens-eggs-report.html',
+    // Admin auth pages stay reachable (only admin.html itself is blocked).
+    '/admin-login.html',
+    '/admin-forgot-password.html',
+    '/admin-reset-password.html',
   ];
 
   test.each(mustServe)('200 for allowed path %s', async (p) => {

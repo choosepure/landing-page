@@ -20,6 +20,10 @@
       "dest": "/public/$1"
     },
     {
+      "src": "/admin\\.html",
+      "dest": "server.js"
+    },
+    {
       "src": "/(.*\\.html)",
       "dest": "/$1"
     },
