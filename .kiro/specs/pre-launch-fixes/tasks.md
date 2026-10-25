@@ -86,3 +86,16 @@ Verification approach (updated): #5 and #7 use **manual verification** (adb / si
   - Add Maestro (`.maestro/` dir, install docs) and author flows for the deep-link cold start (#5) and scanner controls (#7) so these become automated regressions.
   - NOT a launch blocker — do after the above. STOP for review.
   - _Requirements: 3, 4 (automation follow-up)_
+
+- [ ] 12. (OTA) Enable EAS Update in the next store build
+  - Currently NOT OTA-ready: `expo-updates` is not installed (absent from `package.json` and `node_modules/`), `app.json` has no `updates` block and no `runtimeVersion`, and `eas.json` has no `channel`. The live build (2.2.1 / vc43) therefore cannot receive OTA updates.
+  - Install the module (SDK 53-matched): `npx expo install expo-updates`.
+  - Configure `app.json` → `expo`:
+    - `"updates": { "url": "https://u.expo.dev/f735d7c1-0935-46b3-ac19-5b0c945db8db" }` (uses the existing EAS projectId).
+    - `"runtimeVersion": { "policy": "fingerprint" }` — fingerprint policy so the runtime version is derived from the native fingerprint; an OTA update only lands on binaries with a matching native fingerprint, preventing JS-native mismatches after native changes.
+  - Add a `production` channel in `eas.json` so production builds subscribe to that update track, e.g. `"production": { "autoIncrement": true, "channel": "production" }` (add `preview`/`development` channels if staged OTA is wanted).
+  - Alternatively run `eas update:configure` to apply the above and validate the project.
+  - IMPORTANT: OTA ships JS/asset changes only and takes effect only in a NEW store build that embeds `expo-updates` with the fingerprint runtimeVersion. Native changes still require a full rebuild. After the new build ships, publish with `eas update --branch production --message "..."`.
+  - Verify prebuild/build embeds the update config and that `runtimeVersion` resolves consistently between the binary and published updates.
+  - STOP for review.
+  - _Requirements: 7 (release/ops) — do not implement yet_
