@@ -6,6 +6,7 @@ import { signInWithGoogle } from '../services/firebase/googleSignIn';
 import { logLogin, logSignUp, setUserId } from '../services/firebase/analytics';
 import { setCrashlyticsUserId } from '../services/firebase/crashlytics';
 import { trackEvent, identify, reset } from '../services/analytics';
+import { clearScanHistory } from '../utils/scanHistory';
 
 const AuthContext = createContext(null);
 
@@ -167,6 +168,9 @@ export function AuthProvider({ children }) {
     try { await firebaseSignOut(); } catch (e) {}
     try { setUserId(null); } catch (e) {}
     try { setCrashlyticsUserId(''); } catch (e) {}
+    // Bug #16: scan history is stored under a single global key, so clear it on
+    // logout — otherwise the next user on this device sees the previous user's scans.
+    try { await clearScanHistory(); } catch (e) {}
     await AsyncStorage.removeItem('jwt_token');
     setUser(null);
   }
