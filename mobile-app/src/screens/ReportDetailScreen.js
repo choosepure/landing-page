@@ -21,15 +21,23 @@ import TestParameterSection from '../components/report/TestParameterSection';
 import ParentSummary from '../components/report/ParentSummary';
 import RecommendationCard from '../components/report/RecommendationCard';
 import ComparisonTable from '../components/report/ComparisonTable';
+import { getParams } from '../utils/routeParams';
 
 export default function ReportDetailScreen({ route, navigation }) {
-  const { reportId } = route.params;
+  // Bug #4: guard against reaching this screen without a reportId
+  // (deep link / notification / restored nav state).
+  const { reportId } = getParams(route, { reportId: null });
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
   const fetchReport = async () => {
+    if (!reportId) {
+      setError('missing_report');
+      setLoading(false);
+      return;
+    }
     try {
       setError(null);
       setLoading(true);
@@ -85,6 +93,21 @@ export default function ReportDetailScreen({ route, navigation }) {
 
   // Error states
   if (error) {
+    if (error === 'missing_report') {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.errorHeading}>Report not found</Text>
+          <Text style={styles.errorDescription}>
+            We couldn't open this report. Please try again from the reports list.
+          </Text>
+          {navigation.canGoBack() && (
+            <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.retryBtnText}>Go back</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
     if (error === 'subscription_required') {
       return (
         <View style={styles.center}>

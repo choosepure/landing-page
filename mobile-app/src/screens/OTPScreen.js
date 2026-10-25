@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { signInWithPhone, confirmOTP, mapFirebaseAuthError } from '../services/firebase/auth';
 import { getPhoneConfirmation, setPhoneConfirmation, clearPhoneConfirmation } from '../utils/phoneAuthState';
+import { getParams, requireParam } from '../utils/routeParams';
 import { theme } from '../theme';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -22,8 +23,28 @@ const OTP_LENGTH = 6;
 const COUNTDOWN_SECONDS = 60;
 
 export default function OTPScreen({ navigation, route }) {
-  const { phoneNumber } = route.params;
+  // Bug #4: guard against reaching this screen without a phone number
+  // (deep link / restored nav state). Without it we can't verify an OTP.
+  const hasPhoneNumber = requireParam(route, 'phoneNumber');
+  const { phoneNumber } = getParams(route, { phoneNumber: '' });
   const { confirmPhoneOTP } = useAuth();
+
+  // Bug #4: recover from a missing phone number. Prefer going back, but on a
+  // cold-start deep link there's nothing to go back to — route to Login so the
+  // user isn't stuck on a dead screen.
+  const recoverFromMissingPhone = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Login');
+    }
+  }, [navigation]);
+
+  useEffect(() => {
+    if (!hasPhoneNumber) {
+      recoverFromMissingPhone();
+    }
+  }, [hasPhoneNumber, recoverFromMissingPhone]);
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -151,6 +172,22 @@ export default function OTPScreen({ navigation, route }) {
   // -----------------------------------------------------------------------
   // Render
   // -----------------------------------------------------------------------
+  // Bug #4: reached without a phone number — show a recovery state instead of
+  // crashing or sitting blank while the goBack effect runs.
+  if (!hasPhoneNumber) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.cardTitle}>Session expired</Text>
+        <Text style={styles.cardDescription}>
+          We couldn't find your phone number. Please start again.
+        </Text>
+        <View style={styles.centerButton}>
+          <Button title="Go back" onPress={recoverFromMissingPhone} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -266,6 +303,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingBottom: theme.spacing.lg,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerButton: {
+    marginTop: theme.spacing.lg,
   },
 
   // Header

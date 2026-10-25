@@ -11,23 +11,36 @@ import {
 import { theme } from '../theme';
 import apiClient from '../api/client';
 import { saveScanRecord } from '../utils/scanHistory';
+import { getParams } from '../utils/routeParams';
 import NutriScoreBadge from '../components/NutriScoreBadge';
 import NovaGroupLabel from '../components/NovaGroupLabel';
 import AdditiveBadge from '../components/AdditiveBadge';
 import NutritionTable from '../components/NutritionTable';
 
 export default function ResultCardScreen({ route, navigation }) {
-  const { barcode } = route.params;
-  const [product, setProduct] = useState(route.params.product || null);
+  // Bug #4: guard against reaching this screen without params
+  // (deep link / restored nav state). barcode may be null.
+  const { barcode, product: initialProduct } = getParams(route, {
+    barcode: null,
+    product: null,
+  });
+  const [product, setProduct] = useState(initialProduct || null);
   const [matchedReport, setMatchedReport] = useState(null);
-  const [loadingProduct, setLoadingProduct] = useState(!route.params.product);
+  const [loadingProduct, setLoadingProduct] = useState(!initialProduct);
   const [loadingReport, setLoadingReport] = useState(true);
 
   useEffect(() => {
+    if (!barcode && !initialProduct) {
+      // Nothing to show — stop spinners and fall through to the empty state.
+      setLoadingProduct(false);
+      setLoadingReport(false);
+      return;
+    }
+
     let cancelled = false;
 
     async function init() {
-      let currentProduct = route.params.product;
+      let currentProduct = initialProduct;
 
       // If product is null (navigated from scan history), re-fetch from OFF proxy
       if (!currentProduct) {
