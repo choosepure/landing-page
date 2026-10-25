@@ -57,7 +57,7 @@ Surgical, targeted changes across six files (plus one new component and one new 
     - Effect dependencies: `[products, loading, onGradesResolved]`
     - _Requirements: 8.3, 8.4_
 
-  - [~] 4.3 Add `caption` prop and `cardBody` minHeight
+  - [ ] 4.3 Add `caption` prop and `cardBody` minHeight
     - File: `mobile app/src/components/PopularProductsSection.js`
     - Add optional `caption` prop to the component signature
     - Render `<Text style={styles.caption}>{caption}</Text>` below the section title when `caption` is non-null
@@ -115,21 +115,21 @@ Surgical, targeted changes across six files (plus one new component and one new 
     - _Requirements: 5.3_
 
 - [ ] 7. Wire everything together in DashboardScreen
-  - [~] 7.1 Add VotingModule import and `popularGrades` state
+  - [ ] 7.1 Add VotingModule import and `popularGrades` state
     - File: `mobile app/src/screens/DashboardScreen.js`
     - Add `import VotingModule from '../components/VotingModule'`
     - Add `const [popularGrades, setPopularGrades] = useState([])` to the component's state declarations
     - Dependency: Task 5 (VotingModule component must exist)
     - _Requirements: 5.1, 8.3_
 
-  - [~] 7.2 Insert VotingModule and update PopularProductsSection props in JSX
+  - [ ] 7.2 Insert VotingModule and update PopularProductsSection props in JSX
     - File: `mobile app/src/screens/DashboardScreen.js`
     - Insert `<VotingModule onProductPress={(productId) => navigation.navigate('Polling', { productId })} />` in the ScrollView/scroll content, positioned directly above `<PopularProductsSection>`
     - Update `<PopularProductsSection>` to pass `onGradesResolved={setPopularGrades}` and `caption={popularGrades.some(g => ['C','D','E'].includes(g)) ? "Popular doesn't always mean healthy — check before you buy" : null}`
     - Dependency: Tasks 4.2, 4.3, 5.1, 5.2
     - _Requirements: 5.1, 6.3, 8.3, 8.4_
 
-  - [~] 7.3 Replace load-more button with styled chip
+  - [ ] 7.3 Replace load-more button with styled chip
     - File: `mobile app/src/screens/DashboardScreen.js`
     - Locate the existing `<TouchableOpacity style={styles.loadMoreButton}>` element
     - Replace with a styled pill chip: `<TouchableOpacity style={styles.loadMoreChip} onPress={loadMoreNutriProducts} activeOpacity={0.75}>`
@@ -138,7 +138,7 @@ Surgical, targeted changes across six files (plus one new component and one new 
     - Remove old `loadMoreButton` and `loadMoreText` style entries
     - _Requirements: 7.1, 7.3_
 
-- [~] 8. Checkpoint — Ensure all tests pass
+- [ ] 8. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Write remaining property-based tests
@@ -149,7 +149,7 @@ Surgical, targeted changes across six files (plus one new component and one new 
     - Using `fast-check` with `@testing-library/react-native`, assert that for any integer `score` in 0–100, rendering `<ScoreBadge score={score} />` produces a component tree containing the text `"Lab Score"`
     - Run minimum 100 iterations
 
-- [~] 10. Final checkpoint — Ensure all tests pass
+- [ ] 10. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ---
