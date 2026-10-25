@@ -20,6 +20,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn((k) => Promise.resolve(k in mockStore ? mockStore[k] : null)),
   setItem: jest.fn((k, v) => { mockStore[k] = v; return Promise.resolve(); }),
   removeItem: jest.fn((k) => { delete mockStore[k]; return Promise.resolve(); }),
+  multiRemove: jest.fn((keys) => { keys.forEach((k) => { delete mockStore[k]; }); return Promise.resolve(); }),
 }));
 
 // --- Mock everything else logout()/the provider touches ------------------

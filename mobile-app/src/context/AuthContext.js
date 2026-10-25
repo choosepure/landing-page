@@ -6,7 +6,7 @@ import { signInWithGoogle } from '../services/firebase/googleSignIn';
 import { logLogin, logSignUp, setUserId } from '../services/firebase/analytics';
 import { setCrashlyticsUserId } from '../services/firebase/crashlytics';
 import { trackEvent, identify, reset } from '../services/analytics';
-import { clearScanHistory } from '../utils/scanHistory';
+import { clearScanHistory, reconcileScanHistoryOwner } from '../utils/scanHistory';
 
 const AuthContext = createContext(null);
 
@@ -54,6 +54,8 @@ export function AuthProvider({ children }) {
       ]);
       if (res.data.success && res.data.user) {
         setUser(res.data.user);
+        // Bug #16: on token restore, clear scan history left by a different user.
+        try { await reconcileScanHistoryOwner(res.data.user._id); } catch (e) {}
       } else {
         await AsyncStorage.removeItem('jwt_token');
       }
@@ -73,6 +75,8 @@ export function AuthProvider({ children }) {
 
       if (data.success) {
         setUser(data.user);
+        // Bug #16: clear any scan history that belonged to a different user.
+        try { await reconcileScanHistoryOwner(data.user._id); } catch (e) {}
         try {
           logLogin('email');
           setUserId(data.user._id);
@@ -110,6 +114,8 @@ export function AuthProvider({ children }) {
       if (data.success && data.token) {
         await AsyncStorage.setItem('jwt_token', data.token);
         setUser(data.user);
+        // Bug #16: clear any scan history that belonged to a different user.
+        try { await reconcileScanHistoryOwner(data.user._id); } catch (e) {}
         try {
           logLogin('email_direct');
           setUserId(data.user._id);
@@ -139,6 +145,8 @@ export function AuthProvider({ children }) {
 
     if (data.success) {
       setUser(data.user);
+      // Bug #16: clear any scan history that belonged to a different user.
+      try { await reconcileScanHistoryOwner(data.user._id); } catch (e) {}
       try {
         logSignUp('email');
         setUserId(data.user._id);
@@ -184,6 +192,8 @@ export function AuthProvider({ children }) {
     const data = await exchangeFirebaseToken(idToken);
     if (data.success) {
       setUser(data.user);
+      // Bug #16: clear any scan history that belonged to a different user.
+      try { await reconcileScanHistoryOwner(data.user._id); } catch (e) {}
       try {
         logLogin('phone');
         setUserId(data.user._id);
@@ -210,6 +220,8 @@ export function AuthProvider({ children }) {
     const data = await exchangeFirebaseToken(idToken);
     if (data.success) {
       setUser(data.user);
+      // Bug #16: clear any scan history that belonged to a different user.
+      try { await reconcileScanHistoryOwner(data.user._id); } catch (e) {}
       try {
         logLogin('google');
         setUserId(data.user._id);
