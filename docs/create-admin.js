@@ -12,10 +12,17 @@ async function createAdmin() {
         const db = client.db(process.env.DB_NAME || 'choosepure_db');
         const usersCollection = db.collection('users');
         
-        // Admin details
-        const email = 'priyank@choosepure.in';
-        const password = 'ChoosePure@2026'; // Change this to your desired password
-        const name = 'Priyank Barthwal';
+        // Admin details. Password MUST come from the environment — never commit
+        // a plaintext admin password (this repo is public).
+        const email = process.env.ADMIN_EMAIL || 'priyank@choosepure.in';
+        const password = process.env.ADMIN_PASSWORD;
+        const name = process.env.ADMIN_NAME || 'Priyank Barthwal';
+
+        if (!password) {
+            console.error('❌ ADMIN_PASSWORD environment variable is not set. Refusing to create admin.');
+            await client.close();
+            process.exit(1);
+        }
         
         // Check if admin already exists
         const existingAdmin = await usersCollection.findOne({ email });
@@ -45,7 +52,6 @@ async function createAdmin() {
         
         console.log('✅ Admin user created successfully!');
         console.log('📧 Email:', email);
-        console.log('🔑 Password:', password);
         console.log('🆔 User ID:', result.insertedId);
         console.log('\n⚠️ IMPORTANT: Change the password after first login!');
         
