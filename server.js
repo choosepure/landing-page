@@ -1765,7 +1765,7 @@ async function sendAdminEmail(userData) {
         const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'support@choosepure.in';
         
         const messageData = {
-            from: 'ChoosePure Notifications <noreply@choosepure.in>',
+            from: 'ChoosePure Notifications <support@choosepure.in>',
             to: adminEmail,
             subject: 'New Waitlist Signup - ChoosePure',
             'h:Reply-To': 'support@choosepure.in',
@@ -2272,7 +2272,7 @@ app.post('/api/admin/forgot-password', async (req, res) => {
         
         try {
             const messageData = {
-                from: 'ChoosePure Admin <noreply@choosepure.in>',
+                from: 'ChoosePure Admin <support@choosepure.in>',
                 to: email,
                 subject: 'Password Reset - ChoosePure Admin',
                 'h:Reply-To': 'support@choosepure.in',
@@ -5436,7 +5436,7 @@ app.post('/api/razorpay/webhook', async (req, res) => {
                         `;
 
                         mg.messages.create(process.env.MAILGUN_DOMAIN, {
-                            from: process.env.MAILGUN_FROM_EMAIL || 'ChoosePure <noreply@choosepure.in>',
+                            from: process.env.MAILGUN_FROM_EMAIL || 'ChoosePure <support@choosepure.in>',
                             to: [user.email],
                             subject: `ChoosePure Payment Receipt — ₹${amountInRupees}`,
                             html: invoiceHtml
