@@ -1394,11 +1394,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         }
 
         // ── Score helpers ──
+        // Unified lab-score scale (matches mobile scoreTokens + deep-dive.html):
+        //   >= 70 green, 40-69 amber, < 40 red
         function getScoreColor(score) {
-            if (score >= 90) return '#1F6B4E';
-            if (score >= 80) return '#2196F3';
-            if (score >= 70) return '#8A6E4B';
-            if (score >= 50) return '#FFB703';
+            if (score >= 70) return '#1F6B4E';
+            if (score >= 40) return '#FFB703';
             return '#D62828';
         }
         function formatScore(score) {

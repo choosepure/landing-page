@@ -1,0 +1,79 @@
+/* Choosepure — globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS variable mirror of the Tailwind tokens — useful for inline styles & gradients */
+:root {
+  /* greens */
+  --green-25:  #F4F8F5;
+  --green-50:  #EDF3EE;
+  --green-100: #D4E3D8;
+  --green-400: #5DA47B;
+  --green-500: #3D8862;
+  --green-700: #2D7A52;
+  --green-800: #226342;
+  --green-900: #1B4332;
+
+  /* neutrals */
+  --bg:         #F5F7F4;
+  --bg-card:    #FFFFFF;
+  --text:       #1A201A;
+  --text-muted: #6B7268;
+  --text-dim:   #9B9F97;
+  --border:     #ECEAE4;
+  --border-soft:#F4F2EC;
+
+  /* nutri scores */
+  --nutri-a: #1E8449;
+  --nutri-b: #7CB342;
+  --nutri-c: #F4C430;
+  --nutri-d: #E89B3C;
+  --nutri-e: #D14E36;
+}
+
+@layer base {
+  html, body, #root {
+    @apply h-full;
+  }
+  body {
+    @apply font-sans bg-cream text-ink antialiased;
+    -webkit-font-smoothing: antialiased;
+  }
+  button {
+    @apply outline-none;
+  }
+  input, textarea {
+    @apply outline-none bg-transparent;
+  }
+}
+
+@layer components {
+  /* Mobile screen shell — 390×844 by default. Wrap a screen in this for the iPhone shape */
+  .cp-phone {
+    @apply mx-auto w-full max-w-phone min-h-[844px] bg-cream relative overflow-hidden flex flex-col;
+  }
+
+  /* Scrollable middle region inside a screen */
+  .cp-content {
+    @apply flex-1 overflow-y-auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Standard card */
+  .cp-card {
+    @apply bg-white rounded-lg border border-line shadow-card;
+  }
+
+  /* Field label */
+  .cp-label {
+    @apply block text-2xs font-semibold uppercase tracking-[1px] text-ink-muted mb-1.5;
+  }
+
+  /* Field */
+  .cp-field {
+    @apply w-full px-3.5 py-3 rounded-md border border-line bg-white text-base text-ink placeholder:text-ink-dim focus:border-green-700 focus:ring-2 focus:ring-green-100;
+  }
+}

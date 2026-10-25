@@ -1,0 +1,91 @@
+{
+  "expo": {
+    "name": "ChoosePure",
+    "slug": "choosepure",
+    "version": "2.2.1",
+    "orientation": "portrait",
+    "scheme": "choosepure",
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "in.choosepure.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Allow ChoosePure to access your camera to scan product barcodes and capture label photos.",
+        "NSPhotoLibraryUsageDescription": "Allow ChoosePure to access your photos so you can upload product label images."
+      },
+      "buildNumber": "5"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FAFAF7"
+      },
+      "package": "in.choosepure.app",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "versionCode": 43
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/choosepure-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAFAF7"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ChoosePure to access your camera to scan product barcodes",
+          "recordAudioAndroid": false
+        }
+      ],
+      "./plugins/withRazorpay",
+      "./plugins/withAdiRegistration",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.25",
+            "newArchEnabled": false,
+            "targetSdkVersion": 36,
+            "compileSdkVersion": 36,
+            "buildToolsVersion": "36.0.0",
+            "packagingOptions": {
+              "jniLibs": {
+                "useLegacyPackaging": false
+              }
+            },
+            "extraMavenRepos": [],
+            "enableR8": true
+          },
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/messaging",
+      "@react-native-firebase/crashlytics",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.46652240387-1bflfsnfu8acrd5pdrbmc58h4si5rhi3"
+        }
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f735d7c1-0935-46b3-ac19-5b0c945db8db"
+      }
+    }
+  }
+}
