@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { performAccountDeletion } = require('./services/accountDeletion');
+const { requestWebDeletion, confirmWebDeletion } = require('./services/deletionWebFlow');
 const crypto = require('crypto');
 const formData = require('form-data');
 const Mailgun = require('mailgun.js');
@@ -246,6 +248,13 @@ async function connectToDatabase() {
 const IS_VERCEL = !!process.env.VERCEL;
 if (!IS_TEST && !IS_VERCEL) {
     connectToDatabase();
+    // Hourly account-deletion auto-job — Render only (Render is the single
+    // long-lived instance that owns the DB). Not on Vercel (serverless) or tests.
+    // NOTE: assumes a single server instance; if Render is ever scaled out,
+    // move this to an external scheduler or add a DB lock to avoid double-runs.
+    setInterval(() => { runAutoDeletionJob(); }, DELETION_JOB_INTERVAL_MS);
+    // Kick one run shortly after boot so a restart doesn't wait a full hour.
+    setTimeout(() => { runAutoDeletionJob(); }, 60 * 1000);
 }
 
 // ── Open Food Facts (OFF) in-memory cache ──
@@ -1321,6 +1330,110 @@ app.post('/api/user/request-deletion', authenticateUser, async (req, res) => {
     } catch (error) {
         console.error('❌ Error creating deletion request:', error);
         res.status(500).json({ success: false, message: 'Failed to submit deletion request. Please try again.' });
+    }
+});
+
+// ==========================================
+// WEB-BASED ACCOUNT DELETION (public, no login) — Google Play requirement
+// ==========================================
+
+// Simple in-memory sliding-window rate limiter keyed by a string (IP or email).
+const webDeletionHits = new Map(); // key -> [timestamps]
+const WEB_DELETION_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const WEB_DELETION_MAX = 5; // max 5 requests/hour per IP and per email
+function rateLimited(key) {
+    const now = Date.now();
+    const hits = (webDeletionHits.get(key) || []).filter((t) => now - t < WEB_DELETION_WINDOW_MS);
+    if (hits.length >= WEB_DELETION_MAX) { webDeletionHits.set(key, hits); return true; }
+    hits.push(now);
+    webDeletionHits.set(key, hits);
+    return false;
+}
+
+// Serve the public delete-account page.
+app.get('/delete-account', (req, res) => {
+    res.sendFile(path.join(__dirname, 'delete-account.html'));
+});
+
+// Public: submit email to start web deletion. Always returns the SAME response
+// (no account enumeration); a confirmation email is sent only if the account exists.
+app.post('/api/public/request-deletion', async (req, res) => {
+    const OPAQUE = { success: true, message: 'If an account exists for that email, we have sent a confirmation link. Please check your inbox.' };
+    try {
+        const email = (req.body && req.body.email || '').toString().trim().toLowerCase();
+        const ip = (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim();
+        if (rateLimited(`ip:${ip}`) || (email && rateLimited(`email:${email}`))) {
+            return res.status(429).json({ success: false, message: 'Too many requests. Please try again later.' });
+        }
+        if (!isDbConnected || !usersCollection) {
+            return res.json(OPAQUE); // opaque even when DB is down
+        }
+        await requestWebDeletion(email, {
+            usersCollection,
+            jwt,
+            jwtSecret: JWT_SECRET,
+            buildConfirmUrl: (token) => `https://choosepure.in/api/public/confirm-deletion?token=${encodeURIComponent(token)}`,
+            sendConfirmationEmail: sendWebDeletionConfirmEmail,
+            logger: console,
+        });
+        return res.json(OPAQUE);
+    } catch (e) {
+        console.error('web request-deletion error:', e.message);
+        return res.json(OPAQUE); // never leak errors / existence
+    }
+});
+
+// Public: GET renders a confirmation page with a button. It MUST NOT create the
+// request — email scanners / link previewers / prefetchers fetch GET links, so
+// creating on GET would auto-delete without consent. The button POSTs the token.
+app.get('/api/public/confirm-deletion', (req, res) => {
+    const token = (req.query.token || '').toString();
+    const safeToken = token.replace(/"/g, '&quot;');
+    res.set('Content-Type', 'text/html');
+    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex" />
+<title>Confirm account deletion — ChoosePure</title>
+<style>body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#FAFAF7;color:#1a1a1a;margin:0}.wrap{max-width:520px;margin:0 auto;padding:48px 20px}h1{color:#1F6B4E}button{margin-top:20px;padding:14px 28px;background:#C0392B;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer}button:disabled{opacity:.6}.msg{margin-top:18px;padding:12px 14px;border-radius:8px;font-size:14px;display:none}.msg.ok{background:#E8F5E9;color:#1B5E20;display:block}.msg.err{background:#FDECEA;color:#B71C1C;display:block}</style>
+</head><body><div class="wrap">
+<h1>Confirm account deletion</h1>
+<p>Click the button below to confirm. Your ChoosePure account and personal data will be permanently deleted within 24 hours.</p>
+<button id="btn" onclick="go()">Confirm account deletion</button>
+<div class="msg" id="msg"></div>
+<script>
+async function go(){var b=document.getElementById('btn'),m=document.getElementById('msg');b.disabled=true;
+try{var r=await fetch('/api/public/confirm-deletion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:${JSON.stringify(token)}})});var d=await r.json();
+if(r.ok&&d.success){m.className='msg ok';m.textContent=d.message||'Confirmed. Your account will be deleted within 24 hours.';b.style.display='none';}
+else{m.className='msg err';m.textContent=d.message||'This link is invalid or has expired.';b.disabled=false;}}
+catch(e){m.className='msg err';m.textContent='Something went wrong. Please try again.';b.disabled=false;}}
+</script>
+<p style="color:#999;font-size:12px;margin-top:28px">If you did not request this, close this page — nothing happens unless you click the button.</p>
+</div></body></html>`);
+});
+
+// Public: POST actually confirms and creates the pending request.
+app.post('/api/public/confirm-deletion', async (req, res) => {
+    try {
+        const token = (req.body && req.body.token || '').toString();
+        if (!isDbConnected || !deletionRequestsCollection) {
+            return res.status(503).json({ success: false, message: 'Service temporarily unavailable. Please try again later.' });
+        }
+        const { ObjectId } = require('mongodb');
+        const result = await confirmWebDeletion(token, {
+            usersCollection,
+            deletionRequestsCollection,
+            jwt,
+            jwtSecret: JWT_SECRET,
+            ObjectId,
+            logger: console,
+        });
+        if (!result.ok) {
+            return res.status(400).json({ success: false, message: 'This deletion link is invalid or has expired. Please request a new one at /delete-account.' });
+        }
+        return res.json({ success: true, message: 'Your account deletion has been confirmed. Your account and personal data will be deleted within 24 hours.' });
+    } catch (e) {
+        console.error('web confirm-deletion error:', e.message);
+        return res.status(500).json({ success: false, message: 'Something went wrong. Please try again later.' });
     }
 });
 
@@ -3659,6 +3772,116 @@ app.delete('/api/admin/feedback/:id', authenticateAdmin, async (req, res) => {
 });
 
 // ==========================================
+// ACCOUNT DELETION — shared helpers (admin button + hourly job + web flow)
+// ==========================================
+
+const SUPPORT_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'support@choosepure.in';
+const MAILGUN_DOMAIN = () => process.env.MAILGUN_DOMAIN || 'choosepure.in';
+
+async function sendSupportAlert({ subject, text }) {
+    await mg.messages.create(MAILGUN_DOMAIN(), {
+        from: 'ChoosePure System <support@choosepure.in>',
+        to: SUPPORT_EMAIL,
+        subject,
+        text,
+    });
+}
+
+async function sendDeletionConfirmation({ to, name }) {
+    await mg.messages.create(MAILGUN_DOMAIN(), {
+        from: 'ChoosePure <support@choosepure.in>',
+        to,
+        subject: 'Your ChoosePure account has been deleted',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color:#1F6B4E;">Account deleted</h2>
+                <p>Hi${name ? ' ' + name : ''},</p>
+                <p>Your ChoosePure account and associated personal data have been deleted as requested.</p>
+                <p>For legal and accounting reasons, anonymised payment records (amount, date and transaction IDs) are retained with no personal identifiers in our systems. Our payment processor (Razorpay) retains its own transaction records under its privacy policy.</p>
+                <p>If you did not request this, contact <a href="mailto:support@choosepure.in">support@choosepure.in</a> immediately.</p>
+                <p style="color:#999;font-size:12px;margin-top:30px;">ChoosePure</p>
+            </div>`,
+    });
+}
+
+async function sendWebDeletionConfirmEmail({ to, name, confirmUrl }) {
+    await mg.messages.create(MAILGUN_DOMAIN(), {
+        from: 'ChoosePure <support@choosepure.in>',
+        to,
+        subject: 'Confirm your ChoosePure account deletion',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color:#1F6B4E;">Confirm account deletion</h2>
+                <p>Hi${name ? ' ' + name : ''},</p>
+                <p>We received a request to delete your ChoosePure account. To confirm, click the button below. This link expires in 24 hours.</p>
+                <div style="margin:30px 0;">
+                    <a href="${confirmUrl}" style="background:#C0392B;color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;display:inline-block;">Confirm account deletion</a>
+                </div>
+                <p style="color:#666;font-size:14px;">If you did NOT request this, you can safely ignore this email — nothing will happen.</p>
+                <p style="color:#999;font-size:12px;margin-top:30px;">Or paste this link:<br>${confirmUrl}</p>
+            </div>`,
+    });
+}
+
+// Build the dependency bundle for performAccountDeletion().
+function buildDeletionDeps() {
+    const { ObjectId } = require('mongodb');
+    return {
+        ObjectId,
+        usersCollection,
+        deletionRequestsCollection,
+        subscriptionTransactionsCollection,
+        paymentAttemptsCollection,
+        feedbackCollection,
+        rewardsCollection,
+        referralsCollection,
+        voteTransactionsCollection,
+        db,
+        razorpay,
+        firebaseAuth: () => admin.auth(),
+        sendSupportAlert,
+        sendDeletionConfirmation,
+        logger: console,
+    };
+}
+
+// Hourly auto-delete job (Render only). Query-based so missed runs catch up:
+// each run processes every request still pending past the 24h window that has
+// not exhausted its retry budget. Idempotent via performAccountDeletion.
+const DELETION_SLA_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DELETION_JOB_INTERVAL_MS = 60 * 60 * 1000; // hourly
+const DELETION_MAX_ATTEMPTS = 3;
+let deletionJobRunning = false;
+
+async function runAutoDeletionJob() {
+    if (deletionJobRunning) return; // prevent overlap within this instance
+    if (!isDbConnected || !deletionRequestsCollection) return;
+    deletionJobRunning = true;
+    try {
+        const cutoff = new Date(Date.now() - DELETION_SLA_MS);
+        const due = await deletionRequestsCollection.find({
+            status: 'pending',
+            requestedAt: { $lte: cutoff },
+            $or: [{ attempts: { $exists: false } }, { attempts: { $lt: DELETION_MAX_ATTEMPTS } }],
+        }).limit(100).toArray();
+
+        if (due.length === 0) return;
+        console.log(`🧹 Auto-deletion job: processing ${due.length} request(s) past SLA.`);
+        for (const request of due) {
+            try {
+                await performAccountDeletion(request, buildDeletionDeps(), 'auto-job');
+            } catch (e) {
+                console.error(`Auto-deletion failed for request ${request._id}:`, e.message);
+            }
+        }
+    } catch (e) {
+        console.error('Auto-deletion job error:', e.message);
+    } finally {
+        deletionJobRunning = false;
+    }
+}
+
+// ==========================================
 // ACCOUNT DELETION REQUESTS API (admin)
 // ==========================================
 
@@ -3686,7 +3909,9 @@ app.get('/api/admin/deletion-requests', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Admin API: Delete a user account for a deletion request (cascades related data)
+// Admin API: Delete a user account for a deletion request (manual override).
+// Uses the shared performAccountDeletion helper (Razorpay cancel + Firebase
+// delete + cascade + anonymization + confirmation email).
 app.delete('/api/admin/deletion-requests/:id/account', authenticateAdmin, async (req, res) => {
     try {
         if (!deletionRequestsCollection || !usersCollection) {
@@ -3699,72 +3924,24 @@ app.delete('/api/admin/deletion-requests/:id/account', authenticateAdmin, async 
             return res.status(404).json({ success: false, message: 'Deletion request not found' });
         }
 
-        const userIdStr = (request.userId || '').toString();
-        let userObjectId = null;
-        try { userObjectId = new ObjectId(userIdStr); } catch (e) { /* malformed id */ }
+        const result = await performAccountDeletion(request, buildDeletionDeps(), `admin:${req.admin.email}`);
 
-        // Delete the user account
-        let userDeleted = 0;
-        if (userObjectId) {
-            const del = await usersCollection.deleteOne({ _id: userObjectId, role: 'user' });
-            userDeleted = del.deletedCount;
+        if (result.status === 'failed') {
+            // Razorpay cancellation blocked the deletion — surface it to the admin.
+            return res.status(502).json({
+                success: false,
+                message: 'Could not cancel the Razorpay subscription; account NOT deleted. Support has been notified. Resolve the subscription, then retry.',
+                reason: result.reason,
+                attempts: result.attempts,
+            });
         }
-
-        // Clean up related data (best-effort; never block the account deletion)
-        const cleanup = {};
-        try {
-            if (subscriptionTransactionsCollection && userObjectId) {
-                const r = await subscriptionTransactionsCollection.deleteMany({ userId: userObjectId });
-                cleanup.subscriptionTransactions = r.deletedCount;
-            }
-        } catch (e) { console.warn('cleanup subscription_transactions failed:', e.message); }
-        try {
-            if (paymentAttemptsCollection && userObjectId) {
-                const r = await paymentAttemptsCollection.deleteMany({ userId: userObjectId });
-                cleanup.paymentAttempts = r.deletedCount;
-            }
-        } catch (e) { console.warn('cleanup payment_attempts failed:', e.message); }
-        try {
-            if (rewardsCollection && userObjectId) {
-                const r = await rewardsCollection.deleteMany({ user_id: userObjectId });
-                cleanup.rewards = r.deletedCount;
-            }
-        } catch (e) { console.warn('cleanup rewards failed:', e.message); }
-        try {
-            if (referralsCollection && userObjectId) {
-                const r = await referralsCollection.deleteMany({
-                    $or: [{ referrer_user_id: userObjectId }, { referee_user_id: userObjectId }]
-                });
-                cleanup.referrals = r.deletedCount;
-            }
-        } catch (e) { console.warn('cleanup referrals failed:', e.message); }
-        try {
-            // vote_transactions store userId as a string
-            if (voteTransactionsCollection && userIdStr) {
-                const r = await voteTransactionsCollection.deleteMany({ userId: userIdStr });
-                cleanup.voteTransactions = r.deletedCount;
-            }
-        } catch (e) { console.warn('cleanup vote_transactions failed:', e.message); }
-        try {
-            // label_scans store user_id as a string (from JWT)
-            if (db && userIdStr) {
-                const r = await db.collection('label_scans').deleteMany({ user_id: userIdStr });
-                cleanup.labelScans = r.deletedCount;
-            }
-        } catch (e) { console.warn('cleanup label_scans failed:', e.message); }
-
-        // Mark the request as completed (keep a record of the action)
-        await deletionRequestsCollection.updateOne(
-            { _id: new ObjectId(req.params.id) },
-            { $set: { status: 'completed', deletedAt: new Date(), deletedByAdmin: req.admin.email, cleanup } }
-        );
-
-        console.log(`🗑️ Admin ${req.admin.email} deleted account ${request.email} (${userIdStr}). User removed: ${userDeleted}. Cleanup:`, cleanup);
 
         res.json({
             success: true,
-            message: userDeleted ? 'Account and related data deleted.' : 'Account not found (already deleted); request marked complete.',
-            cleanup
+            message: result.userDeleted
+                ? 'Account deleted; personal data removed, financial records anonymised.'
+                : 'Account not found (already deleted); request marked complete.',
+            cleanup: result.cleanup,
         });
     } catch (error) {
         console.error('❌ Error deleting account:', error);
