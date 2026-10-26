@@ -245,6 +245,13 @@ async function connectToDatabase() {
 // NOT connect to Mongo — Vercel's serverless runtime can't hold a reliable
 // connection and doesn't need one. We also skip under the test runner so
 // supertest can import the app without touching Mongo.
+// Account-deletion auto-job timing constants. Declared here (before the startup
+// block) because the setInterval below references them synchronously at module
+// load — a `const` declared later would throw a TDZ ReferenceError.
+const DELETION_SLA_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DELETION_JOB_INTERVAL_MS = 60 * 60 * 1000; // hourly
+const DELETION_MAX_ATTEMPTS = 3;
+
 const IS_VERCEL = !!process.env.VERCEL;
 if (!IS_TEST && !IS_VERCEL) {
     connectToDatabase();
@@ -3848,9 +3855,8 @@ function buildDeletionDeps() {
 // Hourly auto-delete job (Render only). Query-based so missed runs catch up:
 // each run processes every request still pending past the 24h window that has
 // not exhausted its retry budget. Idempotent via performAccountDeletion.
-const DELETION_SLA_MS = 24 * 60 * 60 * 1000; // 24 hours
-const DELETION_JOB_INTERVAL_MS = 60 * 60 * 1000; // hourly
-const DELETION_MAX_ATTEMPTS = 3;
+// (DELETION_SLA_MS, DELETION_JOB_INTERVAL_MS, DELETION_MAX_ATTEMPTS are declared
+// near the top of the file — before the startup setInterval that references them.)
 let deletionJobRunning = false;
 
 async function runAutoDeletionJob() {
