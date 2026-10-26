@@ -12,6 +12,7 @@ import { theme } from '../theme';
 import apiClient from '../api/client';
 import { saveScanRecord } from '../utils/scanHistory';
 import { getParams } from '../utils/routeParams';
+import { makeCancelToken } from '../utils/cancelToken';
 import NutriScoreBadge from '../components/NutriScoreBadge';
 import NovaGroupLabel from '../components/NovaGroupLabel';
 import AdditiveBadge from '../components/AdditiveBadge';
@@ -37,7 +38,11 @@ export default function ResultCardScreen({ route, navigation }) {
       return;
     }
 
-    let cancelled = false;
+    // Bug #17: share ONE live cancel token across init() and
+    // crossReferenceReport(). Passing the token by reference (not a boolean by
+    // value) means the unmount cleanup's token.cancel() is visible to async
+    // work already past an await, so no setState runs after unmount.
+    const token = makeCancelToken();
 
     async function init() {
       let currentProduct = initialProduct;
@@ -47,14 +52,14 @@ export default function ResultCardScreen({ route, navigation }) {
         setLoadingProduct(true);
         try {
           const res = await apiClient.get(`/api/off/product/${barcode}`);
-          if (res.data.found && !cancelled) {
+          if (res.data.found && !token.cancelled) {
             currentProduct = res.data.product;
             setProduct(currentProduct);
           }
         } catch {
           // Silently fail — screen will show empty state
         } finally {
-          if (!cancelled) setLoadingProduct(false);
+          if (!token.cancelled) setLoadingProduct(false);
         }
       }
 
@@ -64,27 +69,27 @@ export default function ResultCardScreen({ route, navigation }) {
       }
 
       // Cross-reference with ChoosePure reports
-      await crossReferenceReport(barcode, cancelled);
+      await crossReferenceReport(barcode, token);
     }
 
-    async function crossReferenceReport(bc, isCancelled) {
+    async function crossReferenceReport(bc, cancelToken) {
       setLoadingReport(true);
       try {
         const res = await apiClient.get('/api/reports');
         const reports = res.data.reports || res.data || [];
         const match = reports.find(r => r.barcode === bc);
-        if (match && !isCancelled) setMatchedReport(match);
+        if (match && !cancelToken.cancelled) setMatchedReport(match);
       } catch {
         // Silently fail — OFF data still shows
       } finally {
-        if (!isCancelled) setLoadingReport(false);
+        if (!cancelToken.cancelled) setLoadingReport(false);
       }
     }
 
     init();
 
     return () => {
-      cancelled = true;
+      token.cancel();
     };
   }, [barcode]);
 
