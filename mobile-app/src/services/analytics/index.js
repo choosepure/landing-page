@@ -15,7 +15,17 @@ import { firebaseAdapter } from './firebase';
 import { mixpanelAdapter } from './mixpanel';
 import { metaAdapter } from './meta';
 
-const ALL_ADAPTERS = [firebaseAdapter, mixpanelAdapter, metaAdapter];
+// C2 / privacy: the Meta adapter forwards app events to Facebook (via our
+// backend Conversions API) for ad measurement — which counts as "tracking"
+// under Apple's App Tracking Transparency rules. We ship no ATT prompt, so the
+// Meta adapter is DISABLED on iOS: it is never registered, so it is never
+// initialized and never receives identify/track/reset. It stays enabled on
+// Android (disclosed in Play Data Safety). Keep this list the single source of
+// truth for which adapters run on each platform.
+export const ALL_ADAPTERS = Platform.OS === 'ios'
+  ? [firebaseAdapter, mixpanelAdapter]
+  : [firebaseAdapter, mixpanelAdapter, metaAdapter];
+
 let adapters = [];
 let initialized = false;
 
@@ -199,6 +209,8 @@ export async function reset() {
  * @returns {Promise<void>}
  */
 export async function flushMetaQueue() {
+  // Meta is disabled on iOS (see ALL_ADAPTERS) — nothing to flush there.
+  if (Platform.OS === 'ios') return;
   if (metaAdapter && typeof metaAdapter.flush === 'function') {
     try {
       await metaAdapter.flush();

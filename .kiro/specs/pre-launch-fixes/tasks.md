@@ -99,3 +99,12 @@ Verification approach (updated): #5 and #7 use **manual verification** (adb / si
   - Verify prebuild/build embeds the update config and that `runtimeVersion` resolves consistently between the binary and published updates.
   - STOP for review.
   - _Requirements: 7 (release/ops) — do not implement yet_
+
+## Post-launch backlog (not launch blockers)
+
+These came out of the referral/sharing and privacy review. Track separately; none block the store submission.
+
+- [ ] **Play Install Referrer for referral attribution.** Today the referral link (`https://choosepure.in/purity-wall?ref=CP-XXXXX`) opens the website, which reads `?ref=` for web sign-up. If the invitee instead installs the Android app and signs up there, referral credit is LOST (no deferred deep link / install attribution). Integrate Google Play Install Referrer API so the `ref` survives install→first-launch and is applied to app sign-up. (iOS equivalent is harder — consider a "enter referral code" field as a fallback.)
+- [ ] **Referral link in report PDF footer.** Reports are shared as a downloaded PDF (`/api/reports/:id/pdf`) with no link back. Add the user's referral link (or a plain app link) to the PDF footer so shared reports drive referrals/installs.
+- [ ] **App Links / Universal Links for report sharing.** There is no `https://` deep link that opens a report in the app, and no verified App Links (Android `assetlinks.json`) / Universal Links (iOS `apple-app-site-association` + `associatedDomains`). Add these so report/referral `https://choosepure.in/...` links open the installed app instead of the website.
+- [ ] **iOS ATT + Meta (only if running iOS Meta ad campaigns).** Meta analytics is disabled on iOS (no ATT prompt). If iOS Meta campaigns are ever needed, add `expo-tracking-transparency`, show the ATT prompt, re-enable the Meta adapter on iOS, and flip `NSPrivacyTracking` to true with `graph.facebook.com` (or the backend forwarding domain) listed in `NSPrivacyTrackingDomains`.
