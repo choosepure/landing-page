@@ -2,7 +2,7 @@
   "expo": {
     "name": "ChoosePure",
     "slug": "choosepure",
-    "version": "2.2.1",
+    "version": "2.3.0",
     "orientation": "portrait",
     "scheme": "choosepure",
     "icon": "./assets/icon.png",
