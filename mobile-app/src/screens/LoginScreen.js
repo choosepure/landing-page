@@ -205,14 +205,6 @@ export default function LoginScreen({ navigation }) {
           <Button variant="outline" fullWidth onPress={handleGoogleSignIn} disabled={googleLoading}>
             {googleLoading ? <ActivityIndicator color={theme.colors.primary} /> : 'Continue with Google'}
           </Button>
-          {Platform.OS === 'ios' && (
-            <>
-              <View style={styles.socialSpacer} />
-              <Button variant="outline" fullWidth>
-                Continue with Apple
-              </Button>
-            </>
-          )}
         </View>
 
         {/* Register link */}
@@ -333,9 +325,6 @@ const styles = StyleSheet.create({
   // Social login
   socialContainer: {
     gap: theme.spacing.sm,
-  },
-  socialSpacer: {
-    height: theme.spacing.sm,
   },
 
   // Register link
