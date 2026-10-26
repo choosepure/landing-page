@@ -41,6 +41,7 @@ export function validateBarcode(input) {
 export default function ScannerScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
   const [manualBarcode, setManualBarcode] = useState('');
   const [loading, setLoading] = useState(false);
   const [lookupBarcode, setLookupBarcode] = useState('');
@@ -90,6 +91,7 @@ export default function ScannerScreen({ navigation }) {
       return () => {
         cancelled = true;
         setIsScreenFocused(false);
+        setTorchOn(false); // don't leave the torch on after leaving the scanner
       };
     }, [])
   );
@@ -229,6 +231,7 @@ export default function ScannerScreen({ navigation }) {
                 key={cameraKey}
                 style={styles.camera}
                 facing="back"
+                enableTorch={torchOn}
                 onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
                 barcodeScannerSettings={{ barcodeTypes: ['ean13'] }}
               />
@@ -236,15 +239,22 @@ export default function ScannerScreen({ navigation }) {
               <View style={[styles.camera, { backgroundColor: '#000' }]} />
             )}
 
-            {/* Flash and Gallery buttons */}
-            <View style={styles.actionButtonsRow}>
-              <TouchableOpacity style={styles.circleButton} activeOpacity={0.8}>
-                <Icon name="flash" size={20} color={theme.colors.text} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} activeOpacity={0.8}>
-                <Icon name="image" size={18} color={theme.colors.text} />
-              </TouchableOpacity>
-            </View>
+            {/* Flash (torch) toggle. Gallery button removed — expo-camera can't
+                scan a barcode from a gallery image, so a dead button is worse. */}
+            {isScreenFocused && (
+              <View style={styles.actionButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.circleButton, torchOn && styles.circleButtonActive]}
+                  activeOpacity={0.8}
+                  onPress={() => setTorchOn((on) => !on)}
+                  accessibilityRole="button"
+                  accessibilityLabel={torchOn ? 'Turn flashlight off' : 'Turn flashlight on'}
+                  accessibilityState={{ selected: torchOn }}
+                >
+                  <Icon name="flash" size={20} color={torchOn ? '#FFFFFF' : theme.colors.text} />
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Green corner brackets viewfinder */}
             <View style={styles.viewfinderOverlay}>
@@ -439,14 +449,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
 
-  // Flash / Gallery action buttons
+  // Flash (torch) toggle button
   actionButtonsRow: {
     position: 'absolute',
     top: 20,
     left: 20,
     right: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     zIndex: 10,
   },
   circleButton: {
@@ -456,6 +466,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  circleButtonActive: {
+    backgroundColor: theme.colors.primary,
   },
 
   // Viewfinder overlay with corner brackets
