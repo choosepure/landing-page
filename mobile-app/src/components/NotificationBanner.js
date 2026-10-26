@@ -4,15 +4,17 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 import { getNavigationAction } from '../utils/notificationHandler';
 
 const BANNER_HEIGHT = 90;
 const AUTO_DISMISS_MS = 4000;
 const ANIMATION_DURATION = 300;
-const STATUS_BAR_PADDING = Platform.OS === 'ios' ? 44 : 24;
+// Minimum top padding when the device reports no top inset (e.g. older Android
+// without a cutout), so the banner never sits flush against the screen edge.
+const MIN_TOP_PADDING = 24;
 
 /**
  * Animated in-app notification banner that slides in from the top
@@ -24,18 +26,25 @@ const STATUS_BAR_PADDING = Platform.OS === 'ios' ? 44 : 24;
  *   onPress       – called with the navigation action when the user taps the banner
  */
 export default function NotificationBanner({ notification, onDismiss, onPress }) {
-  const translateY = useRef(new Animated.Value(-(BANNER_HEIGHT + STATUS_BAR_PADDING))).current;
+  // Bug #1: use the real top safe-area inset instead of a hardcoded per-OS
+  // value, so the banner clears the notch/Dynamic Island/status bar on every
+  // device. Falls back to a sensible minimum when the inset is 0.
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, MIN_TOP_PADDING);
+  const hiddenOffset = -(BANNER_HEIGHT + topInset);
+
+  const translateY = useRef(new Animated.Value(hiddenOffset)).current;
   const dismissTimer = useRef(null);
 
   const slideOut = useCallback(() => {
     Animated.timing(translateY, {
-      toValue: -(BANNER_HEIGHT + STATUS_BAR_PADDING),
+      toValue: hiddenOffset,
       duration: ANIMATION_DURATION,
       useNativeDriver: true,
     }).start(() => {
       if (onDismiss) onDismiss();
     });
-  }, [translateY, onDismiss]);
+  }, [translateY, onDismiss, hiddenOffset]);
 
   useEffect(() => {
     if (notification) {
@@ -81,7 +90,7 @@ export default function NotificationBanner({ notification, onDismiss, onPress })
     <Animated.View
       style={[
         styles.container,
-        { transform: [{ translateY }] },
+        { paddingTop: topInset, transform: [{ translateY }] },
       ]}
     >
       <TouchableOpacity
@@ -112,7 +121,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 9999,
-    paddingTop: STATUS_BAR_PADDING,
     backgroundColor: theme.colors.cardBackground,
     borderBottomLeftRadius: theme.borderRadius.md,
     borderBottomRightRadius: theme.borderRadius.md,

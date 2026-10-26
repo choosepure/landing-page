@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ActivityIndicator, View, StyleSheet, Platform, AppState } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
@@ -215,17 +216,19 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <NotificationBanner
-          notification={foregroundNotification}
-          onDismiss={handleBannerDismiss}
-          onPress={handleBannerPress}
-        />
-        <NavigationContainer ref={navigationRef} onReady={onNavigationReady} onStateChange={onNavigationStateChange}>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </NavigationContainer>
-      </AuthProvider>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <AuthProvider>
+          <NotificationBanner
+            notification={foregroundNotification}
+            onDismiss={handleBannerDismiss}
+            onPress={handleBannerPress}
+          />
+          <NavigationContainer ref={navigationRef} onReady={onNavigationReady} onStateChange={onNavigationStateChange}>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
