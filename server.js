@@ -237,11 +237,14 @@ async function connectToDatabase() {
     }
 }
 
-// Connect to the DB in every environment EXCEPT tests. On Render the app is
-// run directly (node server.js); on Vercel it is required as a serverless
-// function (require.main !== module) — both must connect. We only skip under
-// a test runner (IS_TEST) so supertest can import the app without touching Mongo.
-if (!IS_TEST) {
+// Database ownership: RENDER owns the database. On Render the app runs directly
+// (node server.js) and connects to Mongo. On VERCEL the app serves only static
+// pages and proxies all /api/* traffic to Render (see vercel.json), so it must
+// NOT connect to Mongo — Vercel's serverless runtime can't hold a reliable
+// connection and doesn't need one. We also skip under the test runner so
+// supertest can import the app without touching Mongo.
+const IS_VERCEL = !!process.env.VERCEL;
+if (!IS_TEST && !IS_VERCEL) {
     connectToDatabase();
 }
 

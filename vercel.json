@@ -24,16 +24,27 @@
       "dest": "server.js"
     },
     {
-      "src": "/(.*\\.html)",
-      "dest": "/$1"
+      "src": "/(admin-login|admin-forgot-password|admin-reset-password)\\.html",
+      "status": 308,
+      "headers": { "Location": "https://api.choosepure.in/$1.html" }
+    },
+    {
+      "src": "/admin",
+      "status": 308,
+      "headers": { "Location": "https://api.choosepure.in/admin" }
+    },
+    {
+      "src": "/admin/(.*)",
+      "status": 308,
+      "headers": { "Location": "https://api.choosepure.in/admin/$1" }
     },
     {
       "src": "/api/(.*)",
-      "dest": "server.js"
+      "dest": "https://api.choosepure.in/api/$1"
     },
     {
-      "src": "/admin(.*)",
-      "dest": "server.js"
+      "src": "/(.*\\.html)",
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
