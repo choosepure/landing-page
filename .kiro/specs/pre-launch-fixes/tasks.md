@@ -97,8 +97,24 @@ Verification approach (updated): #5 and #7 use **manual verification** (adb / si
   - Alternatively run `eas update:configure` to apply the above and validate the project.
   - IMPORTANT: OTA ships JS/asset changes only and takes effect only in a NEW store build that embeds `expo-updates` with the fingerprint runtimeVersion. Native changes still require a full rebuild. After the new build ships, publish with `eas update --branch production --message "..."`.
   - Verify prebuild/build embeds the update config and that `runtimeVersion` resolves consistently between the binary and published updates.
-  - STOP for review.
-  - _Requirements: 7 (release/ops) — do not implement yet_
+  - **DONE** (commit pending): `expo-updates ~0.28.18` installed; `app.json` has `runtimeVersion.policy: "fingerprint"` + `updates.url`; `eas.json` channels — development→`development`, preview→`preview`, verification→`preview`, production→`production`.
+  - _Requirements: 7 (release/ops)_
+
+### OTA release flow (staged: test on preview, then promote to production)
+
+Channels: the **verification** build (store APK) runs on the `preview` channel; the **production** store build runs on the `production` channel. This lets us publish an OTA to `preview`, verify it on the verification build, then promote the exact same update to `production` — no rebuild.
+
+1. **Publish to preview:** `eas update --branch preview --message "<what changed>"`
+2. **Test** on the verification build (it subscribes to `preview`). Confirm the JS/asset change behaves and the app still launches.
+3. **Promote the same update to production** (no re-bundling — republish the tested update):
+   - `eas channel:edit production --branch preview` to point the production channel at the tested `preview` branch, **or**
+   - `eas update:republish --channel preview --destination-channel production` (republish the specific tested update to production).
+4. **Undo / rollback:** `eas update:rollback` (or `eas update:rollback --channel production`) reverts the channel to the previous update so devices fetch the prior known-good bundle.
+
+Caveats:
+- OTA ships **JS/asset only**. Any native change (new native dep, `app.json` native config, SDK bump) requires a full store rebuild — the fingerprint `runtimeVersion` will change and OTA updates built against the old fingerprint won't apply.
+- OTA only works on builds that embed `expo-updates` (the next store build onward; the current 2.2.1/vc43 build cannot receive OTA).
+- Always publish/test on `preview` first; never `eas update --branch production` directly for anything unverified.
 
 ## Post-launch backlog (not launch blockers)
 
@@ -108,6 +124,8 @@ These came out of the referral/sharing and privacy review. Track separately; non
 - [ ] **Referral link in report PDF footer.** Reports are shared as a downloaded PDF (`/api/reports/:id/pdf`) with no link back. Add the user's referral link (or a plain app link) to the PDF footer so shared reports drive referrals/installs.
 - [ ] **App Links / Universal Links for report sharing.** There is no `https://` deep link that opens a report in the app, and no verified App Links (Android `assetlinks.json`) / Universal Links (iOS `apple-app-site-association` + `associatedDomains`). Add these so report/referral `https://choosepure.in/...` links open the installed app instead of the website.
 - [ ] **iOS ATT + Meta (only if running iOS Meta ad campaigns).** Meta analytics is disabled on iOS (no ATT prompt). If iOS Meta campaigns are ever needed, add `expo-tracking-transparency`, show the ATT prompt, re-enable the Meta adapter on iOS, and flip `NSPrivacyTracking` to true with `graph.facebook.com` (or the backend forwarding domain) listed in `NSPrivacyTrackingDomains`.
+- [ ] **Upload Crashlytics source maps for OTA bundles.** With EAS Update, OTA-shipped JS has a different bundle than the store build; Crashlytics crash reports from OTA updates will be unsymbolicated/unreadable unless we upload the source map for each published update. Wire source-map upload into the `eas update` release step (e.g. upload the Metro source map to Crashlytics keyed by the update's runtimeVersion/bundle id) so OTA crashes stay readable.
+- [ ] **Review npm audit findings in `mobile-app`.** `npx expo install expo-updates` reported outstanding vulnerabilities (low/moderate/high/critical) in the dependency tree. Triage `npm audit` — patch what's safe (`npm audit fix`), assess the critical/high ones for real exploitability in a RN app context, and avoid `--force` upgrades that could break the SDK-53 pinned versions without testing.
 
 ## Legal review before launch (not code — needs legal sign-off)
 

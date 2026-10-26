@@ -6,6 +6,12 @@
     "orientation": "portrait",
     "scheme": "choosepure",
     "icon": "./assets/icon.png",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f735d7c1-0935-46b3-ac19-5b0c945db8db"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.choosepure.app",
