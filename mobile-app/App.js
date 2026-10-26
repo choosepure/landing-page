@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import useDeepLink from './src/hooks/useDeepLink';
+import { navigateWhenReady, setNavigationReady } from './src/navigation/pendingNavigation';
 import { theme } from './src/theme';
 import NotificationBanner from './src/components/NotificationBanner';
 import {
@@ -38,6 +39,9 @@ export default function App() {
 
   const onNavigationReady = useCallback(() => {
     isNavigationReady.current = true;
+    // Bug #5: flush any deep-link / notification target that arrived before the
+    // navigator was ready (cold start).
+    setNavigationReady(navigationRef);
     // Set the initial route name for screen tracking
     const initialRouteName = navigationRef.current?.getCurrentRoute()?.name;
     routeNameRef.current = initialRouteName;
@@ -146,8 +150,8 @@ export default function App() {
       try {
         const unsubNotifOpened = onNotificationOpened((remoteMessage) => {
           const action = getNavigationAction(remoteMessage?.data);
-          if (action && navigationRef.current) {
-            navigationRef.current.navigate(action.screen, action.params);
+          if (action) {
+            navigateWhenReady(navigationRef, action.screen, action.params);
           }
         });
         unsubscribers.push(unsubNotifOpened);
@@ -160,8 +164,9 @@ export default function App() {
         const initialNotification = await getInitialNotification();
         if (initialNotification) {
           const action = getNavigationAction(initialNotification?.data);
-          if (action && navigationRef.current) {
-            navigationRef.current.navigate(action.screen, action.params);
+          if (action) {
+            // Cold start: the container may not be ready yet; queue it.
+            navigateWhenReady(navigationRef, action.screen, action.params);
           }
         }
       } catch (err) {
