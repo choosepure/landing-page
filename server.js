@@ -5777,6 +5777,9 @@ app.get('/product-lookup', (req, res) => {
 app.get('/privacy-policy', (req, res) => {
     res.sendFile(path.join(__dirname, 'privacy-policy.html'));
 });
+app.get('/refund-policy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'refund-policy.html'));
+});
 app.get('/terms-conditions', (req, res) => {
     res.sendFile(path.join(__dirname, 'terms-conditions.html'));
 });
