@@ -130,7 +130,7 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "versionCode": 44
+      "versionCode": 45
     },
     "plugins": [
       [
